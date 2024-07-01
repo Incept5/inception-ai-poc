@@ -1,0 +1,19 @@
+# requirements.txt
+
+# Core LangGraph and LangChain libraries
+langgraph
+langchain
+langchain_anthropic
+
+# Environment variable management
+python-dotenv
+
+# Web framework and WSGI server
+flask
+gunicorn
+
+# CORS support for development
+flask-cors
+
+# Typing support
+typing-extensions

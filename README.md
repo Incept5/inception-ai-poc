@@ -1,12 +1,17 @@
 # LangGraph Chatbot Project
 
-This project implements a chatbot using LangGraph, Flask, and Docker. It consists of a Python backend server and a simple HTML client.
+This project implements a chatbot using [LangGraph](https://langchain-ai.github.io/langgraph/), Flask, and Docker. It consists of a Python backend server and a simple HTML client.
+
+This project is a starting point for building a chatbot that can interact with LangGraph's conversational AI models. The server is set up to handle incoming messages from the client, send them to LangGraph's API, and return the responses to the client.
+
+Initially we have just implemented the very first part of the first Getting Started Tutorial here:
+
+https://langchain-ai.github.io/langgraph/tutorials/introduction/
 
 ## Project Structure
 
 ```
 .
-├── .gitignore
 ├── .env (ignored)
 ├── .example.env
 ├── README.md

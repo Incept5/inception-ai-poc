@@ -2,7 +2,6 @@
 
 import os
 import sys
-from dotenv import load_dotenv
 from typing import Annotated
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph
@@ -10,9 +9,6 @@ from langgraph.graph.message import add_messages
 from langchain_anthropic import ChatAnthropic
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
-# Load environment variables from .env file (for local development)
-load_dotenv()
 
 # Function to print debug information
 def debug_print(*args, **kwargs):
@@ -23,23 +19,22 @@ debug_print("Environment variables:")
 for key, value in os.environ.items():
     debug_print(f"{key}: {value}")
 
-# Get API keys from environment variables
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY")
+# Get environment variables
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+LANGSMITH_API_KEY = os.environ.get("LANGSMITH_API_KEY")
+ANTHROPIC_DEFAULT_MODEL = os.environ.get("ANTHROPIC_DEFAULT_MODEL", "claude-3-haiku-20240307")
+LANGCHAIN_TRACING_V2 = os.environ.get("LANGCHAIN_TRACING_V2", "true")
+LANGCHAIN_PROJECT = os.environ.get("LANGCHAIN_PROJECT", "LangGraph Tutorial")
 
-# Check if API keys are available
+# Check if required environment variables are set
 if not ANTHROPIC_API_KEY or not LANGSMITH_API_KEY:
-    raise ValueError("API keys not found. Please check your environment variables.")
+    raise ValueError("Required API keys not found. Please check your .env file.")
 
 debug_print(f"ANTHROPIC_API_KEY: {'*' * len(ANTHROPIC_API_KEY)}")  # Print asterisks for security
 debug_print(f"LANGSMITH_API_KEY: {'*' * len(LANGSMITH_API_KEY)}")  # Print asterisks for security
-
-# Set LangChain environment variables
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "LangGraph Tutorial"
-
-debug_print(f"LANGCHAIN_TRACING_V2: {os.environ['LANGCHAIN_TRACING_V2']}")
-debug_print(f"LANGCHAIN_PROJECT: {os.environ['LANGCHAIN_PROJECT']}")
+debug_print(f"ANTHROPIC_DEFAULT_MODEL: {ANTHROPIC_DEFAULT_MODEL}")
+debug_print(f"LANGCHAIN_TRACING_V2: {LANGCHAIN_TRACING_V2}")
+debug_print(f"LANGCHAIN_PROJECT: {LANGCHAIN_PROJECT}")
 
 # Define the State type
 class State(TypedDict):
@@ -49,7 +44,7 @@ class State(TypedDict):
 graph_builder = StateGraph(State)
 
 # Set up the LLM and chatbot function
-llm = ChatAnthropic(model="claude-3-haiku-20240307")
+llm = ChatAnthropic(model=ANTHROPIC_DEFAULT_MODEL)
 
 def chatbot(state: State):
     debug_print(f"Chatbot input state: {state}")

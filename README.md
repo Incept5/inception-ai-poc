@@ -4,7 +4,7 @@ This project implements a chatbot using [LangGraph](https://langchain-ai.github.
 
 This project is a starting point for building a chatbot that can interact with LangGraph's conversational AI models. The server is set up to handle incoming messages from the client, send them to LangGraph's API, and return the responses to the client.
 
-Initially we have just implemented the very first part of the first Getting Started Tutorial here:
+We are working through the tutoral here but making it work in a client/server model:
 
 https://langchain-ai.github.io/langgraph/tutorials/introduction/
 

@@ -23,9 +23,24 @@ https://langchain-ai.github.io/langgraph/tutorials/introduction/
     │   └── simple-client.html
     └── python
         └── py-server
-            ├── gunicorn.conf.py
-            ├── requirements.txt
-            └── server.py
+           │
+           ├── app.py
+           ├── config.py
+           │
+           ├── routes/
+           │   ├── __init__.py
+           │   ├── chat.py
+           │   └── ollama_api.py
+           │
+           ├── services/
+           │   ├── __init__.py
+           │   └── llm_manager.py
+           │
+           ├── utils/
+           │   ├── __init__.py
+           │   └── debug_utils.py
+           │
+           └── requirements.txt
 ```
 
 ## Prerequisites

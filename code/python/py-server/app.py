@@ -3,7 +3,7 @@
 from flask import Flask
 from flask_cors import CORS
 from routes.chat import chat_blueprint
-from routes.ollama_api import ollama_blueprint
+from routes.llm_models import llm_models_blueprint
 from config import Config
 from utils.debug_utils import debug_print
 
@@ -12,7 +12,7 @@ app.config.from_object(Config)
 CORS(app)
 
 app.register_blueprint(chat_blueprint)
-app.register_blueprint(ollama_blueprint)
+app.register_blueprint(llm_models_blueprint)
 
 if __name__ == '__main__':
     debug_print("Starting Flask app")

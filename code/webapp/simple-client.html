@@ -18,42 +18,52 @@
             overflow-y: auto;
             margin-bottom: 20px;
         }
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
         #user-input {
-            width: 60%;
+            flex: 1;
             padding: 10px;
         }
         #send-button {
-            width: 15%;
             padding: 10px;
         }
         .selector {
-            width: 20%;
             padding: 10px;
             margin-right: 10px;
         }
-        #ollama-model-selector {
+        #spinner {
             display: none;
+            margin-left: 10px;
         }
     </style>
 </head>
 <body>
     <h1>Chatbot Interface</h1>
     <div id="chat-container"></div>
-    <select id="llm-selector" class="selector">
-        <option value="anthropic">Anthropic</option>
-        <option value="ollama">Ollama</option>
-        <option value="openai">OpenAI</option>
-    </select>
-    <select id="ollama-model-selector" class="selector"></select>
-    <input type="text" id="user-input" placeholder="Type your message here...">
-    <button id="send-button">Send</button>
+    <div class="input-row">
+        <select id="llm-selector" class="selector">
+            <option value="anthropic">Anthropic</option>
+            <option value="ollama">Ollama</option>
+            <option value="openai">OpenAI</option>
+        </select>
+        <select id="model-selector" class="selector"></select>
+    </div>
+    <div class="input-row">
+        <input type="text" id="user-input" placeholder="Type your message here...">
+        <button id="send-button">Send</button>
+        <div id="spinner">Loading...</div>
+    </div>
 
     <script>
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
         const llmSelector = document.getElementById('llm-selector');
-        const ollamaModelSelector = document.getElementById('ollama-model-selector');
+        const modelSelector = document.getElementById('model-selector');
+        const spinner = document.getElementById('spinner');
 
         function addMessage(sender, message) {
             const messageElement = document.createElement('p');
@@ -62,27 +72,36 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        async function fetchOllamaModels() {
+        async function fetchModels(provider) {
+            modelSelector.innerHTML = '';
+            spinner.style.display = 'inline';
             try {
-                const response = await fetch('http://localhost:5010/ollama-models');
+                const response = await fetch(`http://localhost:5010/llm-models?provider=${provider}`);
                 if (!response.ok) {
-                    throw new Error('Failed to fetch Ollama models');
+                    throw new Error('Failed to fetch models');
                 }
                 const data = await response.json();
-                ollamaModelSelector.innerHTML = data.models.map(model => `<option value="${model}">${model}</option>`).join('');
+                if (data.models) {
+                    modelSelector.innerHTML = data.models.map(model => `<option value="${model}">${model}</option>`).join('');
+                } else {
+                    addMessage('System', `Failed to fetch models for provider ${provider}.`);
+                }
             } catch (error) {
-                console.error('Error fetching Ollama models:', error);
-                addMessage('System', 'Failed to fetch Ollama models.');
+                console.error('Error fetching models:', error);
+                addMessage('System', 'Failed to fetch models.');
+            } finally {
+                spinner.style.display = 'none';
             }
         }
 
         async function sendMessage() {
             const message = userInput.value.trim();
             const selectedLLM = llmSelector.value;
-            const selectedOllamaModel = ollamaModelSelector.value;
+            const selectedModel = modelSelector.value;
             if (message) {
                 addMessage('You', message);
                 userInput.value = '';
+                spinner.style.display = 'inline';
 
                 try {
                     const response = await fetch('http://localhost:5010/chat', {
@@ -93,7 +112,7 @@
                         body: JSON.stringify({
                             message: message,
                             llm_provider: selectedLLM,
-                            ollama_model: selectedLLM === 'ollama' ? selectedOllamaModel : null
+                            llm_model: selectedModel
                         }),
                     });
 
@@ -102,10 +121,12 @@
                     }
 
                     const data = await response.json();
-                    addMessage(`Chatbot (${selectedLLM}${selectedLLM === 'ollama' ? ` - ${selectedOllamaModel}` : ''})`, data.response);
+                    addMessage(`Chatbot (${selectedLLM} - ${selectedModel})`, data.response);
                 } catch (error) {
                     console.error('Error:', error);
                     addMessage('System', 'An error occurred while communicating with the chatbot.');
+                } finally {
+                    spinner.style.display = 'none';
                 }
             }
         }
@@ -120,20 +141,15 @@
         llmSelector.addEventListener('change', function() {
             const selectedLLM = llmSelector.value;
             addMessage('System', `Switched to ${selectedLLM} LLM.`);
-            if (selectedLLM === 'ollama') {
-                fetchOllamaModels();
-                ollamaModelSelector.style.display = 'inline-block';
-            } else {
-                ollamaModelSelector.style.display = 'none';
-            }
+            fetchModels(selectedLLM);
         });
 
-        ollamaModelSelector.addEventListener('change', function() {
-            addMessage('System', `Switched to Ollama model: ${ollamaModelSelector.value}`);
+        modelSelector.addEventListener('change', function() {
+            addMessage('System', `Switched to model: ${modelSelector.value}`);
         });
 
-        // Initial fetch of Ollama models
-        fetchOllamaModels();
+        // Initial fetch of models for the default provider
+        fetchModels(llmSelector.value);
     </script>
 </body>
 </html>

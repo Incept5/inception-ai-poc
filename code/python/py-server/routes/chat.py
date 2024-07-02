@@ -45,7 +45,7 @@ def chat():
     debug_print(f"Request data: {data}")
     user_input = data.get('message')
     llm_provider = data.get('llm_provider', 'anthropic')
-    ollama_model = data.get('ollama_model')
+    llm_model = data.get('llm_model')
 
     if not user_input:
         debug_print("Error: No message provided")
@@ -53,16 +53,11 @@ def chat():
 
     debug_print(f"User input: {user_input}")
     debug_print(f"LLM Provider: {llm_provider}")
-    if llm_provider == 'ollama':
-        debug_print(f"Ollama Model: {ollama_model}")
-
-    # Create a unique key for each LLM configuration
-    graph_key = f"{llm_provider}_{ollama_model}" if llm_provider == 'ollama' else llm_provider
+    debug_print(f"LLM Model: {llm_model}")
 
     # Create the graph for the current LLM configuration
-    llm_wrapper = get_llm(tools, llm_provider, ollama_model)
+    llm_wrapper = get_llm(tools, llm_provider, llm_model)
     graph = create_graph(llm_wrapper)
-    debug_print(f"Created new graph for {graph_key}")
 
     final_response = None
     for event in graph.stream({"messages": [("user", user_input)]}):

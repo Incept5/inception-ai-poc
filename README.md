@@ -10,6 +10,8 @@ https://langchain-ai.github.io/langgraph/tutorials/introduction/
 
 # Features
 
+![docs/images/inception-ui.png](docs/images/inception-ui.png)
+
 The UI allows you to change the following:
 
 * Which bot you are talking to

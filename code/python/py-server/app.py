@@ -2,7 +2,7 @@
 
 from flask import Flask
 from flask_cors import CORS
-from routes.bots.bot_router import bot_blueprint
+from routes.bot_router import bot_blueprint
 from routes.llm_models import llm_models_blueprint
 from config import Config
 from utils.debug_utils import debug_print

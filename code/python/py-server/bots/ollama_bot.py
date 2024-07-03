@@ -1,7 +1,7 @@
 import os
 import requests
 from typing import Dict, Any
-from routes.bots.bot_interface import BotInterface
+from bots.bot_interface import BotInterface
 from utils.debug_utils import debug_print
 
 

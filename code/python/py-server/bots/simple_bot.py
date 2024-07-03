@@ -1,6 +1,6 @@
 from typing import List, TypedDict, Annotated
-from routes.bots.langchain_bot_interface import LangchainBotInterface
-from services.llm_manager import get_system_message, LLMWrapper
+from bots.langchain_bot_interface import LangchainBotInterface
+from llms.llm_wrapper import LLMWrapper
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
@@ -30,7 +30,7 @@ class SimpleBot(LangchainBotInterface):
         def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
-            system_message = SystemMessage(content=get_system_message(llm_wrapper.provider))
+            system_message = SystemMessage(content="You are a helpful AI assistant")
 
             prompt = """
             As an AI assistant, please provide a helpful and informative response to the user's query.

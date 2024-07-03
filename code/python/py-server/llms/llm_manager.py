@@ -7,17 +7,8 @@ from langchain_openai import ChatOpenAI
 from langchain_core.language_models import BaseChatModel
 from typing import List
 from langchain.tools import BaseTool
+from llms.llm_wrapper import LLMWrapper
 from utils.debug_utils import debug_print
-
-
-class LLMWrapper:
-    def __init__(self, llm: BaseChatModel, provider: str):
-        self.llm = llm
-        self.provider = provider
-
-    def invoke(self, *args, **kwargs):
-        return self.llm.invoke(*args, **kwargs)
-
 
 def get_llm(tools: List[BaseTool] = None, llm_provider: str = None, model: str = None) -> LLMWrapper:
     if llm_provider is None:
@@ -53,14 +44,3 @@ def get_llm(tools: List[BaseTool] = None, llm_provider: str = None, model: str =
 
     debug_print(f"Initialized LLM for provider: {llm_provider}")
     return LLMWrapper(llm, llm_provider)
-
-
-def get_system_message(llm_provider: str) -> str:
-    if llm_provider == "anthropic":
-        return "You are Claude, an AI assistant created by Anthropic to be helpful, harmless, and honest."
-    elif llm_provider == "ollama":
-        return "You are a helpful AI assistant. Use the provided tools when necessary."
-    elif llm_provider == "openai":
-        return "You are a helpful AI assistant created by OpenAI."
-    else:
-        return "You are a helpful AI assistant."

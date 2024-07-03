@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from typing import List, Dict, Any
-from routes.bots.bot_interface import BotInterface
+from bots.bot_interface import BotInterface
 from langgraph.graph import StateGraph
-from services.llm_manager import LLMWrapper, get_llm
+from llms.llm_manager import LLMWrapper, get_llm
 from utils.debug_utils import debug_print
 from langchain_core.messages import BaseMessage
 

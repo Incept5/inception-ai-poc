@@ -6,6 +6,7 @@ langgraph
 langchain
 langchain_anthropic
 langchain_openai
+langchain_groq
 langchain_community
 langchain_experimental
 tavily-python

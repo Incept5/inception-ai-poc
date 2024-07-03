@@ -5,13 +5,15 @@ from llms.llm_wrapper import LLMWrapper
 from llms.anthropic_provider import AnthropicProvider
 from llms.ollama_provider import OllamaProvider
 from llms.openai_provider import OpenAIProvider
+from llms.groq_provider import GroqProvider
 from utils.debug_utils import debug_print
 
 class LLMManager:
     providers = {
         "anthropic": AnthropicProvider(),
         "ollama": OllamaProvider(),
-        "openai": OpenAIProvider()
+        "openai": OpenAIProvider(),
+        "groq": GroqProvider()
     }
 
     @classmethod

@@ -2,7 +2,7 @@
 
 from flask import Flask
 from flask_cors import CORS
-from routes.chat import chat_blueprint
+from routes.bots.bot_router import bot_blueprint
 from routes.llm_models import llm_models_blueprint
 from config import Config
 from utils.debug_utils import debug_print
@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 CORS(app)
 
-app.register_blueprint(chat_blueprint)
+app.register_blueprint(bot_blueprint)
 app.register_blueprint(llm_models_blueprint)
 
 if __name__ == '__main__':

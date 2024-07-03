@@ -45,7 +45,7 @@ def fetch_anthropic_models():
     try:
         # Placeholder: Replace with actual call to Anthropic API
         models = [
-            "claude-3-haiku-20240307", "claude-3-5-sonnet-20240620"
+            "claude-3-5-sonnet-20240620", "claude-3-haiku-20240307"
         ]
         return models
     except Exception as e:

@@ -11,6 +11,7 @@ The UI allows you to change the following:
   * Local or remote Ollama (via OLLAMA_BASE_URL in .env)
   * Anthropic Claude
   * Open AI
+  * Groq
 * Which LLM model you are using
   * Will query Ollama for the list of installed models
 

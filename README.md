@@ -1,16 +1,6 @@
-# LangGraph Chatbot Project
+# Inception AI Chatbot Project
 
-This project implements a chatbot using [LangGraph](https://langchain-ai.github.io/langgraph/), Flask, and Docker. It consists of a Python backend server and a simple HTML client.
-
-This project is a starting point for building a chatbot that can interact with LangGraph's conversational AI models. The server is set up to handle incoming messages from the client, send them to LangGraph's API, and return the responses to the client.
-
-We are working through the tutoral here but making it work in a client/server model:
-
-https://langchain-ai.github.io/langgraph/tutorials/introduction/
-
-# Features
-
-![docs/images/inception-ui.png](docs/images/inception-ui.png)
+This is a playground project for experimenting with different AI models and chatbot configurations. The project consists of a simple web interface for interacting with a chatbot server running in a Docker container.
 
 The UI allows you to change the following:
 
@@ -23,6 +13,8 @@ The UI allows you to change the following:
   * Open AI
 * Which LLM model you are using
   * Will query Ollama for the list of installed models
+
+![docs/images/inception-ui.png](docs/images/inception-ui.png)
 
 # Example Bots
 

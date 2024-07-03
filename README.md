@@ -8,6 +8,29 @@ We are working through the tutoral here but making it work in a client/server mo
 
 https://langchain-ai.github.io/langgraph/tutorials/introduction/
 
+# Features
+
+The UI allows you to change the following:
+
+* Which bot you are talking to
+  * You can add new bots under /code/python/py-server/bots/
+  * Make sure you also add that bot to /code/python/py-server/bots/configured_bots.py
+* Which LLM Provider you are using
+  * Local or remote Ollama (via OLLAMA_BASE_URL in .env)
+  * Anthropic Claude
+  * Open AI
+* Which LLM model you are using
+  * Will query Ollama for the list of installed models
+
+# Example Bots
+
+* Simple Bot - [code/python/py-server/bots/simple_bot.py](code/python/py-server/bots/simple_bot.py)
+  * Simple Langgraph bot with no tools 
+* Web Search Bot - [code/python/py-server/bots/web_search_bot.py](code/python/py-server/bots/web_search_bot.py)
+  * Langgraph bot with a web search tool
+* Ollama Bot - [code/python/py-server/bots/ollama_bot.py](code/python/py-server/bots/ollama_bot.py)
+   * This bot does not use langchain at all
+
 ## Project Structure
 
 ```
@@ -22,25 +45,7 @@ https://langchain-ai.github.io/langgraph/tutorials/introduction/
     ├── webapp
     │   └── simple-client.html
     └── python
-        └── py-server
-           │
-           ├── app.py
-           ├── config.py
-           │
-           ├── routes/
-           │   ├── __init__.py
-           │   ├── chat.py
-           │   └── ollama_api.py
-           │
-           ├── services/
-           │   ├── __init__.py
-           │   └── llm_manager.py
-           │
-           ├── utils/
-           │   ├── __init__.py
-           │   └── debug_utils.py
-           │
-           └── requirements.txt
+        └── py-server (this is the AI Codebase)
 ```
 
 ## Prerequisites

@@ -4,7 +4,6 @@ import os
 from langchain_anthropic import ChatAnthropic
 from langchain_experimental.llms.ollama_functions import OllamaFunctions, convert_to_ollama_tool
 from langchain_openai import ChatOpenAI
-from langchain_core.language_models import BaseChatModel
 from typing import List
 from langchain.tools import BaseTool
 from llms.llm_wrapper import LLMWrapper

@@ -2,17 +2,17 @@ from abc import abstractmethod
 from typing import List, Dict, Any
 from bots.bot_interface import BotInterface
 from langgraph.graph import StateGraph
-from llms.llm_manager import LLMWrapper, get_llm
+from llms.llm_manager import LLMManager
 from utils.debug_utils import debug_print
 from langchain_core.messages import BaseMessage
 
 class LangchainBotInterface(BotInterface):
     @abstractmethod
-    def create_chatbot(self, llm_wrapper: LLMWrapper):
+    def create_chatbot(self):
         pass
 
     @abstractmethod
-    def create_graph(self, llm_wrapper: LLMWrapper) -> StateGraph:
+    def create_graph(self) -> StateGraph:
         pass
 
     @abstractmethod
@@ -24,11 +24,17 @@ class LangchainBotInterface(BotInterface):
         debug_print(f"Context: {context}")
         debug_print(f"Additional kwargs: {kwargs}")
 
-        llm_provider = kwargs.get('llm_provider', 'anthropic')
+        llm_provider = kwargs.get('llm_provider')
         llm_model = kwargs.get('llm_model')
 
-        llm_wrapper = get_llm(self.get_tools(), llm_provider, llm_model)
-        graph = self.create_graph(llm_wrapper)
+        # If llm_provider or llm_model are provided, create a new LLMWrapper
+        if llm_provider or llm_model:
+            self.llm_wrapper = LLMManager.get_llm(self.get_tools(), llm_provider, llm_model)
+        # Otherwise, use the default LLMWrapper created in the bot's __init__ method
+        elif not hasattr(self, 'llm_wrapper'):
+            self.llm_wrapper = LLMManager.get_default_llm(self.get_tools())
+
+        graph = self.create_graph()
 
         input_message = f"Context: {context}\n\nUser query: {user_input}"
 
@@ -46,7 +52,7 @@ class LangchainBotInterface(BotInterface):
             "llm_provider": {
                 "type": "string",
                 "description": "The LLM provider to use",
-                "default": "anthropic"
+                "default": None
             },
             "llm_model": {
                 "type": "string",

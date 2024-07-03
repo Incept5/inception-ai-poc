@@ -1,6 +1,6 @@
 from typing import List, TypedDict, Annotated
 from bots.langchain_bot_interface import LangchainBotInterface
-from llms.llm_wrapper import LLMWrapper
+from llms.llm_manager import LLMManager
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
@@ -8,14 +8,13 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_community.tools.tavily_search import TavilySearchResults
 
-
 class State(TypedDict):
     messages: Annotated[List, add_messages]
-
 
 class WebSearchBot(LangchainBotInterface):
     def __init__(self):
         self.tools = [TavilySearchResults(max_results=3)]
+        self.llm_wrapper = LLMManager.get_default_llm(tools=self.tools)
 
     @property
     def bot_type(self) -> str:
@@ -28,7 +27,7 @@ class WebSearchBot(LangchainBotInterface):
     def get_tools(self) -> List:
         return self.tools
 
-    def create_chatbot(self, llm_wrapper: LLMWrapper):
+    def create_chatbot(self):
         def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
@@ -47,15 +46,15 @@ class WebSearchBot(LangchainBotInterface):
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
-            result = {"messages": [llm_wrapper.invoke(messages)]}
+            result = {"messages": [self.llm_wrapper.invoke(messages)]}
             debug_print(f"Chatbot output: {result}")
             return result
 
         return chatbot
 
-    def create_graph(self, llm_wrapper: LLMWrapper) -> StateGraph:
+    def create_graph(self) -> StateGraph:
         graph_builder = StateGraph(State)
-        graph_builder.add_node("chatbot", self.create_chatbot(llm_wrapper))
+        graph_builder.add_node("chatbot", self.create_chatbot())
         tool_node = ToolNode(tools=self.tools)
         graph_builder.add_node("tools", tool_node)
         graph_builder.add_conditional_edges("chatbot", tools_condition)

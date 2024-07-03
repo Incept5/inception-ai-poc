@@ -45,7 +45,7 @@ The UI allows you to change the following:
 │   └── Dockerfile.python-server
 └── code
     ├── webapp
-    │   └── simple-client.html
+    │   └── Chatbot.html
     └── python
         └── py-server (this is the AI Codebase)
 ```
@@ -95,7 +95,7 @@ The UI allows you to change the following:
 
 ## Using the Chatbot
 
-1. Open the `code/webapp/simple-client.html` file in a web browser.
+1. Open the [code/webapp/Chatbot.html](code/webapp/Chatbot.html) file in a web browser.
 
 2. You should see a simple interface where you can type messages and receive responses from the chatbot.
 

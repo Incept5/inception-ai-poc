@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from bots.configured_bots import get_configured_bots
 from utils.debug_utils import debug_print
 

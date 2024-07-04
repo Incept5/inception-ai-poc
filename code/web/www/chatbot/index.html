@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         .chat-container {
-            height: calc(100vh - 400px);
+            height: calc(100vh - 500px);
             min-height: 300px;
         }
         .loading-spinner {
@@ -21,6 +21,10 @@
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Inception AI Chatbot</h1>
         <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+            <div class="flex justify-between items-center mb-4">
+                <div id="thread-display" class="text-gray-600"></div>
+                <button id="new-conversation" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">New Conversation</button>
+            </div>
             <div id="chat-container" class="chat-container overflow-y-auto mb-4 p-4 bg-gray-50 rounded"></div>
             <div class="grid grid-cols-1 gap-4 mb-4">
                 <div class="flex items-center">
@@ -56,9 +60,23 @@
         const modelSelector = document.getElementById('model-selector');
         const messageHistory = document.getElementById('message-history');
         const spinner = document.getElementById('spinner');
+        const threadDisplay = document.getElementById('thread-display');
+        const newConversationButton = document.getElementById('new-conversation');
 
         let initialLoadComplete = false;
         let messageHistoryArray = [];
+        let threadId;
+
+        function generateThreadId() {
+            return Math.random().toString(36).substring(2, 12);
+        }
+
+        function initializeThread() {
+            threadId = generateThreadId();
+            threadDisplay.textContent = `Thread: ${threadId}`;
+            chatContainer.innerHTML = '';
+            addMessage('System', 'New conversation started.');
+        }
 
         function addMessage(sender, message) {
             const messageElement = document.createElement('div');
@@ -92,7 +110,6 @@
             });
         }
 
-// Modify the fetchBots function
         async function fetchBots() {
             try {
                 const response = await fetch('http://localhost:9871/bots');
@@ -103,7 +120,6 @@
                 botSelector.innerHTML = data.map(bot =>
                     `<option value="${bot.bot_type}">${bot.description}</option>`
                 ).join('');
-                // Only fetch models if this is the initial load
                 if (!initialLoadComplete) {
                     addMessage('System', `Loaded available bots. Default bot: ${botSelector.options[botSelector.selectedIndex].text}`);
                     await fetchModels(llmSelector.value);
@@ -160,7 +176,8 @@
                             message: message,
                             config: {
                                 llm_provider: selectedLLM,
-                                llm_model: selectedModel
+                                llm_model: selectedModel,
+                                thread_id: threadId
                             }
                         }),
                     });
@@ -202,6 +219,8 @@
             addMessage('System', `Switched to model: ${modelSelector.value}`);
         });
 
+        newConversationButton.addEventListener('click', initializeThread);
+
         // Load message history from localStorage
         const savedHistory = localStorage.getItem('messageHistory');
         if (savedHistory) {
@@ -209,8 +228,9 @@
             updateMessageHistoryDatalist();
         }
 
-        // Initial fetch of bots and models
+        // Initial fetch of bots and models, and initialize thread
         fetchBots();
+        initializeThread();
     </script>
 </body>
 </html>

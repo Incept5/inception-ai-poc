@@ -1,5 +1,5 @@
 from typing import List, TypedDict, Annotated
-from bots.langchain_bot_interface import LangchainBotInterface
+from mylangchain.langchain_bot_interface import LangchainBotInterface
 from llms.llm_manager import LLMManager
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
@@ -13,8 +13,9 @@ class State(TypedDict):
 
 class WebSearchBot(LangchainBotInterface):
     def __init__(self):
+        super().__init__()
         self.tools = [TavilySearchResults(max_results=3)]
-        self.llm_wrapper = LLMManager.get_default_llm(tools=self.tools)
+        self.initialize()
 
     @property
     def bot_type(self) -> str:
@@ -60,4 +61,5 @@ class WebSearchBot(LangchainBotInterface):
         graph_builder.add_conditional_edges("chatbot", tools_condition)
         graph_builder.add_edge("tools", "chatbot")
         graph_builder.set_entry_point("chatbot")
-        return graph_builder.compile()
+        mycheckpointer = self.get_checkpointer()
+        return graph_builder.compile(checkpointer=mycheckpointer)

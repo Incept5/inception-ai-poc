@@ -79,7 +79,7 @@ The UI allows you to change the following:
    docker-compose up --build
    ```
 
-   This command will build the Python server image and start the container. The server will be accessible at `http://localhost:5010`.
+   This command will build the Python server image and start the container. The server will be accessible at `http://localhost:9871`.
 
 3. To stop the containers, use:
    ```
@@ -92,7 +92,7 @@ The UI allows you to change the following:
 
 2. You should see a simple interface where you can type messages and receive responses from the chatbot.
 
-3. The client will communicate with the server running at `http://localhost:5010`.
+3. The client will communicate with the server running at `http://localhost:9871`.
 
 ## Development
 

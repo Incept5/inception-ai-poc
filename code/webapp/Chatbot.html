@@ -95,7 +95,7 @@
 // Modify the fetchBots function
         async function fetchBots() {
             try {
-                const response = await fetch('http://localhost:5010/bots');
+                const response = await fetch('http://localhost:9871/bots');
                 if (!response.ok) {
                     throw new Error('Failed to fetch bots');
                 }
@@ -120,7 +120,7 @@
             spinner.style.display = 'inline-block';
             addMessage('System', `Fetching models for ${provider}...`);
             try {
-                const response = await fetch(`http://localhost:5010/llm-models?provider=${provider}`);
+                const response = await fetch(`http://localhost:9871/llm-models?provider=${provider}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch models');
                 }
@@ -151,7 +151,7 @@
                 spinner.style.display = 'inline-block';
 
                 try {
-                    const response = await fetch(`http://localhost:5010/bots/${selectedBot}`, {
+                    const response = await fetch(`http://localhost:9871/bots/${selectedBot}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

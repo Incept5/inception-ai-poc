@@ -6,7 +6,7 @@ services:
       context: ../code/python/py-server
       dockerfile: ../../../docker/Dockerfile.python-server
     ports:
-      - "5010:5010"
+      - "9871:9871"
     volumes:
       - ../code/python/py-server:/app
     environment:

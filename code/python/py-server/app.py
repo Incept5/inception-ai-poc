@@ -16,4 +16,4 @@ app.register_blueprint(llm_models_blueprint)
 
 if __name__ == '__main__':
     debug_print("Starting Flask app")
-    app.run(host='0.0.0.0', port=5010, debug=True)
+    app.run(host='0.0.0.0', port=9871, debug=True)

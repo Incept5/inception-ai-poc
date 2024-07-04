@@ -19,11 +19,11 @@ The UI allows you to change the following:
 
 # Example Bots
 
-* Simple Bot - [code/python/py-server/bots/simple_bot.py](code/python/py-server/bots/simple_bot.py)
+* Simple Bot - [code/python/py-server/bots/simple_bot.py](code/python/aiserver/bots/simple_bot.py)
   * Simple Langgraph bot with no tools 
-* Web Search Bot - [code/python/py-server/bots/web_search_bot.py](code/python/py-server/bots/web_search_bot.py)
+* Web Search Bot - [code/python/py-server/bots/web_search_bot.py](code/python/aiserver/bots/web_search_bot.py)
   * Langgraph bot with a web search tool
-* Ollama Bot - [code/python/py-server/bots/ollama_bot.py](code/python/py-server/bots/ollama_bot.py)
+* Ollama Bot - [code/python/py-server/bots/ollama_bot.py](code/python/aiserver/bots/ollama_bot.py)
    * This bot does not use langchain at all
 
 ## Project Structure

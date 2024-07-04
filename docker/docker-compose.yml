@@ -1,16 +1,30 @@
 version: '3.8'
 
 services:
-  python-server:
+  aiserver:
     build:
-      context: ../code/python/py-server
-      dockerfile: ../../../docker/Dockerfile.python-server
+      context: ../code/python/aiserver
+      dockerfile: Dockerfile
     ports:
       - "9871:9871"
     volumes:
-      - ../code/python/py-server:/app
+      - ../code/python/aiserver:/app
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1
     env_file:
       - ../.env
+
+  webui:
+    build:
+      context: ../code/nodejs/webui
+      dockerfile: Dockerfile
+    ports:
+      - "9872:9872"
+    environment:
+      - NODE_ENV=production
+      - PORT=9872
+    env_file:
+      - ../.env
+    depends_on:
+      - aiserver

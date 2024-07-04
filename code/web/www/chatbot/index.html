@@ -7,8 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         .chat-container {
-            height: calc(100vh - 500px);
-            min-height: 300px;
+            height: calc(100vh - 300px);
+            min-height: 400px;
         }
         .loading-spinner {
             display: none;
@@ -18,15 +18,17 @@
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Inception AI Chatbot</h1>
+    <div class="container mx-auto px-4 py-4 max-w-4xl">
         <div class="bg-white rounded-lg shadow-md p-4 mb-4">
             <div class="flex justify-between items-center mb-4">
-                <div id="thread-display" class="text-gray-600"></div>
-                <button id="new-conversation" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">New Conversation</button>
+                <div class="w-1/4"></div>
+                <h1 class="text-2xl font-bold text-gray-800 text-center w-1/2">Inception AI Chatbot</h1>
+                <div class="w-1/4">
+                    <button id="new-conversation" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">New Conversation</button>
+                </div>
             </div>
             <div id="chat-container" class="chat-container overflow-y-auto mb-4 p-4 bg-gray-50 rounded"></div>
-            <div class="grid grid-cols-1 gap-4 mb-4">
+            <div class="grid grid-cols-1 gap-4">
                 <div class="flex items-center">
                     <input type="text" id="user-input" list="message-history" class="flex-grow p-2 border rounded-l focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your message here...">
                     <datalist id="message-history"></datalist>
@@ -81,11 +83,19 @@
         function addMessage(sender, message) {
             const messageElement = document.createElement('div');
             messageElement.className = 'mb-2';
-            messageElement.innerHTML = `
-                <span class="inline-block p-2 rounded-lg ${sender === 'You' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
-                    <strong>${sender}:</strong> ${message}
-                </span>
-            `;
+
+            const spanElement = document.createElement('span');
+            spanElement.className = `inline-block p-2 rounded-lg ${sender === 'You' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`;
+            spanElement.style.whiteSpace = 'pre-wrap';
+            spanElement.style.wordBreak = 'break-word';
+
+            const strongElement = document.createElement('strong');
+            strongElement.textContent = `${sender}: `;
+
+            spanElement.appendChild(strongElement);
+            spanElement.appendChild(document.createTextNode(message));
+
+            messageElement.appendChild(spanElement);
             chatContainer.appendChild(messageElement);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -187,7 +197,7 @@
                     }
 
                     const data = await response.json();
-                    addMessage(`${selectedBot} Bot (${selectedLLM} - ${selectedModel})`, data.response);
+                    addMessage(`${selectedBot}`, data.response);
                 } catch (error) {
                     console.error('Error:', error);
                     addMessage('System', 'An error occurred while communicating with the chatbot.');

@@ -19,12 +19,30 @@ The UI allows you to change the following:
 
 # Example Bots
 
-* Simple Bot - [code/python/py-server/bots/simple_bot.py](code/python/aiserver/bots/simple_bot.py)
-  * Simple Langgraph bot with no tools 
-* Web Search Bot - [code/python/py-server/bots/web_search_bot.py](code/python/aiserver/bots/web_search_bot.py)
-  * Langgraph bot with a web search tool
-* Ollama Bot - [code/python/py-server/bots/ollama_bot.py](code/python/aiserver/bots/ollama_bot.py)
-   * This bot does not use langchain at all
+The project includes several specialized bots, each designed for specific tasks:
+
+* File Saving Bot - [code/python/aiserver/bots/file_saving_bot.py](code/python/aiserver/bots/file_saving_bot.py)
+  * A bot that can engage in conversations and save generated files
+  * Useful for creating and storing code snippets, configurations, or other text-based files during interactions
+* System Improver Bot - [code/python/aiserver/bots/system_improver_bot.py](code/python/aiserver/bots/system_improver_bot.py)
+  * Specialized in analyzing and suggesting improvements for software systems
+  * Can review system structures, answer questions about the system, and propose enhancements
+  * Has access to file content and can generate or modify code snippets
+* Web App Bot - [code/python/aiserver/bots/web_app_bot.py](code/python/aiserver/bots/web_app_bot.py)
+  * Focused on creating single HTML file web applications
+  * Can generate complete, self-contained HTML files with embedded CSS and JavaScript
+  * Implements modern web development practices and responsive design
+* Simple Bot - [code/python/aiserver/bots/simple_bot.py](code/python/aiserver/bots/simple_bot.py)
+  * A basic Langgraph bot without any additional tools
+  * Suitable for general conversations and simple queries
+* Web Search Bot - [code/python/aiserver/bots/web_search_bot.py](code/python/aiserver/bots/web_search_bot.py)
+  * A Langgraph bot equipped with a web search tool
+  * Capable of providing information from the internet to answer queries
+* Ollama Bot - [code/python/aiserver/bots/ollama_bot.py](code/python/aiserver/bots/ollama_bot.py)
+  * A bot that interacts directly with Ollama models
+  * Does not use the Langchain framework, providing a different approach to bot interactions
+
+Each bot is designed to showcase different capabilities and use cases within the Inception AI Chatbot Project.
 
 ## Project Structure
 

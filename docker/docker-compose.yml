@@ -10,6 +10,7 @@ services:
     volumes:
       - ../code/python/aiserver:/app
       - ../data/persisted_files:/app/persisted_files
+      - ../:/system_src:ro
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1

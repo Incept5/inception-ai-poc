@@ -6,13 +6,16 @@ from llms.llm_manager import LLMManager
 from utils.debug_utils import debug_print
 from langchain_core.messages import BaseMessage
 from mylangchain.checkpointer_service import CheckpointerService
-
+import logging
 
 class LangchainBotInterface(BotInterface):
     def __init__(self):
         self.checkpointer = None
         self.graph = None
         self.llm_wrapper = None
+        self.current_llm_provider = None
+        self.current_llm_model = None
+        self.logger = logging.getLogger(__name__)
 
     @abstractmethod
     def create_chatbot(self):
@@ -32,21 +35,34 @@ class LangchainBotInterface(BotInterface):
         return self.checkpointer
 
     def initialize(self, llm_provider=None, llm_model=None):
-        if llm_provider or llm_model:
-            self.llm_wrapper = LLMManager.get_llm(self.get_tools(), llm_provider, llm_model)
-        else:
-            self.llm_wrapper = LLMManager.get_default_llm(self.get_tools())
+        self._update_llm_wrapper(llm_provider, llm_model)
         self.graph = self.create_graph()
+
+    def _update_llm_wrapper(self, llm_provider, llm_model):
+        if llm_provider != self.current_llm_provider or llm_model != self.current_llm_model:
+            self.logger.debug(f"Updating LLM wrapper. New provider: {llm_provider}, New model: {llm_model}")
+            if llm_provider or llm_model:
+                self.llm_wrapper = LLMManager.get_llm(self.get_tools(), llm_provider, llm_model)
+            else:
+                self.llm_wrapper = LLMManager.get_default_llm(self.get_tools())
+            self.current_llm_provider = llm_provider
+            self.current_llm_model = llm_model
+        else:
+            self.logger.debug("LLM wrapper unchanged")
 
     def process_request(self, user_input: str, context: str, **kwargs) -> str:
         debug_print(f"{self.__class__.__name__} processing request. User input: {user_input}")
         debug_print(f"Context: {context}")
         debug_print(f"Additional kwargs: {kwargs}")
 
-        thread_id = kwargs.pop('thread_id', '1')  # Remove thread_id from kwargs
+        thread_id = kwargs.pop('thread_id', '1')
+        llm_provider = kwargs.pop('llm_provider', None)
+        llm_model = kwargs.pop('llm_model', None)
+
+        self._update_llm_wrapper(llm_provider, llm_model)
 
         if self.graph is None:
-            self.initialize()
+            self.initialize(llm_provider, llm_model)
 
         input_message = f"Context: {context}\n\nUser query: {user_input}"
         config = {"configurable": {"thread_id": thread_id}}
@@ -62,7 +78,6 @@ class LangchainBotInterface(BotInterface):
 
         debug_print(f"{self.__class__.__name__} raw response: {final_response}")
 
-        # Call the post_process_response method with correct argument passing
         processed_response = self.post_process_response(final_response, thread_id=thread_id, **kwargs)
 
         debug_print(f"{self.__class__.__name__} processed response: {processed_response}")
@@ -70,18 +85,8 @@ class LangchainBotInterface(BotInterface):
         return processed_response
 
     def post_process_response(self, response: str, **kwargs) -> str:
-        """
-        Process the final response before returning it.
-        Subclasses can override this method to add custom processing logic.
-
-        :param response: The raw response from the LLM
-        :param kwargs: Additional keyword arguments, including thread_id
-        :return: The processed response
-        """
-        thread_id = kwargs.pop('thread_id', '1')  # Remove thread_id from kwargs
+        thread_id = kwargs.pop('thread_id', '1')
         debug_print(f"Post-processing response for thread_id: {thread_id}")
-
-        # Default implementation: return the response as-is
         return response
 
     def get_config_options(self) -> Dict[str, Any]:

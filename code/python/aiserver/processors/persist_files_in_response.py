@@ -10,11 +10,14 @@ def persist_files_in_response(thread_id: str, response: str) -> str:
 
     def process_match(match):
         file_type = match.group(1)
-        file_path = match.group(2)
+        file_path = match.group(2).strip()
         file_content = match.group(3)
 
-        # Call persist_file for each file found
-        persist_file(thread_id, file_path, file_type, file_content)
+        if file_path:
+            # Call persist_file for each file found
+            persist_file(thread_id, file_path, file_type, file_content)
+        else:
+            print(f"Debug: Empty file path found for {file_type} code block")
 
         # Return the original match (to keep the response unchanged)
         return match.group(0)

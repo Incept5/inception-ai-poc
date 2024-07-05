@@ -116,7 +116,7 @@ Each bot is designed to showcase different capabilities and use cases within the
 
 ## Using the Chatbot
 
-1. Open the [code/webapp/Chatbot.html](code/webapp/Chatbot.html) file in a web browser.
+1. Open the [http://localhost:9870/chatbot/index.html](http://localhost:9870/chatbot/index.html) file in a web browser.
 
 2. You should see a simple interface where you can type messages and receive responses from the chatbot.
 

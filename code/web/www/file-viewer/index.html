@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced File Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        #app {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .file-tree {
+            width: 300px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            overflow-y: auto;
+            height: calc(100vh - 40px);
+        }
+        .file-tree ul {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+        .file-tree li {
+            margin: 5px 0;
+        }
+        .file-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            height: calc(100vh - 40px);
+        }
+        .file-name {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        pre {
+            margin: 0;
+            border-radius: 4px;
+        }
+        .clickable {
+            cursor: pointer;
+        }
+        .clickable:hover {
+            text-decoration: underline;
+        }
+        .download-link {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .download-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="file-tree">
+            <h2>File Structure</h2>
+            <ul>
+                <file-item
+                    v-for="(value, key) in fileStructure"
+                    :key="key"
+                    :name="key"
+                    :structure="value"
+                    :initial-open="true">
+                </file-item>
+            </ul>
+        </div>
+        <div v-if="selectedFile" class="file-content">
+            <div class="file-name">
+                <a :href="'/api/file/' + encodeURIComponent(selectedFile)" class="download-link" :download="getFileName(selectedFile)">
+                    {{ getFileName(selectedFile) }}
+                </a>
+            </div>
+            <pre><code :class="getLanguage(selectedFile)" v-html="highlightedContent"></code></pre>
+        </div>
+    </div>
+
+    <script>
+        Vue.component('file-item', {
+            props: ['name', 'structure', 'initialOpen'],
+            template: `
+                <li>
+                    <span v-if="isFolder" @click="toggle" class="clickable">
+                        {{ isOpen ? '▼' : '▶' }} {{ name }}
+                    </span>
+                    <span v-else @click="selectFile" class="clickable">{{ name }}</span>
+                    <ul v-if="isOpen && isFolder">
+                        <file-item
+                            v-for="(value, key) in structure"
+                            :key="key"
+                            :name="key"
+                            :structure="value"
+                            :initial-open="initialOpen">
+                        </file-item>
+                    </ul>
+                </li>
+            `,
+            data() {
+                return {
+                    isOpen: this.initialOpen
+                }
+            },
+            computed: {
+                isFolder() {
+                    return typeof this.structure === 'object' && this.structure !== null && !Array.isArray(this.structure);
+                }
+            },
+            methods: {
+                toggle() {
+                    this.isOpen = !this.isOpen;
+                },
+                selectFile() {
+                    if (!this.isFolder) {
+                        this.$root.selectFile(this.structure);
+                    }
+                }
+            }
+        });
+
+        new Vue({
+            el: '#app',
+            data: {
+                fileStructure: {},
+                selectedFile: null,
+                fileContent: '',
+                highlightedContent: '',
+                basePath: ''
+            },
+            mounted() {
+                const urlParams = new URLSearchParams(window.location.search);
+                this.basePath = urlParams.get('path') || '';
+                this.fetchFileStructure();
+            },
+            methods: {
+                fetchFileStructure() {
+                    let url = '/api/files';
+                    if (this.basePath) {
+                        url += `/${encodeURIComponent(this.basePath)}`;
+                    }
+                    axios.get(url)
+                        .then(response => {
+                            if (typeof response.data === 'object' && response.data !== null) {
+                                this.fileStructure = response.data;
+                                this.selectFirstFile(this.fileStructure);
+                            } else {
+                                console.error('Unexpected data structure received:', response.data);
+                                this.fileStructure = {};
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching file structure:', error);
+                            this.fileStructure = {};
+                        });
+                },
+                selectFirstFile(structure) {
+                    const findFirstFile = (obj) => {
+                        for (let key in obj) {
+                            if (typeof obj[key] === 'string') {
+                                return obj[key];
+                            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                                const result = findFirstFile(obj[key]);
+                                if (result) return result;
+                            }
+                        }
+                        return null;
+                    };
+
+                    const firstFile = findFirstFile(structure);
+                    if (firstFile) {
+                        this.selectFile(firstFile);
+                    }
+                },
+                selectFile(filePath) {
+                    this.selectedFile = filePath;
+
+                    let url = `/api/file/${encodeURIComponent(filePath)}`;
+
+                    axios.get(url, { responseType: 'text' })
+                        .then(response => {
+                            this.fileContent = response.data;
+                            this.highlightCode();
+                        })
+                        .catch(error => {
+                            console.error('Error fetching file content:', error);
+                            this.fileContent = 'Error loading file content';
+                            this.highlightedContent = this.fileContent;
+                        });
+                },
+                getLanguage(fileName) {
+                    const extension = fileName.split('.').pop().toLowerCase();
+                    const languageMap = {
+                        'js': 'javascript',
+                        'py': 'python',
+                        'html': 'html',
+                        'css': 'css',
+                        'json': 'json',
+                        'md': 'markdown',
+                        'java': 'java',
+                        // Add more mappings as needed
+                    };
+                    return languageMap[extension] || 'plaintext';
+                },
+                highlightCode() {
+                    const language = this.getLanguage(this.selectedFile);
+                    this.highlightedContent = hljs.highlight(this.fileContent, { language: language }).value;
+                },
+                getFileName(filePath) {
+                    return filePath.split('/').pop();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -9,6 +9,7 @@ services:
       - "9871:9871"
     volumes:
       - ../code/python/aiserver:/app
+      - ../data/persisted_files:/app/persisted_files
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1
@@ -24,5 +25,6 @@ services:
     volumes:
       - ../code/web/www:/usr/share/nginx/html
       - ../code/web/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../data/persisted_files:/usr/share/nginx/html/files:ro
     depends_on:
       - aiserver

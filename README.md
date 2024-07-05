@@ -48,17 +48,27 @@ Each bot is designed to showcase different capabilities and use cases within the
 
 ```
 .
-├── .env (ignored)
-├── .example.env
-├── README.md
+├── code
+│   ├── python
+│   │   └── aiserver
+│   │       ├── bots
+│   │       ├── llms
+│   │       ├── mylangchain
+│   │       ├── playground
+│   │       ├── processors
+│   │       ├── routes
+│   │       ├── tools
+│   │       └── utils
+│   ├── web
+│   │   └── www
+│   │       ├── chatbot
+│   │       └── file-viewer
+│   └── webapp
+├── data
+│   └── persisted_files
 ├── docker
-│   ├── docker-compose.yml
-│   └── Dockerfile.python-server
-└── code
-    ├── webapp
-    │   └── Chatbot.html
-    └── python
-        └── py-server (this is the AI Codebase)
+└── docs
+    └── images
 ```
 
 ## Prerequisites

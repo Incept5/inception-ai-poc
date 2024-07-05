@@ -43,7 +43,7 @@ class LangchainBotInterface(BotInterface):
         debug_print(f"Context: {context}")
         debug_print(f"Additional kwargs: {kwargs}")
 
-        thread_id = kwargs.get('thread_id', '1')
+        thread_id = kwargs.pop('thread_id', '1')  # Remove thread_id from kwargs
 
         if self.graph is None:
             self.initialize()
@@ -62,23 +62,25 @@ class LangchainBotInterface(BotInterface):
 
         debug_print(f"{self.__class__.__name__} raw response: {final_response}")
 
-        # Call the post_process_response method
-        processed_response = self.post_process_response(final_response, thread_id, **kwargs)
+        # Call the post_process_response method with correct argument passing
+        processed_response = self.post_process_response(final_response, thread_id=thread_id, **kwargs)
 
         debug_print(f"{self.__class__.__name__} processed response: {processed_response}")
         debug_print(f"Snapshot after for thread_id: {thread_id}: {snapshot}")
         return processed_response
 
-    def post_process_response(self, response: str, thread_id: str, **kwargs) -> str:
+    def post_process_response(self, response: str, **kwargs) -> str:
         """
         Process the final response before returning it.
         Subclasses can override this method to add custom processing logic.
 
         :param response: The raw response from the LLM
-        :param thread_id: The thread ID for the current conversation
-        :param kwargs: Additional keyword arguments
+        :param kwargs: Additional keyword arguments, including thread_id
         :return: The processed response
         """
+        thread_id = kwargs.pop('thread_id', '1')  # Remove thread_id from kwargs
+        debug_print(f"Post-processing response for thread_id: {thread_id}")
+
         # Default implementation: return the response as-is
         return response
 

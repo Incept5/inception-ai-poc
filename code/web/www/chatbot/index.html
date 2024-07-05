@@ -23,8 +23,9 @@
             <div class="flex justify-between items-center mb-4">
                 <div class="w-1/4"></div>
                 <h1 class="text-2xl font-bold text-gray-800 text-center w-1/2">Inception AI Chatbot</h1>
-                <div class="w-1/4">
-                    <button id="new-conversation" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">New Conversation</button>
+                <div class="w-1/4 flex justify-end">
+                    <button id="new-conversation" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 mr-2">New Conversation</button>
+                    <button id="files-button" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Files</button>
                 </div>
             </div>
             <div id="chat-container" class="chat-container overflow-y-auto mb-4 p-4 bg-gray-50 rounded"></div>
@@ -64,6 +65,7 @@
         const spinner = document.getElementById('spinner');
         const threadDisplay = document.getElementById('thread-display');
         const newConversationButton = document.getElementById('new-conversation');
+        const filesButton = document.getElementById('files-button');
 
         let initialLoadComplete = false;
         let messageHistoryArray = [];
@@ -206,6 +208,11 @@
             }
         }
 
+        function openFileViewer() {
+            const fileViewerUrl = `./../file-viewer/index.html?path=__threads/${threadId}`;
+            window.open(fileViewerUrl, '_blank');
+        }
+
         sendButton.addEventListener('click', sendMessage);
         userInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -229,6 +236,7 @@
         });
 
         newConversationButton.addEventListener('click', initializeThread);
+        filesButton.addEventListener('click', openFileViewer);
 
         // Load message history from localStorage
         const savedHistory = localStorage.getItem('messageHistory');

@@ -48,8 +48,12 @@ class FileSavingBot(LangchainBotInterface):
                When making edits to previously referenced files, always keep the name/path the same.
 
             Example:
-            ```python /path/to/example.py
+            ```python example.py
             print("Hello, World!")
+            ```
+            Example using a path where is makes sense:
+            ```css css/styles.css
+            body { font-family: Arial, sans-serif; }
             ```
             """
 

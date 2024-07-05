@@ -85,7 +85,7 @@
         </div>
         <div v-if="selectedFile" class="file-content">
             <div class="file-name">
-                <a :href="'/api/file/' + encodeURIComponent(selectedFile)" class="download-link" :download="getFileName(selectedFile)">
+                <a :href="'/api/file/' + encodeURIComponent(selectedFile)" class="download-link" target="_blank">
                     {{ getFileName(selectedFile) }}
                 </a>
             </div>

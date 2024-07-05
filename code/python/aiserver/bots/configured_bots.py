@@ -5,6 +5,7 @@ from bots.web_search_bot import WebSearchBot
 from bots.ollama_bot import OllamaBot
 from bots.file_saving_bot import FileSavingBot
 from bots.system_improver_bot import SystemImproverBot
+from bots.web_app_bot import WebAppBot
 
 
 def get_configured_bots():
@@ -14,6 +15,7 @@ def get_configured_bots():
         bots = OrderedDict([
             ("file-saving-bot", FileSavingBot()),
             ("system-improver-bot", SystemImproverBot()),
+            ("web-app-bot", WebAppBot()),
             ("simple-bot", SimpleBot()),
             ("web-search-bot", WebSearchBot()),
             ("ollama-bot", OllamaBot())

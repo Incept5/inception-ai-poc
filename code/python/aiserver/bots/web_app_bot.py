@@ -1,7 +1,7 @@
 from typing import List, TypedDict, Annotated
 from mylangchain.langchain_bot_interface import LangchainBotInterface
-from processors.persist_files_in_response import persist_files_in_response
 from utils.debug_utils import debug_print
+from processors.persist_files_in_response import persist_files_in_response
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
@@ -23,7 +23,7 @@ class WebAppBot(LangchainBotInterface):
 
     @property
     def description(self) -> str:
-        return "Web App Bot - Creates single HTML file web applications"
+        return "Web App Bot - Creates single-page web applications using Vue"
 
     def get_tools(self) -> List:
         return self.tools
@@ -32,43 +32,19 @@ class WebAppBot(LangchainBotInterface):
         def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
-            system_message = SystemMessage(content="You are a helpful AI assistant specialized in creating single HTML file web applications")
+            system_message = SystemMessage(content="You are a helpful AI assistant specialized in creating single-page web applications using Vue.")
 
             prompt = """
-            As an AI assistant specialized in creating single HTML file web applications, please provide a helpful and informative response to the user's query.
-            Follow these guidelines:
-            1. Create complete, self-contained HTML files that include CSS and JavaScript within the HTML file
-            2. Use modern HTML5, CSS3, and ES6+ JavaScript features
-            3. Ensure the web app is responsive and works well on different screen sizes
-            4. Implement user-friendly interfaces and intuitive interactions
-            5. When appropriate, use CSS Flexbox or Grid for layouts
-            6. Include comments in the code to explain complex parts or functionality
-            7. You can use the web search tool to look up information, libraries or examples if needed
-            8. When generating the web app, use a block which starts with 3 backticks, 
-               followed by 'html', then the name (with path) after 'html' plus a space. 
-               Always do this when generating the web app and make up a path/name if you have to. 
-               When making edits to previously referenced files, always keep the name/path the same.
+            Create a single-page web app using the Vue framework, ensuring it will run without any transpiling in all modern browsers. The app should be functional and responsive, capable of running directly in the browser without additional build steps.
 
-            Example:
-            ```html web_apps/todo_app.html
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Todo App</title>
-                <style>
-                    /* CSS styles here */
-                </style>
-            </head>
-            <body>
-                <!-- HTML content here -->
-                <script>
-                    // JavaScript code here
-                </script>
-            </body>
-            </html>
-            ```
+            Provide only the complete code for the web application. Start the code block with three backticks followed by 'html' and a suitable filename, like this:
+
+            ```html example_vue_app.html
+
+            You can use the web search tool to find out information if you need it.
+
+            Remember to include all necessary HTML, CSS, and JavaScript (including Vue.js) within a single file.
+            IMPORTANT: only output the html file - do not provide bother describing the code.
             """
 
             prompt_message = HumanMessage(content=prompt)
@@ -77,7 +53,7 @@ class WebAppBot(LangchainBotInterface):
             debug_print(f"Chatbot output: {result}")
             return result
 
-        return chatbot  # Return the chatbot function
+        return chatbot
 
     def create_graph(self) -> StateGraph:
         graph_builder = StateGraph(State)

@@ -14,7 +14,7 @@ class AnthropicProvider(BaseLLMProvider):
             raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
 
         model = model or os.environ.get("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-        llm = ChatAnthropic(model=model)
+        llm = ChatAnthropic(model=model,max_tokens=4096)
 
         if tools:
             llm = llm.bind_tools(tools)

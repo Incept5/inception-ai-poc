@@ -3,7 +3,6 @@ from collections import OrderedDict
 from bots.simple_bot import SimpleBot
 from bots.web_search_bot import WebSearchBot
 from bots.ollama_bot import OllamaBot
-from bots.file_saving_bot import FileSavingBot
 from bots.system_improver_bot import SystemImproverBot
 from bots.web_app_bot import WebAppBot
 
@@ -13,7 +12,6 @@ def get_configured_bots():
     if 'configured_bots' not in current_app.extensions:
         # If not, create new instances and store them
         bots = OrderedDict([
-            ("file-saving-bot", FileSavingBot()),
             ("system-improver-bot", SystemImproverBot()),
             ("web-app-bot", WebAppBot()),
             ("simple-bot", SimpleBot()),

@@ -21,9 +21,6 @@ The UI allows you to change the following:
 
 The project includes several specialized bots, each designed for specific tasks:
 
-* File Saving Bot - [code/python/aiserver/bots/file_saving_bot.py](code/python/aiserver/bots/file_saving_bot.py)
-  * A bot that can engage in conversations and save generated files
-  * Useful for creating and storing code snippets, configurations, or other text-based files during interactions
 * System Improver Bot - [code/python/aiserver/bots/system_improver_bot.py](code/python/aiserver/bots/system_improver_bot.py)
   * Specialized in analyzing and suggesting improvements for software systems
   * Can review system structures, answer questions about the system, and propose enhancements

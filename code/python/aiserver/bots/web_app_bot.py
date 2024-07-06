@@ -7,6 +7,7 @@ from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_community.tools.tavily_search import TavilySearchResults
+from prompts.system_prompts import file_saving_prompt
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]
@@ -32,19 +33,11 @@ class WebAppBot(LangchainBotInterface):
         def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
-            system_message = SystemMessage(content="You are a helpful AI assistant specialized in creating single-page web applications using Vue.")
+            system_message = SystemMessage(content=file_saving_prompt())
 
             prompt = """
             Create a single-page web app using the Vue framework, ensuring it will run without any transpiling in all modern browsers. The app should be functional and responsive, capable of running directly in the browser without additional build steps.
-
-            Provide only the complete code for the web application. Start the code block with three backticks followed by 'html' and a suitable filename, like this:
-
-            ```html example_vue_app.html
-
-            You can use the web search tool to find out information if you need it.
-
             Remember to include all necessary HTML, CSS, and JavaScript (including Vue.js) within a single file.
-            IMPORTANT: only output the html file - do not provide bother describing the code.
             """
 
             prompt_message = HumanMessage(content=prompt)
@@ -65,10 +58,3 @@ class WebAppBot(LangchainBotInterface):
         graph_builder.set_entry_point("chatbot")
         mycheckpointer = self.get_checkpointer()
         return graph_builder.compile(checkpointer=mycheckpointer)
-
-    def post_process_response(self, response: str, **kwargs) -> str:
-        thread_id = kwargs.get('thread_id', '1')
-        # Process files in the response without modifying it
-        persist_files_in_response(thread_id, response)
-        # Return the original response unchanged
-        return response

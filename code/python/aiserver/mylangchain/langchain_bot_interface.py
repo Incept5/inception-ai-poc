@@ -7,7 +7,9 @@ from llms.llm_manager import LLMManager
 from utils.debug_utils import debug_print
 from langchain_core.messages import BaseMessage
 from mylangchain.checkpointer_service import CheckpointerService
+from processors.persist_files_in_response import persist_files_in_response
 import logging
+
 
 class LangchainBotInterface(BotInterface):
     def __init__(self):
@@ -74,12 +76,12 @@ class LangchainBotInterface(BotInterface):
                 debug_print(f"Event: {event}")
 
                 if last_event is not None:
-                    yield from self.process_and_emit_content(last_event, "intermediate")
+                    yield from self.process_and_emit_content(last_event, "intermediate", thread_id)
 
                 last_event = event
 
             if last_event is not None:
-                yield from self.process_and_emit_content(last_event, "final")
+                yield from self.process_and_emit_content(last_event, "final", thread_id)
             else:
                 yield {"type": "error", "content": "No response generated"}
 
@@ -87,17 +89,18 @@ class LangchainBotInterface(BotInterface):
             self.logger.error(f"Error in process_request: {str(e)}", exc_info=True)
             yield {"type": "error", "content": f"An error occurred: {str(e)}"}
 
-    def process_and_emit_content(self, event: Dict[str, Any], step_type: str) -> Generator[Dict[str, Any], None, None]:
+    def process_and_emit_content(self, event: Dict[str, Any], step_type: str, thread_id: str) -> Generator[
+        Dict[str, Any], None, None]:
         for key, value in event.items():
             if isinstance(value.get("messages", [])[-1], BaseMessage):
                 content = value["messages"][-1].content
                 if content is not None:
                     if isinstance(content, str):
-                        yield from self.process_content(content, step_type)
+                        yield from self.process_content(content, step_type, thread_id)
                     else:
-                        yield from self.process_content(json.dumps(content), step_type)
+                        yield from self.process_content(json.dumps(content), step_type, thread_id)
 
-    def process_content(self, content: str, step_type: str) -> Generator[Dict[str, Any], None, None]:
+    def process_content(self, content: str, step_type: str, thread_id: str) -> Generator[Dict[str, Any], None, None]:
         debug_print(f"Processing content (step_type: {step_type}):")
         debug_print(f"Raw content: {content[:200]}...")  # Print first 200 characters to avoid overwhelming logs
 
@@ -109,7 +112,7 @@ class LangchainBotInterface(BotInterface):
                 debug_print(f"Content is a list with {len(content_list)} items")
                 for index, item in enumerate(content_list):
                     debug_print(f"Processing item {index + 1}/{len(content_list)}")
-                    processed_content = self.process_response_content(json.dumps(item))
+                    processed_content = self.process_response_content(json.dumps(item), thread_id)
                     debug_print(f"Processed item {index + 1}: {processed_content[:200]}...")
 
                     if self.should_emit_response(processed_content, step_type):
@@ -119,7 +122,7 @@ class LangchainBotInterface(BotInterface):
                         debug_print(f"Skipping emission for item {index + 1}")
             else:
                 debug_print("Content is not a list, processing as a single item")
-                processed_content = self.process_response_content(content)
+                processed_content = self.process_response_content(content, thread_id)
                 debug_print(f"Processed content: {processed_content[:200]}...")
 
                 if self.should_emit_response(processed_content, step_type):
@@ -129,7 +132,7 @@ class LangchainBotInterface(BotInterface):
                     debug_print("Skipping emission for single item")
         except json.JSONDecodeError:
             debug_print("Content is not valid JSON, processing as plain text")
-            processed_content = self.process_response_content(content)
+            processed_content = self.process_response_content(content, thread_id)
             debug_print(f"Processed content: {processed_content[:200]}...")
 
             if self.should_emit_response(processed_content, step_type):
@@ -138,12 +141,27 @@ class LangchainBotInterface(BotInterface):
             else:
                 debug_print("Skipping emission for plain text content")
 
-    def process_response_content(self, content: str) -> str:
+    def process_response_content(self, content: str, thread_id: str) -> str:
         """
-        Process the response content. This method can be overridden in subclasses
+        Process the response content. This method now includes file saving functionality.
+
+        :param content: The original response content
+        :param thread_id: The thread ID for the current conversation
+        :return: The processed response content
+        """
+        # Attempt to save any files in the response
+        persist_files_in_response(thread_id, content)
+
+        # Perform any additional processing (can be overridden in subclasses)
+        return self.post_process_response(content, thread_id=thread_id)
+
+    def post_process_response(self, content: str, **kwargs) -> str:
+        """
+        Post-process the response content. This method can be overridden in subclasses
         to implement custom processing of the response content.
 
         :param content: The original response content
+        :param kwargs: Additional keyword arguments
         :return: The processed response content
         """
         return content  # Default implementation returns the content unchanged

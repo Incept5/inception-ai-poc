@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, Response, stream_with_context
 from bots.configured_bots import get_configured_bots
 from utils.debug_utils import debug_print
+import json
 
 bot_blueprint = Blueprint('bots', __name__)
 
@@ -40,9 +41,13 @@ def chat(bot_type):
         debug_print(f"Error: Invalid bot type {bot_type}")
         return jsonify({"error": f"Invalid bot type {bot_type}"}), 400
 
-    try:
-        response = bot.process_request(user_input, context, **config)
-        return jsonify({"response": response})
-    except Exception as e:
-        debug_print(f"Error processing request: {str(e)}")
-        return jsonify({"error": f"Error processing request: {str(e)}"}), 500
+    def generate():
+        try:
+            for response in bot.process_request(user_input, context, **config):
+                yield f"data: {json.dumps(response)}\n\n"
+        except Exception as e:
+            debug_print(f"Error processing request: {str(e)}")
+            yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return Response(stream_with_context(generate()), content_type='text/event-stream')

@@ -1,5 +1,6 @@
+import json
 from abc import abstractmethod
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Generator, Optional
 from bots.bot_interface import BotInterface
 from langgraph.graph import StateGraph
 from llms.llm_manager import LLMManager
@@ -50,7 +51,7 @@ class LangchainBotInterface(BotInterface):
         else:
             self.logger.debug("LLM wrapper unchanged")
 
-    def process_request(self, user_input: str, context: str, **kwargs) -> str:
+    def process_request(self, user_input: str, context: str, **kwargs) -> Generator[Dict[str, Any], None, None]:
         debug_print(f"{self.__class__.__name__} processing request. User input: {user_input}")
         debug_print(f"Context: {context}")
         debug_print(f"Additional kwargs: {kwargs}")
@@ -67,27 +68,97 @@ class LangchainBotInterface(BotInterface):
         input_message = f"Context: {context}\n\nUser query: {user_input}"
         config = {"configurable": {"thread_id": thread_id}}
 
-        snapshot = self.graph.get_state(config)
-        debug_print(f"Snapshot before for thread_id: {thread_id}: {snapshot}")
+        last_event = None
+        try:
+            for event in self.graph.stream({"messages": [("user", input_message)]}, config):
+                debug_print(f"Event: {event}")
 
-        final_response = None
-        for event in self.graph.stream({"messages": [("user", input_message)]}, config):
-            for value in event.values():
-                if isinstance(value["messages"][-1], BaseMessage):
-                    final_response = value["messages"][-1].content
+                if last_event is not None:
+                    yield from self.process_and_emit_content(last_event, "intermediate")
 
-        debug_print(f"{self.__class__.__name__} raw response: {final_response}")
+                last_event = event
 
-        processed_response = self.post_process_response(final_response, thread_id=thread_id, **kwargs)
+            if last_event is not None:
+                yield from self.process_and_emit_content(last_event, "final")
+            else:
+                yield {"type": "error", "content": "No response generated"}
 
-        debug_print(f"{self.__class__.__name__} processed response: {processed_response}")
-        debug_print(f"Snapshot after for thread_id: {thread_id}: {snapshot}")
-        return processed_response
+        except Exception as e:
+            self.logger.error(f"Error in process_request: {str(e)}", exc_info=True)
+            yield {"type": "error", "content": f"An error occurred: {str(e)}"}
 
-    def post_process_response(self, response: str, **kwargs) -> str:
-        thread_id = kwargs.pop('thread_id', '1')
-        debug_print(f"Post-processing response for thread_id: {thread_id}")
-        return response
+    def process_and_emit_content(self, event: Dict[str, Any], step_type: str) -> Generator[Dict[str, Any], None, None]:
+        for key, value in event.items():
+            if isinstance(value.get("messages", [])[-1], BaseMessage):
+                content = value["messages"][-1].content
+                if content is not None:
+                    if isinstance(content, str):
+                        yield from self.process_content(content, step_type)
+                    else:
+                        yield from self.process_content(json.dumps(content), step_type)
+
+    def process_content(self, content: str, step_type: str) -> Generator[Dict[str, Any], None, None]:
+        debug_print(f"Processing content (step_type: {step_type}):")
+        debug_print(f"Raw content: {content[:200]}...")  # Print first 200 characters to avoid overwhelming logs
+
+        try:
+            content_list = json.loads(content)
+            debug_print(f"Content successfully parsed as JSON")
+
+            if isinstance(content_list, list):
+                debug_print(f"Content is a list with {len(content_list)} items")
+                for index, item in enumerate(content_list):
+                    debug_print(f"Processing item {index + 1}/{len(content_list)}")
+                    processed_content = self.process_response_content(json.dumps(item))
+                    debug_print(f"Processed item {index + 1}: {processed_content[:200]}...")
+
+                    if self.should_emit_response(processed_content, step_type):
+                        debug_print(f"Emitting response for item {index + 1}")
+                        yield {"type": step_type, "content": processed_content}
+                    else:
+                        debug_print(f"Skipping emission for item {index + 1}")
+            else:
+                debug_print("Content is not a list, processing as a single item")
+                processed_content = self.process_response_content(content)
+                debug_print(f"Processed content: {processed_content[:200]}...")
+
+                if self.should_emit_response(processed_content, step_type):
+                    debug_print("Emitting response for single item")
+                    yield {"type": step_type, "content": processed_content}
+                else:
+                    debug_print("Skipping emission for single item")
+        except json.JSONDecodeError:
+            debug_print("Content is not valid JSON, processing as plain text")
+            processed_content = self.process_response_content(content)
+            debug_print(f"Processed content: {processed_content[:200]}...")
+
+            if self.should_emit_response(processed_content, step_type):
+                debug_print("Emitting response for plain text content")
+                yield {"type": step_type, "content": processed_content}
+            else:
+                debug_print("Skipping emission for plain text content")
+
+    def process_response_content(self, content: str) -> str:
+        """
+        Process the response content. This method can be overridden in subclasses
+        to implement custom processing of the response content.
+
+        :param content: The original response content
+        :return: The processed response content
+        """
+        return content  # Default implementation returns the content unchanged
+
+    def should_emit_response(self, content: str, step_type: str) -> bool:
+        """
+        Determine if a response should be emitted.
+        Override this method in subclasses to customize response emission behavior.
+
+        :param content: The content to be emitted
+        :param step_type: The type of step ('intermediate' or 'final')
+        :return: True if the response should be emitted, False otherwise
+        """
+        debug_print(f"Deciding whether to emit response (step_type: {step_type})")
+        return True  # Emit all responses by default
 
     def get_config_options(self) -> Dict[str, Any]:
         return {

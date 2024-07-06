@@ -1,7 +1,5 @@
-# bots/system_improver_bot.py
-
 import os
-from typing import List, TypedDict, Annotated
+from typing import List, TypedDict, Annotated, Dict, Any
 from mylangchain.langchain_bot_interface import LangchainBotInterface
 from processors.persist_files_in_response import persist_files_in_response
 from utils.debug_utils import debug_print
@@ -12,8 +10,10 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.tools import tool
 
+
 class State(TypedDict):
     messages: Annotated[List, add_messages]
+
 
 @tool
 def file_content(file_path: str) -> str:
@@ -23,6 +23,7 @@ def file_content(file_path: str) -> str:
         with open(full_path, 'r') as file:
             return file.read()
     return f"Error: File {file_path} not found or is not a file."
+
 
 class SystemImproverBot(LangchainBotInterface):
     def __init__(self):
@@ -48,7 +49,8 @@ class SystemImproverBot(LangchainBotInterface):
 
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
-            system_message = SystemMessage(content="You are an AI assistant tasked with helping improve a software system.")
+            system_message = SystemMessage(
+                content="You are an AI assistant tasked with helping improve a software system.")
 
             prompt = f"""
             As an AI assistant, you are tasked with analyzing and suggesting improvements for a software system.
@@ -66,7 +68,7 @@ class SystemImproverBot(LangchainBotInterface):
             ```python code/python/aiserver/utils/example.py
             print("Hello, World!")
             ```
-            
+
             Example of generating a snippet that doesn't have an obvious home in the system:
             ```python snippets/my_data_loader.py
             def my_data_loader(file_path: str) -> dict:
@@ -98,10 +100,3 @@ class SystemImproverBot(LangchainBotInterface):
         graph_builder.set_entry_point("chatbot")
         mycheckpointer = self.get_checkpointer()
         return graph_builder.compile(checkpointer=mycheckpointer)
-
-    def post_process_response(self, response: str, **kwargs) -> str:
-        thread_id = kwargs.get('thread_id', '1')
-        # Process files in the response without modifying it
-        persist_files_in_response(thread_id, response)
-        # Return the original response unchanged
-        return response

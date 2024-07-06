@@ -101,45 +101,32 @@ class LangchainBotInterface(BotInterface):
                         yield from self.process_content(json.dumps(content), step_type, thread_id)
 
     def process_content(self, content: str, step_type: str, thread_id: str) -> Generator[Dict[str, Any], None, None]:
-        debug_print(f"Processing content (step_type: {step_type}):")
-        debug_print(f"Raw content: {content[:200]}...")  # Print first 200 characters to avoid overwhelming logs
+        print(f"Processing content (step_type: {step_type}):")
+        print(f"Raw content: {content[:200]}...")  # Print first 200 characters
+
+        def process_item(item):
+            if isinstance(item, dict) and "text" in item:
+                return item["text"]
+            return json.dumps(item) if isinstance(item, (dict, list)) else str(item)
 
         try:
-            content_list = json.loads(content)
-            debug_print(f"Content successfully parsed as JSON")
-
-            if isinstance(content_list, list):
-                debug_print(f"Content is a list with {len(content_list)} items")
-                for index, item in enumerate(content_list):
-                    debug_print(f"Processing item {index + 1}/{len(content_list)}")
-                    processed_content = self.process_response_content(json.dumps(item), thread_id)
-                    debug_print(f"Processed item {index + 1}: {processed_content[:200]}...")
-
-                    if self.should_emit_response(processed_content, step_type):
-                        debug_print(f"Emitting response for item {index + 1}")
-                        yield {"type": step_type, "content": processed_content}
-                    else:
-                        debug_print(f"Skipping emission for item {index + 1}")
+            parsed_content = json.loads(content)
+            if isinstance(parsed_content, list):
+                items = parsed_content
             else:
-                debug_print("Content is not a list, processing as a single item")
-                processed_content = self.process_response_content(content, thread_id)
-                debug_print(f"Processed content: {processed_content[:200]}...")
-
-                if self.should_emit_response(processed_content, step_type):
-                    debug_print("Emitting response for single item")
-                    yield {"type": step_type, "content": processed_content}
-                else:
-                    debug_print("Skipping emission for single item")
+                items = [parsed_content]
         except json.JSONDecodeError:
-            debug_print("Content is not valid JSON, processing as plain text")
-            processed_content = self.process_response_content(content, thread_id)
-            debug_print(f"Processed content: {processed_content[:200]}...")
+            items = [content]
+
+        for item in items:
+            processed_item = process_item(item)
+            processed_content = self.process_response_content(processed_item, thread_id)
 
             if self.should_emit_response(processed_content, step_type):
-                debug_print("Emitting response for plain text content")
                 yield {"type": step_type, "content": processed_content}
-            else:
-                debug_print("Skipping emission for plain text content")
+
+        print(
+            f"Processed content: {processed_content[:200]}...")  # Print first 200 characters of the last processed item
 
     def process_response_content(self, content: str, thread_id: str) -> str:
         """

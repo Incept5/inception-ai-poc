@@ -21,10 +21,15 @@
     <div class="container mx-auto px-4 py-4 max-w-4xl">
         <div class="bg-white rounded-lg shadow-md p-4 mb-4">
             <div class="flex justify-between items-center mb-4">
-                <div class="w-1/4"></div>
+                <div class="w-1/4">
+                    <button id="new-conversation" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">New Conversation</button>
+                </div>
                 <h1 class="text-2xl font-bold text-gray-800 text-center w-1/2">Inception AI Chatbot</h1>
-                <div class="w-1/4 flex justify-end">
-                    <button id="new-conversation" class="bg-green-500 text-white p-2 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 mr-2">New Conversation</button>
+                <div class="w-1/4 flex justify-end items-center">
+                    <label for="show-thinking" class="mr-2">
+                        <input type="checkbox" id="show-thinking" checked class="mr-1">
+                        Show Thinking
+                    </label>
                     <button id="files-button" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Files</button>
                 </div>
             </div>
@@ -65,6 +70,7 @@
         const spinner = document.getElementById('spinner');
         const newConversationButton = document.getElementById('new-conversation');
         const filesButton = document.getElementById('files-button');
+        const showThinkingCheckbox = document.getElementById('show-thinking');
 
         let initialLoadComplete = false;
         let messageHistoryArray = [];
@@ -236,7 +242,9 @@
         function handleStreamedResponse(data) {
             switch (data.type) {
                 case 'intermediate':
-                    addMessage('Bot (thinking)', data.content);
+                    if (showThinkingCheckbox.checked) {
+                        addMessage('Bot (thinking)', data.content);
+                    }
                     break;
                 case 'final':
                     addMessage('Bot', data.content);

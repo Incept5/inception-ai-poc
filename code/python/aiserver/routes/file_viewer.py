@@ -6,7 +6,7 @@ import json
 
 file_viewer_blueprint = Blueprint('file_viewer', __name__)
 
-BASE_DIR = '/app/persisted_files'
+BASE_DIR = '/data/persisted_files'
 
 
 def debug_print(message):

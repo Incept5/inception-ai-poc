@@ -9,7 +9,7 @@ services:
       - "9871:9871"
     volumes:
       - ../code/python/aiserver:/app
-      - ../data/persisted_files:/app/persisted_files
+      - ../data:/data
       - ../:/system_src:ro
     environment:
       - FLASK_ENV=development

@@ -6,7 +6,8 @@ def file_saving_prompt():
        followed by the file type, then the name (with path) after the file type plus a space. 
        Always do this when generating files and make up a path/name if you have to. 
        When making edits to previously referenced files, always keep the name/path the same.
-   2. If you are aware of the structure of the current system then use that as a guide for where to save files.
+   2. If you are aware of the structure of the current system then use that as a guide for where to save files
+   3. When generating code always re-generate the whole file rather than diffs etc
 
     Example:
     ```python example.py

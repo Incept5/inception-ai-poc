@@ -13,7 +13,6 @@ from utils.debug_utils import debug_print
 
 class RetrieverManager:
     def __init__(self):
-        debug_print("Initializing RetrieverManager")
         self.embedding_provider = os.getenv("DEFAULT_EMBEDDING_PROVIDER", "openai")
         self.embedding_model = os.getenv("DEFAULT_EMBEDDING_MODEL", "text-embedding-ada-002")
         self.persist_directory = "/data/embeddings/__chromadb"
@@ -25,11 +24,13 @@ class RetrieverManager:
         self._initialize_embeddings()
         self._initialize_client()
         
-        if names:
-            for name in names:
-                self.process_documents(name)
-        else:
-            self._check_all_imports()
+        if names is None:
+            configured_importers = os.getenv("CONFIGURED_IMPORTERS", "")
+            names = [name.strip() for name in configured_importers.split(",")] if configured_importers else []
+        
+        debug_print(f"Processing importers: {names}")
+        for name in names:
+            self.process_documents(name)
 
     def _initialize_embeddings(self):
         debug_print(f"Initializing embeddings for provider: {self.embedding_provider}")
@@ -44,14 +45,6 @@ class RetrieverManager:
         debug_print(f"Initializing ChromaDB client with persistence directory: {self.persist_directory}")
         os.makedirs(self.persist_directory, exist_ok=True)
         self.client = chromadb.PersistentClient(path=self.persist_directory)
-
-    def _check_all_imports(self):
-        debug_print("Checking all imports")
-        import_dir = "/data/imported"
-        if os.path.exists(import_dir):
-            for name in os.listdir(import_dir):
-                if os.path.isdir(os.path.join(import_dir, name)):
-                    self.process_documents(name)
 
     def _load_document(self, file_path: str):
         debug_print(f"Loading document: {file_path}")
@@ -98,7 +91,7 @@ class RetrieverManager:
             debug_print(f"Creating new directory: {directory}")
             os.makedirs(directory)
             self._save_retriever_info(name, info)
-            return False
+            return True
 
         has_updates = False
         current_files = set(os.listdir(directory))
@@ -133,30 +126,26 @@ class RetrieverManager:
 
     def process_documents(self, name: str):
         debug_print(f"Processing documents for retriever: {name}")
-        if self._check_for_updates(name):
+        collection_name = f"{name}_collection"
+        
+        if not self._check_for_updates(name):
+            if self._verify_collection_exists(name):
+                debug_print(f"Collection {collection_name} is up to date. Skipping processing.")
+                return
+        else:
             debug_print(f"Updates detected, deleting existing collection for {name}")
             self._delete_collection(name)
 
         directory = f"/data/imported/{name}"
-        collection_name = f"{name}_collection"
-
-        if collection_name in self.client.list_collections():
-            debug_print(f"Collection {collection_name} is up to date. Skipping processing.")
-            return
 
         documents = []
-        processed_files = set()  # Keep track of processed files
         for filename in os.listdir(directory):
             if filename.startswith('.') or os.path.isdir(
                     os.path.join(directory, filename)) or filename == "retriever-info.json":
                 continue
             file_path = os.path.join(directory, filename)
-            if file_path in processed_files:
-                continue  # Skip if file has already been processed
             try:
-                debug_print(f"Loading document: {file_path}")
                 documents.extend(self._load_document(file_path))
-                processed_files.add(file_path)  # Mark file as processed
             except ValueError as e:
                 debug_print(f"Skipping file {filename}: {str(e)}")
 
@@ -170,28 +159,55 @@ class RetrieverManager:
         debug_print(f"Created {len(splits)} splits")
 
         debug_print(f"Creating Chroma vectorstore for {collection_name}")
-        Chroma.from_documents(
-            documents=splits,
-            embedding=self.embeddings,
-            client=self.client,
-            collection_name=collection_name,
-        )
-        debug_print(f"Processed and persisted {len(splits)} chunks for {name}")
+        try:
+            vectorstore = Chroma.from_documents(
+                documents=splits,
+                embedding=self.embeddings,
+                client=self.client,
+                collection_name=collection_name,
+            )
+            debug_print(f"Processed and persisted {len(splits)} chunks for {name}")
+            
+            # Verify the collection exists after storing the embeddings
+            if self._verify_collection_exists(name):
+                debug_print(f"Successfully created and verified collection: {collection_name}")
+            else:
+                raise Exception(f"Collection {collection_name} was not created successfully")
+        except Exception as e:
+            debug_print(f"Error creating Chroma vectorstore: {str(e)}")
+            raise
 
     def _delete_collection(self, name: str):
         collection_name = f"{name}_collection"
-        if collection_name in self.client.list_collections():
-            debug_print(f"Deleting existing collection: {collection_name}")
-            self.client.delete_collection(collection_name)
-            debug_print(f"Deleted collection: {collection_name}")
+        try:
+            if collection_name in self.client.list_collections():
+                debug_print(f"Deleting existing collection: {collection_name}")
+                self.client.delete_collection(collection_name)
+                debug_print(f"Deleted collection: {collection_name}")
+        except Exception as e:
+            debug_print(f"Error deleting collection {collection_name}: {str(e)}")
+
+    def _verify_collection_exists(self, name: str) -> bool:
+        collection_name = f"{name}_collection"
+        try:
+            collections = self.client.list_collections()
+            exists = collection_name in [c.name for c in collections]
+            if exists:
+                debug_print(f"Verified: Collection {collection_name} exists")
+            else:
+                debug_print(f"Error: Collection {collection_name} does not exist")
+            return exists
+        except Exception as e:
+            debug_print(f"Error verifying collection existence: {str(e)}")
+            return False
 
     def get_retriever(self, name: str):
         debug_print(f"Getting retriever for: {name}")
         try:
             self.process_documents(name)  # Ensure the collection is up-to-date
             collection_name = f"{name}_collection"
-            if collection_name not in self.client.list_collections():
-                debug_print(f"Collection {collection_name} does not exist.")
+            if not self._verify_collection_exists(name):
+                debug_print(f"Error: Collection {collection_name} does not exist.")
                 return None
 
             debug_print(f"Creating Chroma vectorstore for {collection_name}")

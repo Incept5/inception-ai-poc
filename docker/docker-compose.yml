@@ -10,7 +10,7 @@ services:
     volumes:
       - ../code/python/aiserver:/app
       - ../data:/data
-      - ../:/system_src:ro
+      - ../:/system_src:rw  # Changed from :ro to :rw to allow write access
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1

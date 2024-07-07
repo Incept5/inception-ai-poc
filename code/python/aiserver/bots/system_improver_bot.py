@@ -18,8 +18,12 @@ class State(TypedDict):
 
 @tool
 def file_content(file_path: str) -> str:
-    """Get the content of a file from the /system_src directory."""
-    full_path = os.path.join('/system_src', file_path)
+    """Get the content of a file, handling paths that may or may not start with /system_src."""
+    if file_path.startswith('/system_src'):
+        full_path = file_path
+    else:
+        full_path = os.path.join('/system_src', file_path)
+
     if os.path.exists(full_path) and os.path.isfile(full_path):
         with open(full_path, 'r') as file:
             return file.read()
@@ -60,12 +64,12 @@ class SystemImproverBot(LangchainBotInterface):
                When making edits to previously referenced files, always keep the name/path the same.
             3. When choosing a file path for generated artefacts consider the system structure and choose a logical location.
             4. When I mention a specific file name then look for it in the system structure below and use the file_content tool to get the content of that file.
-            5. You will probably need to prepend /system_src/ to the file path to get the full path to the file.
 
             The system structure is as follows:
             {file_structure}
 
             IMPORTANT: Remember to ask for specific file contents using the file_content tool when needed.
+            VERY IMPORTANT: Always generate FULL source code files rather than diffs or partial code snippets.
             """
 
             prompt_message = HumanMessage(content=prompt)

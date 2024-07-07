@@ -4,11 +4,13 @@ from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langchain_core.messages import SystemMessage, HumanMessage
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]
 
-class SimpleBot(LangchainBotInterface):
+class SimpleRagBot(LangchainBotInterface):
     def __init__(self):
         super().__init__()
         self.tools = []  # SimpleBot doesn't use any tools
@@ -16,11 +18,11 @@ class SimpleBot(LangchainBotInterface):
 
     @property
     def bot_type(self) -> str:
-        return "simple-bot"
+        return "simple-rag-bot"
 
     @property
     def description(self) -> str:
-        return "Simple Bot - Basic conversation"
+        return "Simple RAG Bot - Retrieval Augmented Generation Bot"
 
     def get_tools(self) -> List:
         return self.tools
@@ -39,16 +41,44 @@ class SimpleBot(LangchainBotInterface):
             3. Break down complex information into manageable steps
             4. Use examples where appropriate
             5. Cite sources or provide reasoning for your answers when possible
+            6. Use Retriever to answer questions when appropriate
             """
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
 
-            answer = self.llm_wrapper.invoke(messages).content
+            debug_print("Attempting to get retriever for 'adam'")
+            retriever = self.get_retriever("adam")
+            
+            if retriever:
+                debug_print("Retriever obtained successfully")
+                try:
+                    debug_print("Setting up ConversationBufferMemory")
+                    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+                    
+                    debug_print("Creating ConversationalRetrievalChain")
+                    qa_chain = ConversationalRetrievalChain.from_llm(
+                        llm=self.llm_wrapper.llm,
+                        retriever=retriever,
+                        memory=memory
+                    )
+                    
+                    debug_print(f"Invoking qa_chain with question: {messages[-1].content}")
+                    result = qa_chain({"question": messages[-1].content})
+                    answer = result['answer']
+                    debug_print(f"QA chain result: {answer}")
+                except Exception as e:
+                    debug_print(f"Error in RAG processing: {str(e)}")
+                    answer = f"An error occurred while processing your request with RAG: {str(e)}"
+            else:
+                debug_print("Retriever not available, falling back to standard LLM")
+                answer = self.llm_wrapper.invoke(messages).content
 
             result = {"messages": [HumanMessage(content=answer)]}
             debug_print(f"Chatbot output: {result}")
             return result
+
+        return chatbot
 
     def create_graph(self) -> StateGraph:
         graph_builder = StateGraph(State)

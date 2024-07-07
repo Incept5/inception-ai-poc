@@ -73,7 +73,7 @@ class RetrieverManager:
                     info["files"] = []
                 return info
         debug_print(f"No existing retriever info found for {name}")
-        return {"name": name, "files": []}
+        return {"name": name, "files": [], "embedding_provider": self.embedding_provider, "embedding_model": self.embedding_model}
 
     def _save_retriever_info(self, name: str, info: Dict):
         info_path = self._get_retriever_info_path(name)
@@ -119,6 +119,13 @@ class RetrieverManager:
         # Check for deleted files
         info["files"] = [file for file in info["files"] if
                          isinstance(file, dict) and file.get("filename") in current_files]
+
+        # Check if embedding provider or model has changed
+        if info.get("embedding_provider") != self.embedding_provider or info.get("embedding_model") != self.embedding_model:
+            debug_print(f"Embedding provider or model has changed. Provider: {self.embedding_provider}, Model: {self.embedding_model}")
+            has_updates = True
+            info["embedding_provider"] = self.embedding_provider
+            info["embedding_model"] = self.embedding_model
 
         self._save_retriever_info(name, info)
         debug_print(f"Updates check complete. Has updates: {has_updates}")

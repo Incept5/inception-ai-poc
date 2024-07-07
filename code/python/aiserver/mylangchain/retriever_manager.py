@@ -11,7 +11,8 @@ class RetrieverManager:
         self.embedding_provider = os.getenv("DEFAULT_EMBEDDING_PROVIDER", "openai")
         self.embedding_model = os.getenv("DEFAULT_EMBEDDING_MODEL", "text-embedding-ada-002")
         self.embeddings = self._get_embeddings()
-        self.persist_directory = "data/chroma_db"
+        self.persist_directory = "/data/chromadb"
+        os.makedirs(self.persist_directory, exist_ok=True)
         self.client = chromadb.PersistentClient(path=self.persist_directory)
 
     def _get_embeddings(self):

@@ -8,6 +8,7 @@ def file_saving_prompt():
        When making edits to previously referenced files, always keep the name/path the same.
    2. If you are aware of the structure of the current system then use that as a guide for where to save files
    3. When generating code always re-generate the whole file rather than diffs etc
+   4. Important: file paths should be relative to the system_src directory and should not start with a leading slash 
 
     Example:
     ```python example.py

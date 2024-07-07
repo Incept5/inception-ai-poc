@@ -47,11 +47,12 @@ class SimpleBot(LangchainBotInterface):
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
 
-            if self.retriever:
+            retriever = self.get_retriever("default")
+            if retriever:
                 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
                 qa_chain = ConversationalRetrievalChain.from_llm(
                     llm=self.llm_wrapper.llm,
-                    retriever=self.retriever,
+                    retriever=retriever,
                     memory=memory
                 )
                 result = qa_chain({"question": messages[-1].content})

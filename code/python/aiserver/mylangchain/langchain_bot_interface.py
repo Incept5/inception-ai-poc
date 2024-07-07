@@ -8,7 +8,7 @@ from utils.debug_utils import debug_print
 from langchain_core.messages import BaseMessage
 from mylangchain.checkpointer_service import CheckpointerService
 from processors.persist_files_in_response import persist_files_in_response
-from mylangchain.retriever_manager import retriever_manager
+from mylangchain.retriever_manager import RetrieverManager
 import logging
 
 
@@ -20,7 +20,8 @@ class LangchainBotInterface(BotInterface):
         self.current_llm_provider = None
         self.current_llm_model = None
         self.logger = logging.getLogger(__name__)
-        self.retriever = None
+        self.is_initialized = False
+        self.retriever_manager = RetrieverManager()
 
     @abstractmethod
     def create_chatbot(self):
@@ -39,10 +40,18 @@ class LangchainBotInterface(BotInterface):
             self.checkpointer = CheckpointerService.get_checkpointer(checkpointer_type, **kwargs)
         return self.checkpointer
 
-    def initialize(self, llm_provider=None, llm_model=None, retriever_name=None):
-        self._update_llm_wrapper(llm_provider, llm_model)
-        self._update_retriever(retriever_name)
-        self.graph = self.create_graph()
+    def get_retriever(self, name: str):
+        return self.retriever_manager.get_retriever(name)
+
+    def initialize(self, llm_provider=None, llm_model=None):
+        # This method is now a no-op
+        pass
+
+    def lazy_init_langchain(self, llm_provider=None, llm_model=None):
+        if not self.is_initialized:
+            self._update_llm_wrapper(llm_provider, llm_model)
+            self.graph = self.create_graph()
+            self.is_initialized = True
 
     def _update_llm_wrapper(self, llm_provider, llm_model):
         if llm_provider != self.current_llm_provider or llm_model != self.current_llm_model:
@@ -56,17 +65,6 @@ class LangchainBotInterface(BotInterface):
         else:
             self.logger.debug("LLM wrapper unchanged")
 
-    def _update_retriever(self, retriever_name):
-        if retriever_name:
-            self.retriever = retriever_manager.get_retriever(retriever_name)
-            if self.retriever:
-                self.logger.debug(f"Retriever updated for {retriever_name}")
-            else:
-                self.logger.warning(f"Failed to get retriever for {retriever_name}")
-        else:
-            self.retriever = None
-            self.logger.debug("Retriever set to None")
-
     def process_request(self, user_input: str, context: str, **kwargs) -> Generator[Dict[str, Any], None, None]:
         debug_print(f"{self.__class__.__name__} processing request. User input: {user_input}")
         debug_print(f"Context: {context}")
@@ -75,9 +73,8 @@ class LangchainBotInterface(BotInterface):
         thread_id = kwargs.pop('thread_id', '1')
         llm_provider = kwargs.pop('llm_provider', None)
         llm_model = kwargs.pop('llm_model', None)
-        retriever_name = kwargs.pop('retriever_name', None)
 
-        self.initialize(llm_provider, llm_model, retriever_name)
+        self.lazy_init_langchain(llm_provider, llm_model)
 
         input_message = f"Context: {context}\n\nUser query: {user_input}"
         config = {"configurable": {"thread_id": thread_id}}
@@ -193,10 +190,5 @@ class LangchainBotInterface(BotInterface):
                 "type": "string",
                 "description": "The thread ID for conversation continuity",
                 "default": "1"
-            },
-            "retriever_name": {
-                "type": "string",
-                "description": "The name of the retriever to use for RAG",
-                "default": None
             }
         }

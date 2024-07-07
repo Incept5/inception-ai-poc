@@ -5,3 +5,5 @@ __pycache__
 .DS_Store
 node_modules
 __threads
+__chromadb
+retriever-info.json

@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import datetime
 from langchain_community.document_loaders import PyPDFLoader, UnstructuredXMLLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -8,25 +8,53 @@ from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import chromadb
+from utils.debug_utils import debug_print
+
 
 class RetrieverManager:
     def __init__(self):
+        debug_print("Initializing RetrieverManager")
         self.embedding_provider = os.getenv("DEFAULT_EMBEDDING_PROVIDER", "openai")
         self.embedding_model = os.getenv("DEFAULT_EMBEDDING_MODEL", "text-embedding-ada-002")
-        self.embeddings = self._get_embeddings()
         self.persist_directory = "/data/embeddings/__chromadb"
-        os.makedirs(self.persist_directory, exist_ok=True)
-        self.client = chromadb.PersistentClient(path=self.persist_directory)
+        self.embeddings = None
+        self.client = None
 
-    def _get_embeddings(self):
+    def check_imports(self, names: Optional[List[str]] = None):
+        debug_print("Checking imports and initializing RetrieverManager")
+        self._initialize_embeddings()
+        self._initialize_client()
+        
+        if names:
+            for name in names:
+                self.process_documents(name)
+        else:
+            self._check_all_imports()
+
+    def _initialize_embeddings(self):
+        debug_print(f"Initializing embeddings for provider: {self.embedding_provider}")
         if self.embedding_provider == "openai":
-            return OpenAIEmbeddings(model=self.embedding_model)
+            self.embeddings = OpenAIEmbeddings(model=self.embedding_model)
         elif self.embedding_provider == "huggingface":
-            return HuggingFaceEmbeddings(model_name=self.embedding_model)
+            self.embeddings = HuggingFaceEmbeddings(model_name=self.embedding_model)
         else:
             raise ValueError(f"Unsupported embedding provider: {self.embedding_provider}")
 
+    def _initialize_client(self):
+        debug_print(f"Initializing ChromaDB client with persistence directory: {self.persist_directory}")
+        os.makedirs(self.persist_directory, exist_ok=True)
+        self.client = chromadb.PersistentClient(path=self.persist_directory)
+
+    def _check_all_imports(self):
+        debug_print("Checking all imports")
+        import_dir = "/data/imported"
+        if os.path.exists(import_dir):
+            for name in os.listdir(import_dir):
+                if os.path.isdir(os.path.join(import_dir, name)):
+                    self.process_documents(name)
+
     def _load_document(self, file_path: str):
+        debug_print(f"Loading document: {file_path}")
         file_extension = os.path.splitext(file_path)[1].lower()
         if file_extension == ".pdf":
             return PyPDFLoader(file_path).load()
@@ -42,102 +70,142 @@ class RetrieverManager:
 
     def _load_retriever_info(self, name: str) -> Dict:
         info_path = self._get_retriever_info_path(name)
+        debug_print(f"Loading retriever info from: {info_path}")
         if os.path.exists(info_path):
             with open(info_path, 'r') as f:
-                return json.load(f)
-        return {"name": name, "files": {}}
+                info = json.load(f)
+                debug_print(f"Loaded retriever info: {info}")
+                # Ensure the "files" key exists and is a list
+                if "files" not in info or not isinstance(info["files"], list):
+                    info["files"] = []
+                return info
+        debug_print(f"No existing retriever info found for {name}")
+        return {"name": name, "files": []}
 
     def _save_retriever_info(self, name: str, info: Dict):
         info_path = self._get_retriever_info_path(name)
+        debug_print(f"Saving retriever info to: {info_path}")
         with open(info_path, 'w') as f:
             json.dump(info, f, indent=2)
+        debug_print(f"Saved retriever info: {info}")
 
     def _check_for_updates(self, name: str) -> bool:
+        debug_print(f"Checking for updates in retriever: {name}")
         info = self._load_retriever_info(name)
         directory = f"/data/imported/{name}"
-        
+
         if not os.path.exists(directory):
+            debug_print(f"Creating new directory: {directory}")
             os.makedirs(directory)
             self._save_retriever_info(name, info)
             return False
 
         has_updates = False
         current_files = set(os.listdir(directory))
-        stored_files = set(info["files"].keys())
+        stored_files = {file["filename"] for file in info["files"] if isinstance(file, dict) and "filename" in file}
+
+        debug_print(f"Current files: {current_files}")
+        debug_print(f"Stored files: {stored_files}")
 
         # Check for new or modified files
         for file in current_files:
             file_path = os.path.join(directory, file)
-            if file.startswith('.') or not os.path.isfile(file_path):
+            if file.startswith('.') or not os.path.isfile(file_path) or file == "retriever-info.json":
                 continue
             last_modified = os.path.getmtime(file_path)
-            if file not in stored_files or last_modified != info["files"][file]:
+            stored_file = next(
+                (item for item in info["files"] if isinstance(item, dict) and item.get("filename") == file), None)
+            if not stored_file or last_modified != stored_file.get("last_modified"):
+                debug_print(f"Update detected for file: {file}")
                 has_updates = True
-                info["files"][file] = last_modified
+                if stored_file:
+                    stored_file["last_modified"] = last_modified
+                else:
+                    info["files"].append({"filename": file, "last_modified": last_modified})
 
         # Check for deleted files
-        for file in stored_files - current_files:
-            has_updates = True
-            del info["files"][file]
+        info["files"] = [file for file in info["files"] if
+                         isinstance(file, dict) and file.get("filename") in current_files]
 
         self._save_retriever_info(name, info)
+        debug_print(f"Updates check complete. Has updates: {has_updates}")
         return has_updates
 
     def process_documents(self, name: str):
+        debug_print(f"Processing documents for retriever: {name}")
         if self._check_for_updates(name):
+            debug_print(f"Updates detected, deleting existing collection for {name}")
             self._delete_collection(name)
 
         directory = f"/data/imported/{name}"
         collection_name = f"{name}_collection"
 
         if collection_name in self.client.list_collections():
-            print(f"Collection {collection_name} is up to date. Skipping processing.")
+            debug_print(f"Collection {collection_name} is up to date. Skipping processing.")
             return
 
         documents = []
+        processed_files = set()  # Keep track of processed files
         for filename in os.listdir(directory):
-            if filename.startswith('.') or os.path.isdir(os.path.join(directory, filename)):
+            if filename.startswith('.') or os.path.isdir(
+                    os.path.join(directory, filename)) or filename == "retriever-info.json":
                 continue
             file_path = os.path.join(directory, filename)
+            if file_path in processed_files:
+                continue  # Skip if file has already been processed
             try:
+                debug_print(f"Loading document: {file_path}")
                 documents.extend(self._load_document(file_path))
+                processed_files.add(file_path)  # Mark file as processed
             except ValueError as e:
-                print(f"Skipping file {filename}: {str(e)}")
+                debug_print(f"Skipping file {filename}: {str(e)}")
 
         if not documents:
-            print(f"No valid documents found in {directory}.")
+            debug_print(f"No valid documents found in {directory}.")
             return
 
+        debug_print(f"Splitting {len(documents)} documents")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         splits = text_splitter.split_documents(documents)
+        debug_print(f"Created {len(splits)} splits")
 
-        vectorstore = Chroma.from_documents(
+        debug_print(f"Creating Chroma vectorstore for {collection_name}")
+        Chroma.from_documents(
             documents=splits,
             embedding=self.embeddings,
-            persist_directory=self.persist_directory,
+            client=self.client,
             collection_name=collection_name,
         )
-        vectorstore.persist()
-        print(f"Processed and persisted {len(splits)} chunks for {name}")
+        debug_print(f"Processed and persisted {len(splits)} chunks for {name}")
 
     def _delete_collection(self, name: str):
         collection_name = f"{name}_collection"
         if collection_name in self.client.list_collections():
+            debug_print(f"Deleting existing collection: {collection_name}")
             self.client.delete_collection(collection_name)
-            print(f"Deleted existing collection: {collection_name}")
+            debug_print(f"Deleted collection: {collection_name}")
 
     def get_retriever(self, name: str):
-        self.process_documents(name)  # Ensure the collection is up-to-date
-        collection_name = f"{name}_collection"
-        if collection_name not in self.client.list_collections():
-            print(f"Collection {collection_name} does not exist.")
+        debug_print(f"Getting retriever for: {name}")
+        try:
+            self.process_documents(name)  # Ensure the collection is up-to-date
+            collection_name = f"{name}_collection"
+            if collection_name not in self.client.list_collections():
+                debug_print(f"Collection {collection_name} does not exist.")
+                return None
+
+            debug_print(f"Creating Chroma vectorstore for {collection_name}")
+            vectorstore = Chroma(
+                client=self.client,
+                embedding_function=self.embeddings,
+                collection_name=collection_name,
+            )
+            debug_print(f"Retriever created for {name}")
+            return vectorstore.as_retriever()
+        except Exception as e:
+            debug_print(f"Error in get_retriever: {str(e)}")
             return None
 
-        vectorstore = Chroma(
-            persist_directory=self.persist_directory,
-            embedding_function=self.embeddings,
-            collection_name=collection_name,
-        )
-        return vectorstore.as_retriever()
 
 retriever_manager = RetrieverManager()
+debug_print("RetrieverManager instance created")

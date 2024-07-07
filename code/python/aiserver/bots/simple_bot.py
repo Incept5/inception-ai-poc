@@ -4,6 +4,8 @@ from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langchain_core.messages import SystemMessage, HumanMessage
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]
@@ -20,7 +22,7 @@ class SimpleBot(LangchainBotInterface):
 
     @property
     def description(self) -> str:
-        return "Simple Bot - Basic conversation without web search"
+        return "Simple Bot - Basic conversation with optional RAG capabilities"
 
     def get_tools(self) -> List:
         return self.tools
@@ -39,11 +41,25 @@ class SimpleBot(LangchainBotInterface):
             3. Break down complex information into manageable steps
             4. Use examples where appropriate
             5. Cite sources or provide reasoning for your answers when possible
+            6. If relevant information is available from the retriever, incorporate it into your response
             """
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
-            result = {"messages": [self.llm_wrapper.invoke(messages)]}
+
+            if self.retriever:
+                memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+                qa_chain = ConversationalRetrievalChain.from_llm(
+                    llm=self.llm_wrapper.llm,
+                    retriever=self.retriever,
+                    memory=memory
+                )
+                result = qa_chain({"question": messages[-1].content})
+                answer = result['answer']
+            else:
+                answer = self.llm_wrapper.invoke(messages).content
+
+            result = {"messages": [HumanMessage(content=answer)]}
             debug_print(f"Chatbot output: {result}")
             return result
 

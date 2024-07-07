@@ -11,3 +11,6 @@ langchain_community
 langchain_experimental
 tavily-python
 typing-extensions
+PyPDF2
+chromadb
+sentence-transformers

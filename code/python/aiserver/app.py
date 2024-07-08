@@ -1,5 +1,7 @@
 # app.py
 
+import os
+import threading
 from flask import Flask
 from flask_cors import CORS
 from routes.bot_router import bot_blueprint
@@ -9,6 +11,10 @@ from routes.conversations import conversations_blueprint
 from config import Config
 from utils.debug_utils import debug_print
 from bots.configured_bots import get_configured_bots
+from mylangchain.retriever_manager import retriever_manager
+
+def run_check_imports():
+    retriever_manager.check_imports()
 
 def create_app():
     app = Flask(__name__)
@@ -23,6 +29,10 @@ def create_app():
     # Initialize bot instances
     with app.app_context():
         get_configured_bots()
+
+    # Start check_imports in a background thread
+    check_imports_thread = threading.Thread(target=run_check_imports)
+    check_imports_thread.start()
 
     return app
 

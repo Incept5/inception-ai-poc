@@ -56,6 +56,15 @@ class SystemImproverBot(LangchainBotInterface):
             messages = state["messages"]
             system_message = SystemMessage(content=file_saving_prompt())
 
+            # Check for hints.md file
+            hints_content = file_content("/system_src/hints.md")
+            hints_section = ""
+            if not hints_content.startswith("Error:"):
+                hints_section = f"""
+                Here are some hints about the system:
+                {hints_content}
+                """
+
             prompt = f"""
             As an AI assistant, you are tasked with analyzing and suggesting improvements for a software system.
             Follow these guidelines:
@@ -67,6 +76,8 @@ class SystemImproverBot(LangchainBotInterface):
 
             The system structure is as follows:
             {file_structure}
+
+            {hints_section}
 
             IMPORTANT: Remember to ask for specific file contents using the file_content tool when needed.
             VERY IMPORTANT: Always generate FULL source code files rather than diffs or partial code snippets.

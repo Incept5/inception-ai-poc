@@ -1,4 +1,4 @@
-from typing import List, TypedDict, Annotated
+from typing import List, TypedDict, Annotated, Optional
 from mylangchain.langchain_bot_interface import LangchainBotInterface
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
@@ -9,8 +9,8 @@ class State(TypedDict):
     messages: Annotated[List, add_messages]
 
 class SimpleBot(LangchainBotInterface):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, retriever_name: Optional[str] = None):
+        super().__init__(retriever_name)
         self.tools = []  # SimpleBot doesn't use any tools
         self.initialize()
 
@@ -20,7 +20,7 @@ class SimpleBot(LangchainBotInterface):
 
     @property
     def description(self) -> str:
-        return "Simple Bot - Basic conversation without web search"
+        return "Simple Bot - Basic conversation"
 
     def get_tools(self) -> List:
         return self.tools
@@ -43,7 +43,10 @@ class SimpleBot(LangchainBotInterface):
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
-            result = {"messages": [self.llm_wrapper.invoke(messages)]}
+
+            answer = self.llm_wrapper.invoke(messages).content
+
+            result = {"messages": [HumanMessage(content=answer)]}
             debug_print(f"Chatbot output: {result}")
             return result
 

@@ -15,6 +15,16 @@ The UI allows you to change the following:
 * Which LLM model you are using
   * Will query Ollama for the list of installed models
 
+## System Improver Bot
+
+You can select the System Improver Bot from the UI to chat with this current system and suggest updates etc
+You can say things like:
+
+    "add a new rag bot that uses the iso20022 retriever and is an expert in all things ISO20022"
+
+And it will think about it and generate some code for you which you can view by clicking on the "Files" button.
+If you are happy with the code you can click on "Update Files" button to update the running system with the new code.
+
 ![docs/images/inception-ui.png](docs/images/inception-ui.png)
 
 # Example Bots

@@ -12,3 +12,4 @@ The bot should be named after the file or directory name
 If we are adding a bot remember to also add it to configured_bots.py
 IMPORTANT: when creating a bot always extend langchain_bot_interface.py unless asked not to
 IMPORTANT: when creating a bot look in simple_bot.py for a basic example of the pattern to follow
+IMPORTANT: when creating a method like def create_chatbot(self) don't forget to return the chatbot() function with return chatbot

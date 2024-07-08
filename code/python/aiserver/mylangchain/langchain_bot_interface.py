@@ -9,11 +9,12 @@ from langchain_core.messages import BaseMessage
 from mylangchain.checkpointer_service import CheckpointerService
 from processors.persist_files_in_response import persist_files_in_response
 from mylangchain.retriever_manager import RetrieverManager
+from mylangchain.retriever.retriever_builder import retriever_builder
 import logging
 
 
 class LangchainBotInterface(BotInterface):
-    def __init__(self):
+    def __init__(self, retriever_name: Optional[str] = None):
         self.checkpointer = None
         self.graph = None
         self.llm_wrapper = None
@@ -22,6 +23,8 @@ class LangchainBotInterface(BotInterface):
         self.logger = logging.getLogger(__name__)
         self.is_initialized = False
         self.retriever_manager = RetrieverManager()
+        self.retriever_name = retriever_name
+        self.retriever = None
 
     @abstractmethod
     def create_chatbot(self):
@@ -50,8 +53,13 @@ class LangchainBotInterface(BotInterface):
     def lazy_init_langchain(self, llm_provider=None, llm_model=None):
         if not self.is_initialized:
             self._update_llm_wrapper(llm_provider, llm_model)
+            self.lazy_init_retriever()
             self.graph = self.create_graph()
             self.is_initialized = True
+
+    def lazy_init_retriever(self):
+        if self.retriever_name and self.retriever is None:
+            self.retriever = retriever_builder.get_retriever(self.retriever_name)
 
     def _update_llm_wrapper(self, llm_provider, llm_model):
         if llm_provider != self.current_llm_provider or llm_model != self.current_llm_model:

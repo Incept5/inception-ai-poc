@@ -15,12 +15,32 @@ The UI allows you to change the following:
 * Which LLM model you are using
   * Will query Ollama for the list of installed models
 
+## System Improver Bot
+
+You can select the System Improver Bot from the UI to chat with this current system and suggest updates etc
+You can say things like:
+
+    "add a new rag bot that uses the iso20022 retriever and is an expert in all things ISO20022"
+
+And it will think about it and generate some code for you which you can view by clicking on the "Files" button.
+If you are happy with the code you can click on "Update Files" button to update the running system with the new code.
+
 ![docs/images/inception-ui.png](docs/images/inception-ui.png)
 
 # Example Bots
 
 The project includes several specialized bots, each designed for specific tasks:
 
+* ISO20022 Expert Bot - [code/python/aiserver/bots/iso20022_expert_bot.py](code/python/aiserver/bots/iso20022_expert_bot.py)
+  * An expert bot for ISO20022 financial messaging standards
+* Ollama Bot - [code/python/aiserver/bots/ollama_bot.py](code/python/aiserver/bots/ollama_bot.py)
+  * A bot that interacts directly with Ollama models
+  * Does not use the Langchain framework, providing a different approach to bot interactions
+* Simple Bot - [code/python/aiserver/bots/simple_bot.py](code/python/aiserver/bots/simple_bot.py)
+  * A basic Langgraph bot without any additional tools
+  * Suitable for general conversations and simple queries
+* Simple RAG QA Bot - [code/python/aiserver/bots/simple_rag_qa_bot.py](code/python/aiserver/bots/simple_rag_qa_bot.py)
+  * A bot that uses Retrieval-Augmented Generation (RAG) for question answering
 * System Improver Bot - [code/python/aiserver/bots/system_improver_bot.py](code/python/aiserver/bots/system_improver_bot.py)
   * Specialized in analyzing and suggesting improvements for software systems
   * Can review system structures, answer questions about the system, and propose enhancements
@@ -29,15 +49,9 @@ The project includes several specialized bots, each designed for specific tasks:
   * Focused on creating single HTML file web applications
   * Can generate complete, self-contained HTML files with embedded CSS and JavaScript
   * Implements modern web development practices and responsive design
-* Simple Bot - [code/python/aiserver/bots/simple_bot.py](code/python/aiserver/bots/simple_bot.py)
-  * A basic Langgraph bot without any additional tools
-  * Suitable for general conversations and simple queries
 * Web Search Bot - [code/python/aiserver/bots/web_search_bot.py](code/python/aiserver/bots/web_search_bot.py)
   * A Langgraph bot equipped with a web search tool
   * Capable of providing information from the internet to answer queries
-* Ollama Bot - [code/python/aiserver/bots/ollama_bot.py](code/python/aiserver/bots/ollama_bot.py)
-  * A bot that interacts directly with Ollama models
-  * Does not use the Langchain framework, providing a different approach to bot interactions
 
 Each bot is designed to showcase different capabilities and use cases within the Inception AI Chatbot Project.
 
@@ -89,7 +103,9 @@ Each bot is designed to showcase different capabilities and use cases within the
 3. Edit the `.env` file and add your API keys:
    ```
    ANTHROPIC_API_KEY=your_anthropic_api_key_here
+   OPENAI_API_KEY=your_openai_api_key_here
    LANGSMITH_API_KEY=your_langsmith_api_key_here
+   TAVILY_API_KEY=your_tavily_api_key_here
    ```
 
 ## Retriever Configuration

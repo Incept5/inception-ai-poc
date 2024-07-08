@@ -44,7 +44,7 @@ class VectorDBLoader:
                     info["files"] = []
                 return info
         debug_print(f"No existing retriever info found for {name}")
-        return {"name": name, "files": [], "embedding_provider": retriever_config.embedding_provider, "embedding_model": retriever_config.embedding_model}
+        return {"name": name, "files": [], "embedding_provider": retriever_config.default_embedding_provider, "embedding_model": retriever_config.default_embedding_model}
 
     def save_retriever_info(self, name: str, info: Dict):
         info_path = self.get_retriever_info_path(name)
@@ -89,11 +89,11 @@ class VectorDBLoader:
         info["files"] = [file for file in info["files"] if
                          isinstance(file, dict) and file.get("filename") in current_files]
 
-        if info.get("embedding_provider") != retriever_config.embedding_provider or info.get("embedding_model") != retriever_config.embedding_model:
-            debug_print(f"Embedding provider or model has changed. Provider: {retriever_config.embedding_provider}, Model: {retriever_config.embedding_model}")
+        if info.get("embedding_provider") != retriever_config.default_embedding_provider or info.get("embedding_model") != retriever_config.default_embedding_model:
+            debug_print(f"Embedding provider or model has changed. Provider: {retriever_config.default_embedding_provider}, Model: {retriever_config.default_embedding_model}")
             has_updates = True
-            info["embedding_provider"] = retriever_config.embedding_provider
-            info["embedding_model"] = retriever_config.embedding_model
+            info["embedding_provider"] = retriever_config.default_embedding_provider
+            info["embedding_model"] = retriever_config.default_embedding_model
 
         self.save_retriever_info(name, info)
         debug_print(f"Updates check complete. Has updates: {has_updates}")

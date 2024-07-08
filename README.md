@@ -112,7 +112,14 @@ Each bot is designed to showcase different capabilities and use cases within the
 
 The project now includes a retriever functionality that allows bots to access and search through vector databases. This feature is configured using environment variables in the `.env` file. Here are the key configuration options:
 
-1. Embedding Provider:
+1. Retriever Collections:
+   Define the retriever collections using the `RETRIEVER_COLLECTIONS` variable.
+   ```
+   RETRIEVER_COLLECTIONS=iso20022
+   ```
+   This variable specifies the collections that the retriever can access. Each collection corresponds to a specific set of embeddings that can be queried by the bots.
+
+2. Embedding Provider:
    Set the default embedding provider using the `DEFAULT_EMBEDDING_PROVIDER` variable.
    ```
    DEFAULT_EMBEDDING_PROVIDER=openai
@@ -121,14 +128,14 @@ The project now includes a retriever functionality that allows bots to access an
    - `openai`: Uses OpenAI's embedding model
    - `huggingface`: Uses HuggingFace's embedding models
 
-2. Embedding Model:
+3. Embedding Model:
    Set the default embedding model using the `DEFAULT_EMBEDDING_MODEL` variable.
    ```
    DEFAULT_EMBEDDING_MODEL=text-embedding-ada-002
    ```
    The default model for OpenAI is "text-embedding-ada-002". For HuggingFace, you can specify any compatible model name.
 
-3. Persist Directory:
+4. Persist Directory:
    The embeddings are stored in a ChromaDB database. The default persist directory is set to:
    ```
    /data/embeddings/__chromadb

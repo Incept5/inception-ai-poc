@@ -13,7 +13,8 @@ class RetrieverManager:
 
     def check_imports(self, names: Optional[List[str]] = None):
         debug_print("Checking imports and initializing RetrieverManager")
-        self.config.initialize_embeddings()
+        # Initialize embeddings by calling get_embeddings() instead of initialize_embeddings()
+        self.config.get_embeddings()
         self.loader.initialize_client()
         
         if names is None:

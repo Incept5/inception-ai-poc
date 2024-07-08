@@ -9,6 +9,7 @@ langchain_openai
 langchain_groq
 langchain_community
 langchain_experimental
+langchain-huggingface
 tavily-python
 typing-extensions
 PyPDF2

@@ -5,7 +5,7 @@ from bots.web_search_bot import WebSearchBot
 from bots.ollama_bot import OllamaBot
 from bots.system_improver_bot import SystemImproverBot
 from bots.web_app_bot import WebAppBot
-from bots.adam_bot import AdamBot
+from bots.simple_rag_qa_bot import SimpleRAGQABot
 
 def get_configured_bots():
     # Check if bots are already stored in the app context
@@ -17,7 +17,7 @@ def get_configured_bots():
             ("simple-bot", SimpleBot()),
             ("web-search-bot", WebSearchBot()),
             ("ollama-bot", OllamaBot()),
-            ("adam-bot", AdamBot())
+            ("simple-rag-qa-bot", SimpleRAGQABot())
         ])
         current_app.extensions['configured_bots'] = bots
 

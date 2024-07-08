@@ -4,9 +4,7 @@ from bots.simple_bot import SimpleBot
 from bots.web_search_bot import WebSearchBot
 from bots.ollama_bot import OllamaBot
 from bots.system_improver_bot import SystemImproverBot
-from bots.web_enabled_improver_bot import WebEnabledImproverBot
 from bots.web_app_bot import WebAppBot
-from bots.simple_rag_bot import SimpleRagBot
 
 def get_configured_bots():
     # Check if bots are already stored in the app context
@@ -14,10 +12,8 @@ def get_configured_bots():
         # If not, create new instances and store them
         bots = OrderedDict([
             ("system-improver-bot", SystemImproverBot()),
-            ("web-enabled-improver-bot", WebEnabledImproverBot()),
             ("web-app-bot", WebAppBot()),
             ("simple-bot", SimpleBot()),
-            ("simple-rag-bot", SimpleRagBot()),
             ("web-search-bot", WebSearchBot()),
             ("ollama-bot", OllamaBot())
         ])

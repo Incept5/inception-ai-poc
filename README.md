@@ -113,7 +113,8 @@ Each bot is designed to showcase different capabilities and use cases within the
 The project now includes a retriever functionality that allows bots to access and search through vector databases. This feature is configured using environment variables in the `.env` file. Here are the key configuration options:
 
 1. Retriever Collections:
-   Define the retriever collections using the `RETRIEVER_COLLECTIONS` variable.
+   A comma-separated list of named retrievers each corresponding to a folder under '/data/imported' that contains the source docs
+   We currently support .pdf, .txt and .xml files
    ```
    RETRIEVER_COLLECTIONS=iso20022
    ```

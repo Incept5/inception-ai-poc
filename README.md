@@ -92,6 +92,43 @@ Each bot is designed to showcase different capabilities and use cases within the
    LANGSMITH_API_KEY=your_langsmith_api_key_here
    ```
 
+## Retriever Configuration
+
+The project now includes a retriever functionality that allows bots to access and search through vector databases. This feature is configured using environment variables in the `.env` file. Here are the key configuration options:
+
+1. Embedding Provider:
+   Set the default embedding provider using the `DEFAULT_EMBEDDING_PROVIDER` variable.
+   ```
+   DEFAULT_EMBEDDING_PROVIDER=openai
+   ```
+   Supported options are:
+   - `openai`: Uses OpenAI's embedding model
+   - `huggingface`: Uses HuggingFace's embedding models
+
+2. Embedding Model:
+   Set the default embedding model using the `DEFAULT_EMBEDDING_MODEL` variable.
+   ```
+   DEFAULT_EMBEDDING_MODEL=text-embedding-ada-002
+   ```
+   The default model for OpenAI is "text-embedding-ada-002". For HuggingFace, you can specify any compatible model name.
+
+3. Persist Directory:
+   The embeddings are stored in a ChromaDB database. The default persist directory is set to:
+   ```
+   /data/embeddings/__chromadb
+   ```
+   This directory is used to store the vector database files.
+
+To use the retriever functionality in a bot, you can utilize the `RetrieverBuilder` class. Here's a basic example of how to get a retriever for a specific collection:
+
+```python
+from mylangchain.retriever.retriever_builder import retriever_builder
+
+retriever = retriever_builder.get_retriever("collection_name")
+```
+
+This will create and return a retriever for the specified collection, which can then be used in your bot's logic for information retrieval tasks.
+
 ## Building and Running
 
 1. Navigate to the `docker` directory:
@@ -154,3 +191,8 @@ docker-compose up --build
   ```
   docker-compose logs python-server
   ```
+
+- If you encounter issues with the retriever functionality:
+  - Ensure that the `DEFAULT_EMBEDDING_PROVIDER` and `DEFAULT_EMBEDDING_MODEL` are correctly set in your `.env` file.
+  - Check that the necessary API keys (e.g., OPENAI_API_KEY) are properly configured if using the OpenAI embedding provider.
+  - Verify that the persist directory for ChromaDB (/data/embeddings/__chromadb) exists and has the correct permissions within the Docker container.

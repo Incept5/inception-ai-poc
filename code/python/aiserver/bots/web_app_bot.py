@@ -36,8 +36,10 @@ class WebAppBot(LangchainBotInterface):
             system_message = SystemMessage(content=file_saving_prompt())
 
             prompt = """
-            Create a single-page web app using the Vue framework, ensuring it will run without any transpiling in all modern browsers. The app should be functional and responsive, capable of running directly in the browser without additional build steps.
+            Create a single-page web app using the Vue framework, ensuring it will run without any transpiling in all modern browsers. 
+            The app should be functional and responsive, capable of running directly in the browser without additional build steps.
             Remember to include all necessary HTML, CSS, and JavaScript (including Vue.js) within a single file.
+            IMPORTANT: Only use the configured web search tool if you are asked to use technology that you don't know how to use.
             """
 
             prompt_message = HumanMessage(content=prompt)

@@ -11,10 +11,12 @@ services:
       - ../code/python/aiserver:/app
       - ../data:/data
       - ../:/system_src:rw
-      - ../data/huggingface_cache:/root/.cache/huggingface  # Updated this line
+      - ../data/huggingface_cache:/root/.cache/huggingface
+      - ${EXTERNAL_SYSTEM_SRC:-/tmp/external_system_src}:/external_system_src:rw
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1
+      - EXTERNAL_SYSTEM_SRC=/external_system_src
     env_file:
       - ../.env
 
@@ -29,5 +31,3 @@ services:
       - ../code/web/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - aiserver
-
-# Remove the volumes section at the bottom since we're not using a named volume anymore

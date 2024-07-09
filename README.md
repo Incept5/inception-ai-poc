@@ -25,6 +25,12 @@ You can say things like:
 And it will think about it and generate some code for you which you can view by clicking on the "Files" button.
 If you are happy with the code you can click on "Update Files" button to update the running system with the new code.
 
+## External System Improver Bit
+
+Set the following in your .env file to point to another local git based system on you local disk to then chat with via External System Improver Bot
+
+    EXTERNAL_SYSTEM_SRC=/path/to/your/other/system
+
 ![docs/images/inception-ui.png](docs/images/inception-ui.png)
 
 # Example Bots

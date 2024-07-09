@@ -18,3 +18,4 @@ chromadb
 sentence-transformers
 faiss-cpu
 bs4
+wikipedia

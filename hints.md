@@ -20,5 +20,5 @@ If we are adding a bot remember to also add it to configured_bots.py
 IMPORTANT: when creating a bot always find an example bot to copy and fetch the contents of that to use as a template first before generating any code 
 Useful example template bots to use for inspiration include:
 * code/python/aiserver/bots/simple_bot.py - default bot
-* code/python/aiserver/bots/simple_rag_qa_bot.py for a RAG bot or if asked to use a retriever
+* code/python/aiserver/bots/simple_retriever_bot.py for a bot that needs to use a retriever
 IMPORTANT: when creating a method like def create_chatbot(self) don't forget to return the chatbot() function with return chatbot

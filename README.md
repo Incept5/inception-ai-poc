@@ -20,10 +20,12 @@ The UI allows you to change the following:
 You can select the System Improver Bot from the UI to chat with this current system and suggest updates etc
 You can say things like:
 
-    "add a new rag bot that uses the iso20022 retriever and is an expert in all things ISO20022"
+* _"add a new rag bot based on https://en.wikipedia.org/wiki/White_blood_cell"_
+* _"add a new rag bot that uses the iso20022 retriever and is an expert in all things ISO20022"_
 
 And it will think about it and generate some code for you which you can view by clicking on the "Files" button.
 If you are happy with the code you can click on "Update Files" button to update the running system with the new code.
+Note: you will need to refresh the UI to see your new bot in the list of available bots
 
 ## External System Improver Bit
 

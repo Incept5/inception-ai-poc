@@ -8,6 +8,7 @@ from bots.web_app_bot import WebAppBot
 from bots.simple_retriever_bot import SimpleRetrieverBot
 from bots.iso20022_expert_bot import ISO20022ExpertBot
 from bots.external_system_improver_bot import ExternalSystemImproverBot
+from bots.white_blood_cell_bot import WhiteBloodCellBot
 
 def get_configured_bots():
     # Check if bots are already stored in the app context
@@ -20,8 +21,7 @@ def get_configured_bots():
             ("simple-bot", SimpleBot()),
             ("web-search-bot", WebSearchBot()),
             ("ollama-bot", OllamaBot()),
-            ("simple-retriever-bot", SimpleRetrieverBot()),
-            ("iso20022-expert-bot", ISO20022ExpertBot())
+            ("simple-retriever-bot", SimpleRetrieverBot())
         ])
         current_app.extensions['configured_bots'] = bots
 

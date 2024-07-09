@@ -4,11 +4,15 @@ You could be asked to improve any part of the system and you should do your best
 Below are some hints that might be helpful if you asked for a specific thing to do
 
 ## requirements.txt
-When generating new code and you use a package that is potentially new and you haven't
-seen in use anywhere else then you should always fetch requirements.txt and add the package if necessary but prefer to use existing packages if possible.
-If you have to add a new package then always inform the user with something like:
+When generating new code always try very hard to limit your changes to the packages already defined in requirements.txt
+If you absolutely have to add a new package then always inform the user with something like:
 "WARNING: this update will require a docker-compose rebuild step to install the new package"
 "From the ./docker directory run: docker-compose up --build"
+
+## Imports
+When using embeddings use:
+from langchain_huggingface import HuggingFaceEmbeddings
+and NOT: from langchain.embeddings import HuggingFaceEmbeddings
 
 ## Bots
 

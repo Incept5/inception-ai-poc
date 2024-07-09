@@ -31,7 +31,9 @@ Set the following in your .env file to point to another local git based system o
 
     EXTERNAL_SYSTEM_SRC=/path/to/your/other/system
 
-Note: You can add a file called *hints.md* to the root of your system to provide hints to the 
+### Hints File
+
+You can add a file called *hints.md* to the root of your system to provide hints to the 
 External System Improver Bot on how to improve your system for example:
 
     # General
@@ -45,6 +47,8 @@ External System Improver Bot on how to improve your system for example:
     Here are some ideas for good examples to use:
     * code/python/widgetsystem/widgets/simple_widget.py - default widget
     * code/python/widgetsystem/widgets/complex_widget.py - more complex widget that does x y z
+
+## UI Screenshot
 
 ![docs/images/inception-ui.png](docs/images/inception-ui.png)
 

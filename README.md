@@ -25,6 +25,31 @@ You can say things like:
 And it will think about it and generate some code for you which you can view by clicking on the "Files" button.
 If you are happy with the code you can click on "Update Files" button to update the running system with the new code.
 
+## External System Improver Bit
+
+Set the following in your .env file to point to another local git based system on you local disk to then chat with via External System Improver Bot
+
+    EXTERNAL_SYSTEM_SRC=/path/to/your/other/system
+
+### Hints File
+
+You can add a file called *hints.md* to the root of your system to provide hints to the 
+External System Improver Bot on how to improve your system for example:
+
+    # General
+
+    You could be asked to improve any part of the system and you should do your best to do that.
+    Below are some hints that might be helpful if you asked for a specific thing to do
+
+    ## Widgets
+    
+    When asked to create a new widget you should fetch an example that makes sense and use it as a template.
+    Here are some ideas for good examples to use:
+    * code/python/widgetsystem/widgets/simple_widget.py - default widget
+    * code/python/widgetsystem/widgets/complex_widget.py - more complex widget that does x y z
+
+## UI Screenshot
+
 ![docs/images/inception-ui.png](docs/images/inception-ui.png)
 
 # Example Bots

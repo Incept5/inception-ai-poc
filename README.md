@@ -31,7 +31,8 @@ Set the following in your .env file to point to another local git based system o
 
     EXTERNAL_SYSTEM_SRC=/path/to/your/other/system
 
-Note: You can add a file called *hints.md* to the root of your system to provide hints to the System Improver Bot on how to improve your system for example:
+Note: You can add a file called *hints.md* to the root of your system to provide hints to the 
+External System Improver Bot on how to improve your system for example:
 
     # General
 

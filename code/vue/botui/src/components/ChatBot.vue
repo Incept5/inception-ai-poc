@@ -145,7 +145,7 @@ function scrollToBottom() {
       <div v-for="(message, index) in messages" :key="index" class="message" :class="message.sender.toLowerCase()">
         <div class="message-content" :class="message.type">
           <strong>{{ message.label || message.sender }}:</strong>
-          <div v-html="message.message"></div>
+          <pre>{{ message.message }}</pre>
         </div>
       </div>
     </div>
@@ -261,5 +261,12 @@ input {
 
 button {
   padding: 5px 10px;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: inherit;
+  margin: 0;
 }
 </style>

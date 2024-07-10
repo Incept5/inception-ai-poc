@@ -22,10 +22,20 @@ const llmProviders = [
 onMounted(async () => {
   await loadBots()
   await loadModels()
+  initializeThread()
 })
 
 watch(llmSelector, async () => {
   await loadModels()
+  addSystemMessage(`LLM provider changed to ${llmSelector.value}`)
+})
+
+watch(botSelector, () => {
+  addSystemMessage(`Bot changed to ${botSelector.value}`)
+})
+
+watch(modelSelector, () => {
+  addSystemMessage(`Model changed to ${modelSelector.value}`)
 })
 
 async function loadBots() {
@@ -53,6 +63,12 @@ async function loadModels() {
 function initializeThread() {
   threadId.value = Date.now().toString()
   messages.value = []
+  addSystemMessage(`New conversation started. Thread ID: ${threadId.value}`)
+}
+
+function addSystemMessage(message) {
+  messages.value.push({ sender: 'System', message: message })
+  scrollToBottom()
 }
 
 async function handleSendMessage() {
@@ -80,12 +96,11 @@ async function handleSendMessage() {
         label: label
       })
 
-      // Scroll to the bottom of the chat container
       scrollToBottom()
     }
   } catch (error) {
     console.error('Error sending message:', error)
-    messages.value.push({ sender: 'Error', message: 'Failed to send message. Please try again.' })
+    addSystemMessage('Failed to send message. Please try again.')
   }
 
   scrollToBottom()
@@ -218,6 +233,11 @@ select {
 
 .bot .message-content {
   background-color: #f0f0f0;
+}
+
+.system .message-content {
+  background-color: #ffe6e6;
+  font-style: italic;
 }
 
 .bot .message-content.intermediate {

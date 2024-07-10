@@ -54,21 +54,30 @@ export const sendMessage = async (bot, message, llmProvider, llmModel, threadId)
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
+    let partialChunk = ''
 
     return {
       async *[Symbol.asyncIterator]() {
         while (true) {
-          const { value, done } = await reader.read()
+          const { done, value } = await reader.read()
           if (done) break
-          const chunk = decoder.decode(value)
-          const lines = chunk.split('\n')
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const jsonData = line.slice(5).trim()
+
+          const chunk = partialChunk + decoder.decode(value, { stream: true })
+          const events = chunk.split('\n\n')
+          partialChunk = events.pop() || ''
+
+          for (const event of events) {
+            if (event.startsWith('data: ')) {
+              const jsonData = event.slice(6)
               if (jsonData === '[DONE]') {
                 return
               }
-              yield JSON.parse(jsonData)
+              try {
+                const parsedData = JSON.parse(jsonData)
+                yield parsedData
+              } catch (e) {
+                console.error('Error parsing JSON:', e)
+              }
             }
           }
         }

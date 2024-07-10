@@ -144,8 +144,11 @@ function scrollToBottom() {
       </div>
     </div>
     <div ref="chatContainer" class="chat-messages">
-      <div v-for="(message, index) in messages" :key="index" class="message" :class="[message.sender.toLowerCase(), message.type]">
-        <strong>{{ message.sender === 'Bot' && message.type === 'intermediate' ? 'Bot (thinking):' : message.sender }}:</strong> {{ message.message }}
+      <div v-for="(message, index) in messages" :key="index" class="message" :class="message.sender.toLowerCase()">
+        <div class="message-content" :class="message.type">
+          <strong>{{ message.sender === 'Bot' && message.type === 'intermediate' ? 'Bot (thinking):' : message.sender }}:</strong>
+          <div v-html="message.message"></div>
+        </div>
       </div>
     </div>
     <div class="input-area">
@@ -215,19 +218,31 @@ select {
 }
 
 .message {
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
-.you {
-  text-align: right;
+.message-content {
+  display: inline-block;
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
-.bot {
-  text-align: left;
+.you .message-content {
+  background-color: #e6f3ff;
 }
 
-.intermediate {
-  opacity: 0.7;
+.bot .message-content {
+  background-color: #f0f0f0;
+}
+
+.bot .message-content.intermediate {
+  background-color: #e0e0e0;
+}
+
+.bot .message-content.final {
+  background-color: #e6ffe6;
 }
 
 .input-area {

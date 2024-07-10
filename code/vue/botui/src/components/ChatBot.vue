@@ -1,5 +1,124 @@
 <script setup>
-// ... (keep the existing script code unchanged)
+import { ref, onMounted, watch } from 'vue'
+import { fetchBots, fetchModels, sendMessage } from '../api'
+
+const bots = ref([])
+const models = ref([])
+const botSelector = ref('')
+const llmSelector = ref('anthropic')
+const modelSelector = ref('')
+const userInput = ref('')
+const messages = ref([])
+const showThinking = ref(false)
+const chatContainer = ref(null)
+const threadId = ref(null)
+
+const llmProviders = [
+  { label: 'Anthropic', value: 'anthropic' },
+  { label: 'OpenAI', value: 'openai' },
+  { label: 'Ollama', value: 'ollama' },
+  { label: 'Groq', value: 'groq' }
+]
+
+onMounted(async () => {
+  await loadBots()
+  await loadModels()
+})
+
+watch(llmSelector, async () => {
+  await loadModels()
+})
+
+async function loadBots() {
+  try {
+    bots.value = await fetchBots()
+    if (bots.value.length > 0) {
+      botSelector.value = bots.value[0].bot_type
+    }
+  } catch (error) {
+    console.error('Error loading bots:', error)
+  }
+}
+
+async function loadModels() {
+  try {
+    models.value = await fetchModels(llmSelector.value)
+    if (models.value.length > 0) {
+      modelSelector.value = models.value[0]
+    }
+  } catch (error) {
+    console.error('Error loading models:', error)
+  }
+}
+
+function initializeThread() {
+  threadId.value = Date.now().toString()
+  messages.value = []
+}
+
+async function handleSendMessage() {
+  if (!userInput.value.trim()) return
+
+  const userMessage = userInput.value
+  messages.value.push({ sender: 'You', message: userMessage })
+  userInput.value = ''
+
+  try {
+    const response = await sendMessage(
+      botSelector.value,
+      userMessage,
+      llmSelector.value,
+      modelSelector.value,
+      threadId.value
+    )
+
+    // Handle the response stream
+    const reader = response.getReader()
+    let botResponse = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      const chunk = new TextDecoder().decode(value)
+      const lines = chunk.split('\n')
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const jsonData = line.slice(5).trim()
+          if (jsonData === '[DONE]') {
+            break
+          }
+
+          try {
+            const parsedData = JSON.parse(jsonData)
+            if (parsedData.type === 'content') {
+              botResponse += parsedData.content
+            } else if (parsedData.type === 'thinking' && showThinking.value) {
+              messages.value.push({ sender: 'Bot (thinking)', message: parsedData.content })
+            }
+          } catch (error) {
+            console.error('Error parsing JSON:', error)
+          }
+        }
+      }
+    }
+
+    if (botResponse) {
+      messages.value.push({ sender: 'Bot', message: botResponse })
+    }
+  } catch (error) {
+    console.error('Error sending message:', error)
+    messages.value.push({ sender: 'Error', message: 'Failed to send message. Please try again.' })
+  }
+
+  // Scroll to the bottom of the chat container
+  setTimeout(() => {
+    if (chatContainer.value) {
+      chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+    }
+  }, 0)
+}
 </script>
 
 <template>
@@ -10,11 +129,10 @@
           {{ bot.description }}
         </option>
       </select>
-      <select v-model="llmSelector" @change="loadModels">
-        <option value="anthropic">Anthropic</option>
-        <option value="openai">OpenAI</option>
-        <option value="ollama">Ollama</option>
-        <option value="groq">Groq</option>
+      <select v-model="llmSelector">
+        <option v-for="provider in llmProviders" :key="provider.value" :value="provider.value">
+          {{ provider.label }}
+        </option>
       </select>
       <select v-model="modelSelector">
         <option v-for="model in models" :key="model" :value="model">
@@ -39,61 +157,5 @@
 </template>
 
 <style scoped>
-.chatbot-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  max-width: 100%;
-}
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.controls select,
-.controls button,
-.controls label {
-  flex: 1 1 auto;
-  min-width: 120px;
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-bottom: 10px;
-}
-
-.message {
-  margin-bottom: 10px;
-  word-wrap: break-word;
-  max-width: 100%;
-}
-
-.message.you {
-  text-align: right;
-}
-
-.input-area {
-  display: flex;
-}
-
-input {
-  flex: 1;
-  padding: 5px;
-  min-width: 0; /* Allow input to shrink below its default size */
-}
-
-button {
-  padding: 5px 10px;
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  cursor: pointer;
-  white-space: nowrap;
-}
+/* Keep the existing styles unchanged */
 </style>

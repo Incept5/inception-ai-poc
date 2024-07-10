@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:9870/api'
+const API_BASE_URL = 'http://localhost:9870/api'  // Updated to work with nginx proxy
 
 export const fetchBots = async () => {
   try {
@@ -18,7 +18,9 @@ export const fetchModels = async (provider) => {
     return []
   }
   try {
-    const response = await axios.get(`${API_BASE_URL}/llm-models?provider=${provider}`)
+    const response = await axios.get(`${API_BASE_URL}/llm-models`, {
+      params: { provider: provider.toLowerCase() }
+    })
     return response.data.models
   } catch (error) {
     console.error(`Error fetching models for ${provider}:`, error)

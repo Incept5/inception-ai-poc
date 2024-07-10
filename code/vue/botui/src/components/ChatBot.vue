@@ -163,6 +163,7 @@ async function handleSendMessage() {
   height: 100%;
   max-width: 800px;
   margin: 0 auto;
+  padding-bottom: 20px; /* Added padding to the bottom of the container */
 }
 
 .controls {
@@ -211,6 +212,7 @@ select {
   border: 1px solid #ccc;
   padding: 10px;
   margin-bottom: 10px;
+  max-height: calc(100vh - 220px); /* Adjusted to account for the added padding */
 }
 
 .message {
@@ -228,6 +230,7 @@ select {
 .input-area {
   display: flex;
   gap: 10px;
+  padding-bottom: 10px;
 }
 
 input {

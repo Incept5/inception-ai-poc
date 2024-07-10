@@ -1,16 +1,43 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { fetchFileStructure, fetchFileContent } from '@/api'
 import hljs from 'highlight.js'
+
+const props = defineProps({
+  threadId: {
+    type: String,
+    default: ''
+  }
+})
 
 const fileStructure = ref({})
 const selectedFile = ref(null)
 const fileContent = ref('')
 const highlightedContent = ref('')
+const error = ref('')
 
 const fetchStructure = async () => {
-  fileStructure.value = await fetchFileStructure()
-  selectFirstFile(fileStructure.value)
+  if (!props.threadId) {
+    fileStructure.value = {}
+    selectedFile.value = null
+    fileContent.value = ''
+    highlightedContent.value = ''
+    error.value = 'No thread selected'
+    return
+  }
+
+  error.value = ''
+  try {
+    fileStructure.value = await fetchFileStructure(props.threadId)
+    selectFirstFile(fileStructure.value)
+  } catch (err) {
+    console.error('Error fetching file structure:', err)
+    error.value = 'Error fetching file structure. Please try again.'
+    fileStructure.value = {}
+    selectedFile.value = null
+    fileContent.value = ''
+    highlightedContent.value = ''
+  }
 }
 
 const selectFirstFile = (structure) => {
@@ -34,8 +61,15 @@ const selectFirstFile = (structure) => {
 
 const selectFile = async (filePath) => {
   selectedFile.value = filePath
-  fileContent.value = await fetchFileContent(filePath)
-  highlightCode()
+  try {
+    fileContent.value = await fetchFileContent(filePath)
+    highlightCode()
+  } catch (err) {
+    console.error('Error fetching file content:', err)
+    error.value = 'Error fetching file content. Please try again.'
+    fileContent.value = ''
+    highlightedContent.value = ''
+  }
 }
 
 const highlightCode = () => {
@@ -77,29 +111,39 @@ const downloadFile = () => {
   window.URL.revokeObjectURL(url)
 }
 
-onMounted(fetchStructure)
+onMounted(() => {
+  if (props.threadId) {
+    fetchStructure()
+  }
+})
+
+watch(() => props.threadId, fetchStructure)
 </script>
 
 <template>
   <div class="file-viewer-container">
-    <div class="file-tree">
-      <h2>Files</h2>
-      <ul>
-        <li v-for="(value, key) in fileStructure" :key="key">
-          <span @click="selectFile(value)" class="file-item">{{ key }}</span>
-        </li>
-      </ul>
-    </div>
-    <div v-if="selectedFile" class="file-content">
-      <div class="file-name">
-        {{ getFileName(selectedFile) }}
+    <div v-if="error" class="error-message">{{ error }}</div>
+    <div v-else-if="!props.threadId" class="no-thread-message">No thread selected</div>
+    <template v-else>
+      <div class="file-tree">
+        <h2>Files</h2>
+        <ul>
+          <li v-for="(value, key) in fileStructure" :key="key">
+            <span @click="selectFile(value)" class="file-item">{{ key }}</span>
+          </li>
+        </ul>
       </div>
-      <div class="action-buttons">
-        <button @click="copyToClipboard">Copy</button>
-        <button @click="downloadFile">Download</button>
+      <div v-if="selectedFile" class="file-content">
+        <div class="file-name">
+          {{ getFileName(selectedFile) }}
+        </div>
+        <div class="action-buttons">
+          <button @click="copyToClipboard">Copy</button>
+          <button @click="downloadFile">Download</button>
+        </div>
+        <pre><code v-html="highlightedContent"></code></pre>
       </div>
-      <pre><code v-html="highlightedContent"></code></pre>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -146,5 +190,11 @@ button {
 pre {
   margin: 0;
   white-space: pre-wrap;
+}
+
+.error-message, .no-thread-message {
+  color: #ff0000;
+  font-weight: bold;
+  padding: 10px;
 }
 </style>

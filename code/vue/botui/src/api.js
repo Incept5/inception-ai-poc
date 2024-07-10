@@ -89,15 +89,31 @@ export const sendMessage = async (bot, message, llmProvider, llmModel, threadId)
   }
 }
 
-export const fetchFileStructure = async () => {
+export const fetchFileStructure = async (threadId) => {
+  // Check if the threadId is valid before making the request
+  if (!threadId || threadId === 'undefined') {
+    return {}
+  }
+
   try {
-    const response = await axios.get(`${API_BASE_URL}/files`)
-    return response.data
+    const response = await fetch(`${API_BASE_URL}/files/__threads/${threadId}`)
+    if (response.ok) {
+      return await response.json()
+    } else if (response.status === 404) {
+      // Return an empty object for 404 errors without logging
+      return {}
+    } else {
+      // For other errors, log and return an empty object
+      console.error('Error fetching file structure:', response.statusText)
+      return {}
+    }
   } catch (error) {
-    console.error('Error fetching file structure:', error)
+    // For network errors, log and return an empty object
+    console.error('Network error fetching file structure:', error)
     return {}
   }
 }
+
 
 export const fetchFileContent = async (filePath) => {
   try {

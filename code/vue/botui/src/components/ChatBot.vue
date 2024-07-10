@@ -1,7 +1,9 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { fetchBots, fetchModels, sendMessage } from '../api'
+import { fetchBots, fetchModels, sendMessage, fetchFileStructure } from '../api'
 import ChatMessage from './ChatMessage.vue'
+
+const emit = defineEmits(['thread-created'])
 
 const bots = ref([])
 const models = ref([])
@@ -12,6 +14,7 @@ const userInput = ref('')
 const messages = ref([])
 const chatContainer = ref(null)
 const threadId = ref(null)
+const fileStructure = ref(null)
 
 const llmProviders = [
   { label: 'Anthropic', value: 'anthropic' },
@@ -37,6 +40,10 @@ watch(botSelector, () => {
 
 watch(modelSelector, () => {
   addSystemMessage(`Model changed to ${modelSelector.value}`)
+})
+
+watch(threadId, async () => {
+  await updateFileStructure()
 })
 
 async function loadBots() {
@@ -65,6 +72,15 @@ function initializeThread() {
   threadId.value = Date.now().toString()
   messages.value = []
   addSystemMessage(`New conversation started. Thread ID: ${threadId.value}`)
+  emit('thread-created', threadId.value)
+}
+
+async function updateFileStructure() {
+  try {
+    fileStructure.value = await fetchFileStructure(threadId.value)
+  } catch (error) {
+    console.error('Error fetching file structure:', error)
+  }
 }
 
 function addSystemMessage(message) {
@@ -99,6 +115,9 @@ async function handleSendMessage() {
 
       scrollToBottom()
     }
+
+    // Update file structure after each message
+    await updateFileStructure()
   } catch (error) {
     console.error('Error sending message:', error)
     addSystemMessage('Failed to send message. Please try again.')

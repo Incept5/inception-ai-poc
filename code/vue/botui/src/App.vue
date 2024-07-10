@@ -1,7 +1,14 @@
 <script setup>
+import { ref } from 'vue'
 import { RouterView } from 'vue-router'
 import ChatBot from './components/ChatBot.vue'
 import FileViewer from './components/FileViewer.vue'
+
+const threadId = ref('')
+
+const updateThreadId = (newThreadId) => {
+  threadId.value = newThreadId
+}
 </script>
 
 <template>
@@ -11,8 +18,8 @@ import FileViewer from './components/FileViewer.vue'
     </header>
     <main>
       <div class="content-wrapper">
-        <ChatBot class="chatbot" />
-        <FileViewer class="file-viewer" />
+        <ChatBot class="chatbot" @thread-created="updateThreadId" />
+        <FileViewer class="file-viewer" :threadId="threadId" />
       </div>
     </main>
   </div>

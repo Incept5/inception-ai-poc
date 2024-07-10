@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { fetchBots, fetchModels, sendMessage } from '../api'
+import ChatMessage from './ChatMessage.vue'
 
 const bots = ref([])
 const models = ref([])
@@ -142,12 +143,7 @@ function scrollToBottom() {
       </div>
     </div>
     <div ref="chatContainer" class="chat-messages">
-      <div v-for="(message, index) in messages" :key="index" class="message" :class="message.sender.toLowerCase()">
-        <div class="message-content" :class="message.type">
-          <strong>{{ message.label || message.sender }}:</strong>
-          <pre>{{ message.message }}</pre>
-        </div>
-      </div>
+      <ChatMessage v-for="(message, index) in messages" :key="index" :message="message" />
     </div>
     <div class="input-area">
       <input v-model="userInput" @keyup.enter="handleSendMessage" placeholder="Type your message here...">
@@ -215,39 +211,6 @@ select {
   max-height: calc(100vh - 220px);
 }
 
-.message {
-  margin-bottom: 15px;
-}
-
-.message-content {
-  display: inline-block;
-  padding: 10px;
-  border-radius: 10px;
-  max-width: 100%;
-  word-wrap: break-word;
-}
-
-.you .message-content {
-  background-color: #e6f3ff;
-}
-
-.bot .message-content {
-  background-color: #f0f0f0;
-}
-
-.system .message-content {
-  background-color: #ffe6e6;
-  font-style: italic;
-}
-
-.bot .message-content.intermediate {
-  background-color: #e0e0e0;
-}
-
-.bot .message-content.final {
-  background-color: #e6ffe6;
-}
-
 .input-area {
   display: flex;
   gap: 10px;
@@ -261,12 +224,5 @@ input {
 
 button {
   padding: 5px 10px;
-}
-
-pre {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: inherit;
-  margin: 0;
 }
 </style>

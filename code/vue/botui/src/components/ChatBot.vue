@@ -9,7 +9,6 @@ const llmSelector = ref('anthropic')
 const modelSelector = ref('')
 const userInput = ref('')
 const messages = ref([])
-const showThinking = ref(false)
 const chatContainer = ref(null)
 const threadId = ref(null)
 
@@ -94,8 +93,6 @@ async function handleSendMessage() {
             const parsedData = JSON.parse(jsonData)
             if (parsedData.type === 'content') {
               botResponse += parsedData.content
-            } else if (parsedData.type === 'thinking' && showThinking.value) {
-              messages.value.push({ sender: 'Bot (thinking)', message: parsedData.content })
             }
           } catch (error) {
             console.error('Error parsing JSON:', error)
@@ -124,25 +121,28 @@ async function handleSendMessage() {
 <template>
   <div class="chatbot-container">
     <div class="controls">
-      <select v-model="botSelector">
-        <option v-for="bot in bots" :key="bot.bot_type" :value="bot.bot_type">
-          {{ bot.description }}
-        </option>
-      </select>
-      <select v-model="llmSelector">
-        <option v-for="provider in llmProviders" :key="provider.value" :value="provider.value">
-          {{ provider.label }}
-        </option>
-      </select>
-      <select v-model="modelSelector">
-        <option v-for="model in models" :key="model" :value="model">
-          {{ model }}
-        </option>
-      </select>
-      <label>
-        <input type="checkbox" v-model="showThinking"> Show Thinking
-      </label>
-      <button @click="initializeThread">New Conversation</button>
+      <div class="top-row">
+        <div class="bot-selector-wrapper">
+          <select v-model="botSelector">
+            <option v-for="bot in bots" :key="bot.bot_type" :value="bot.bot_type">
+              {{ bot.description }}
+            </option>
+          </select>
+        </div>
+        <button @click="initializeThread" class="new-conversation-btn">New Conversation</button>
+      </div>
+      <div class="bottom-row">
+        <select v-model="llmSelector">
+          <option v-for="provider in llmProviders" :key="provider.value" :value="provider.value">
+            {{ provider.label }}
+          </option>
+        </select>
+        <select v-model="modelSelector">
+          <option v-for="model in models" :key="model" :value="model">
+            {{ model }}
+          </option>
+        </select>
+      </div>
     </div>
     <div ref="chatContainer" class="chat-messages">
       <div v-for="(message, index) in messages" :key="index" class="message" :class="message.sender.toLowerCase()">
@@ -157,5 +157,85 @@ async function handleSendMessage() {
 </template>
 
 <style scoped>
-/* Keep the existing styles unchanged */
+.chatbot-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.top-row, .bottom-row {
+  display: flex;
+  gap: 10px;
+}
+
+.top-row {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bottom-row {
+  justify-content: flex-start;
+}
+
+.bot-selector-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+select, button {
+  padding: 5px 10px;
+  font-size: 14px;
+}
+
+select {
+  width: 100%;
+}
+
+.new-conversation-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.message {
+  margin-bottom: 10px;
+}
+
+.you {
+  text-align: right;
+}
+
+.bot {
+  text-align: left;
+}
+
+.input-area {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex-grow: 1;
+  padding: 5px;
+}
+
+button {
+  padding: 5px 10px;
+}
 </style>

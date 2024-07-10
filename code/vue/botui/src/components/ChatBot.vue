@@ -71,35 +71,18 @@ async function handleSendMessage() {
       threadId.value
     )
 
-    let currentResponse = { sender: 'Bot', message: '', type: 'intermediate' }
-
     for await (const chunk of responseStream) {
-      if (chunk.type === 'intermediate') {
-        currentResponse.message += chunk.content
-        currentResponse.type = 'intermediate'
-      } else if (chunk.type === 'final') {
-        currentResponse.message += chunk.content
-        currentResponse.type = 'final'
-      }
-
-      // Update or add the message to the conversation
-      const existingMessageIndex = messages.value.findIndex(m => m.sender === 'Bot' && m.type === 'intermediate')
-      if (existingMessageIndex !== -1) {
-        messages.value[existingMessageIndex] = { ...currentResponse }
-      } else {
-        messages.value.push({ ...currentResponse })
-      }
+      const label = chunk.type === 'intermediate' ? 'Bot (thinking)' : 'Bot'
+      messages.value.push({
+        sender: 'Bot',
+        message: chunk.content,
+        type: chunk.type,
+        label: label
+      })
 
       // Scroll to the bottom of the chat container
       scrollToBottom()
     }
-
-    // If the last message is still intermediate, change it to final
-    const lastMessage = messages.value[messages.value.length - 1]
-    if (lastMessage.sender === 'Bot' && lastMessage.type === 'intermediate') {
-      lastMessage.type = 'final'
-    }
-
   } catch (error) {
     console.error('Error sending message:', error)
     messages.value.push({ sender: 'Error', message: 'Failed to send message. Please try again.' })
@@ -146,7 +129,7 @@ function scrollToBottom() {
     <div ref="chatContainer" class="chat-messages">
       <div v-for="(message, index) in messages" :key="index" class="message" :class="message.sender.toLowerCase()">
         <div class="message-content" :class="message.type">
-          <strong>{{ message.sender === 'Bot' && message.type === 'intermediate' ? 'Bot (thinking):' : message.sender }}:</strong>
+          <strong>{{ message.label || message.sender }}:</strong>
           <div v-html="message.message"></div>
         </div>
       </div>

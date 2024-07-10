@@ -63,7 +63,7 @@ async function handleSendMessage() {
   userInput.value = ''
 
   try {
-    const response = await sendMessage(
+    const responseStream = await sendMessage(
       botSelector.value,
       userMessage,
       llmSelector.value,
@@ -71,45 +71,44 @@ async function handleSendMessage() {
       threadId.value
     )
 
-    // Handle the response stream
-    const reader = response.getReader()
-    let botResponse = ''
+    let currentResponse = { sender: 'Bot', message: '', type: 'intermediate' }
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      const chunk = new TextDecoder().decode(value)
-      const lines = chunk.split('\n')
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const jsonData = line.slice(5).trim()
-          if (jsonData === '[DONE]') {
-            break
-          }
-
-          try {
-            const parsedData = JSON.parse(jsonData)
-            if (parsedData.type === 'content') {
-              botResponse += parsedData.content
-            }
-          } catch (error) {
-            console.error('Error parsing JSON:', error)
-          }
-        }
+    for await (const chunk of responseStream) {
+      if (chunk.type === 'intermediate') {
+        currentResponse.message += chunk.content
+        currentResponse.type = 'intermediate'
+      } else if (chunk.type === 'final') {
+        currentResponse.message += chunk.content
+        currentResponse.type = 'final'
       }
+
+      // Update or add the message to the conversation
+      const existingMessageIndex = messages.value.findIndex(m => m.sender === 'Bot' && m.type === 'intermediate')
+      if (existingMessageIndex !== -1) {
+        messages.value[existingMessageIndex] = { ...currentResponse }
+      } else {
+        messages.value.push({ ...currentResponse })
+      }
+
+      // Scroll to the bottom of the chat container
+      scrollToBottom()
     }
 
-    if (botResponse) {
-      messages.value.push({ sender: 'Bot', message: botResponse })
+    // If the last message is still intermediate, change it to final
+    const lastMessage = messages.value[messages.value.length - 1]
+    if (lastMessage.sender === 'Bot' && lastMessage.type === 'intermediate') {
+      lastMessage.type = 'final'
     }
+
   } catch (error) {
     console.error('Error sending message:', error)
     messages.value.push({ sender: 'Error', message: 'Failed to send message. Please try again.' })
   }
 
-  // Scroll to the bottom of the chat container
+  scrollToBottom()
+}
+
+function scrollToBottom() {
   setTimeout(() => {
     if (chatContainer.value) {
       chatContainer.value.scrollTop = chatContainer.value.scrollHeight
@@ -145,8 +144,8 @@ async function handleSendMessage() {
       </div>
     </div>
     <div ref="chatContainer" class="chat-messages">
-      <div v-for="(message, index) in messages" :key="index" class="message" :class="message.sender.toLowerCase()">
-        <strong>{{ message.sender }}:</strong> {{ message.message }}
+      <div v-for="(message, index) in messages" :key="index" class="message" :class="[message.sender.toLowerCase(), message.type]">
+        <strong>{{ message.sender === 'Bot' && message.type === 'intermediate' ? 'Bot (thinking):' : message.sender }}:</strong> {{ message.message }}
       </div>
     </div>
     <div class="input-area">
@@ -163,7 +162,7 @@ async function handleSendMessage() {
   height: 100%;
   max-width: 800px;
   margin: 0 auto;
-  padding-bottom: 20px; /* Added padding to the bottom of the container */
+  padding-bottom: 20px;
 }
 
 .controls {
@@ -212,7 +211,7 @@ select {
   border: 1px solid #ccc;
   padding: 10px;
   margin-bottom: 10px;
-  max-height: calc(100vh - 220px); /* Adjusted to account for the added padding */
+  max-height: calc(100vh - 220px);
 }
 
 .message {
@@ -225,6 +224,10 @@ select {
 
 .bot {
   text-align: left;
+}
+
+.intermediate {
+  opacity: 0.7;
 }
 
 .input-area {

@@ -30,19 +30,50 @@ export const fetchModels = async (provider) => {
 
 export const sendMessage = async (bot, message, llmProvider, llmModel, threadId) => {
   try {
-    const response = await axios.post(
+    const response = await fetch(
       `${API_BASE_URL}/bots/${bot}`,
       {
-        message,
-        config: {
-          llm_provider: llmProvider,
-          llm_model: llmModel,
-          thread_id: threadId
-        }
-      },
-      { responseType: 'stream' }
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          config: {
+            llm_provider: llmProvider,
+            llm_model: llmModel,
+            thread_id: threadId
+          }
+        }),
+      }
     )
-    return response.data
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+
+    return {
+      async *[Symbol.asyncIterator]() {
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const jsonData = line.slice(5).trim()
+              if (jsonData === '[DONE]') {
+                return
+              }
+              yield JSON.parse(jsonData)
+            }
+          }
+        }
+      }
+    }
   } catch (error) {
     console.error('Error sending message:', error)
     throw error

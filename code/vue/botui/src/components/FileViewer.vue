@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { fetchFileStructure, fetchFileContent } from '@/api'
+import { fetchFileStructure, fetchFileContent, updateFiles } from '@/api'
 import hljs from 'highlight.js'
 import TreeItem from './TreeItem.vue'
 
@@ -162,6 +162,18 @@ const refreshFileStructure = () => {
   fetchStructure()
 }
 
+const updateSystem = async () => {
+  console.log('Updating system')
+  try {
+    await updateFiles(props.threadId)
+    console.log('System updated successfully')
+    refreshFileStructure() // Refresh the file structure after updating
+  } catch (err) {
+    console.error('Error updating system:', err)
+    error.value = 'Error updating system. Please try again.'
+  }
+}
+
 onMounted(() => {
   console.log('FileViewer component mounted, threadId:', props.threadId, 'fileViewerKey:', props.fileViewerKey)
   if (props.threadId) {
@@ -180,6 +192,9 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
     <div class="button-row">
       <button @click="refreshFileStructure" title="Refresh file structure">
         <span class="refresh-icon">&#x21bb;</span> Refresh
+      </button>
+      <button @click="updateSystem" title="Update System">
+        Update System
       </button>
       <div class="action-buttons" v-if="selectedFile">
         <button @click="copyToClipboard">Copy</button>
@@ -222,20 +237,22 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
 
 .button-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   padding: 10px;
   border-bottom: 1px solid #ccc;
+  gap: 10px;
+}
+
+.action-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
 }
 
 .refresh-icon {
   font-size: 1.2em;
   vertical-align: middle;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 10px;
 }
 
 .file-tree-and-content {

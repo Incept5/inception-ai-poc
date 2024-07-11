@@ -124,3 +124,13 @@ export const fetchFileContent = async (filePath) => {
     return 'Error loading file content'
   }
 }
+
+export const updateFiles = async (threadId) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/update_files/__threads/${threadId}`)
+    return response.data
+  } catch (error) {
+    console.error('Error updating files:', error)
+    throw error
+  }
+}

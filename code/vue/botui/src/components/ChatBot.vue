@@ -43,6 +43,7 @@ watch(modelSelector, () => {
 })
 
 watch(threadId, async () => {
+  console.log('threadId changed, calling updateFileStructure')
   await updateFileStructure()
 })
 
@@ -76,8 +77,19 @@ function initializeThread() {
 }
 
 async function updateFileStructure() {
+  console.log('updateFileStructure called with threadId:', threadId.value)
   try {
-    fileStructure.value = await fetchFileStructure(threadId.value)
+    console.log('Fetching file structure...')
+    const newFileStructure = await fetchFileStructure(threadId.value)
+    console.log('Received new file structure:', newFileStructure)
+
+    if (JSON.stringify(fileStructure.value) !== JSON.stringify(newFileStructure)) {
+      console.log('File structure has changed, updating...')
+      fileStructure.value = newFileStructure
+      console.log('File structure updated successfully')
+    } else {
+      console.log('File structure has not changed')
+    }
   } catch (error) {
     console.error('Error fetching file structure:', error)
   }
@@ -117,6 +129,7 @@ async function handleSendMessage() {
     }
 
     // Update file structure after each message
+    console.log('Message sent, calling updateFileStructure')
     await updateFileStructure()
   } catch (error) {
     console.error('Error sending message:', error)

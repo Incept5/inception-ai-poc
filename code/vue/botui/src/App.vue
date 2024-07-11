@@ -1,19 +1,36 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { RouterView } from 'vue-router'
 import ChatBot from './components/ChatBot.vue'
 import FileViewer from './components/FileViewer.vue'
+
+const router = useRouter()
+const route = useRoute()
 
 const threadId = ref('')
 const fileViewerKey = ref(0)
 
 const updateThreadId = (newThreadId) => {
   threadId.value = newThreadId
+  router.push({ name: 'thread', params: { threadId: newThreadId } })
 }
 
 const handleNewMessageDisplayed = () => {
   fileViewerKey.value += 1
 }
+
+onMounted(() => {
+  if (route.params.threadId) {
+    threadId.value = route.params.threadId
+  }
+})
+
+watch(() => route.params.threadId, (newThreadId) => {
+  if (newThreadId) {
+    threadId.value = newThreadId
+  }
+})
 </script>
 
 <template>
@@ -25,6 +42,7 @@ const handleNewMessageDisplayed = () => {
       <div class="content-wrapper">
         <ChatBot
           class="chatbot"
+          :initialThreadId="threadId"
           @thread-created="updateThreadId"
           @new-message-displayed="handleNewMessageDisplayed"
         />

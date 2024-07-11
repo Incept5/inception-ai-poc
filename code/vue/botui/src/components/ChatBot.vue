@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { fetchBots, fetchModels, sendMessage } from '../api'
 import ChatMessage from './ChatMessage.vue'
 
+const props = defineProps(['initialThreadId'])
 const emit = defineEmits(['thread-created', 'new-message-displayed'])
 
 const bots = ref([])
@@ -25,7 +26,7 @@ const llmProviders = [
 onMounted(async () => {
   await loadBots()
   await loadModels()
-  initializeThread()
+  initializeThread(props.initialThreadId)
 })
 
 watch(llmSelector, async () => {
@@ -63,10 +64,10 @@ async function loadModels() {
   }
 }
 
-function initializeThread() {
-  threadId.value = Date.now().toString()
+function initializeThread(initialThreadId = null) {
+  threadId.value = initialThreadId || Date.now().toString()
   messages.value = []
-  addSystemMessage(`New conversation started. Thread ID: ${threadId.value}`)
+  addSystemMessage(`Conversation started. Thread ID: ${threadId.value}`)
   emit('thread-created', threadId.value)
 }
 
@@ -133,7 +134,7 @@ function scrollToBottom() {
             </option>
           </select>
         </div>
-        <button @click="initializeThread" class="new-conversation-btn">New Conversation</button>
+        <button @click="initializeThread()" class="new-conversation-btn">New Conversation</button>
       </div>
       <div class="bottom-row">
         <select v-model="llmSelector">

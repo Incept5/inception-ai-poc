@@ -165,7 +165,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
   <div class="file-viewer-container">
     <div class="button-row">
       <button @click="refreshFileStructure" title="Refresh file structure">
-        <span class="refresh-icon">&#x21bb;</span> Refresh
+        Refresh
       </button>
       <button @click="updateSystem" title="Update System">
         Update System

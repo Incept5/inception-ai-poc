@@ -179,57 +179,58 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
       <button @click="refreshFileStructure" title="Refresh file structure">
         <span class="refresh-icon">&#x21bb;</span> Refresh
       </button>
-      <!-- Add more buttons here if needed -->
+      <div class="action-buttons" v-if="selectedFile">
+        <button @click="copyToClipboard">Copy</button>
+        <button @click="downloadFile">Download</button>
+      </div>
     </div>
     <div v-if="error" class="error-message">{{ error }}</div>
     <div v-else-if="!props.threadId" class="no-thread-message">No thread selected</div>
     <template v-else>
-      <div class="file-tree">
-        <h2>Files</h2>
-        <div v-if="Object.keys(fileStructure).length === 0" class="no-files-message">
-          No files available for this thread.
-        </div>
-        <ul v-else>
-          <li v-for="(value, key) in fileStructure" :key="key">
-            <span class="folder-item">{{ key }}</span>
-            <ul>
-              <template v-if="typeof value === 'object'">
-                <li v-for="(subValue, subKey) in value" :key="subKey">
-                  <span v-if="typeof subValue === 'string'" @click="selectFile(subValue)" class="file-item">{{ subKey }}</span>
-                  <template v-else>
-                    <span class="folder-item">{{ subKey }}</span>
-                    <ul>
-                      <li v-for="(leafValue, leafKey) in subValue" :key="leafKey">
-                        <span v-if="typeof leafValue === 'string'" @click="selectFile(leafValue)" class="file-item">{{ leafKey }}</span>
-                        <template v-else>
-                          <span class="folder-item">{{ leafKey }}</span>
-                          <ul>
-                            <li v-for="(finalValue, finalKey) in leafValue" :key="finalKey">
-                              <span @click="selectFile(finalValue)" class="file-item">{{ finalKey }}</span>
-                            </li>
-                          </ul>
-                        </template>
-                      </li>
-                    </ul>
-                  </template>
+      <div class="file-tree-and-content">
+        <div class="file-tree">
+          <h2>Files</h2>
+          <div v-if="Object.keys(fileStructure).length === 0" class="no-files-message">
+            No files available for this thread.
+          </div>
+          <ul v-else>
+            <li v-for="(value, key) in fileStructure" :key="key">
+              <span class="folder-item">{{ key }}</span>
+              <ul>
+                <template v-if="typeof value === 'object'">
+                  <li v-for="(subValue, subKey) in value" :key="subKey">
+                    <span v-if="typeof subValue === 'string'" @click="selectFile(subValue)" class="file-item">{{ subKey }}</span>
+                    <template v-else>
+                      <span class="folder-item">{{ subKey }}</span>
+                      <ul>
+                        <li v-for="(leafValue, leafKey) in subValue" :key="leafKey">
+                          <span v-if="typeof leafValue === 'string'" @click="selectFile(leafValue)" class="file-item">{{ leafKey }}</span>
+                          <template v-else>
+                            <span class="folder-item">{{ leafKey }}</span>
+                            <ul>
+                              <li v-for="(finalValue, finalKey) in leafValue" :key="finalKey">
+                                <span @click="selectFile(finalValue)" class="file-item">{{ finalKey }}</span>
+                              </li>
+                            </ul>
+                          </template>
+                        </li>
+                      </ul>
+                    </template>
+                  </li>
+                </template>
+                <li v-else>
+                  <span @click="selectFile(value)" class="file-item">{{ key }}</span>
                 </li>
-              </template>
-              <li v-else>
-                <span @click="selectFile(value)" class="file-item">{{ key }}</span>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-      <div v-if="selectedFile" class="file-content">
-        <div class="file-name">
-          {{ getFileName(selectedFile) }}
+              </ul>
+            </li>
+          </ul>
         </div>
-        <div class="action-buttons">
-          <button @click="copyToClipboard">Copy</button>
-          <button @click="downloadFile">Download</button>
+        <div v-if="selectedFile" class="file-content">
+          <div class="file-name">
+            {{ getFileName(selectedFile) }}
+          </div>
+          <pre><code v-html="highlightedContent"></code></pre>
         </div>
-        <pre><code v-html="highlightedContent"></code></pre>
       </div>
     </template>
   </div>
@@ -243,6 +244,9 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
 }
 
 .button-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 10px;
   border-bottom: 1px solid #ccc;
 }
@@ -252,6 +256,11 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
   vertical-align: middle;
 }
 
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
 .file-tree-and-content {
   display: flex;
   flex: 1;
@@ -259,7 +268,8 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
 }
 
 .file-tree {
-  width: 200px;
+  width: 250px;
+  min-width: 250px;
   overflow-y: auto;
   border-right: 1px solid #ccc;
   padding: 10px;
@@ -284,12 +294,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
   margin-bottom: 10px;
 }
 
-.action-buttons {
-  margin-bottom: 10px;
-}
-
 button {
-  margin-right: 10px;
   padding: 5px 10px;
   background-color: #f0f0f0;
   border: 1px solid #ccc;

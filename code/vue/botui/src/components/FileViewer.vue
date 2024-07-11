@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { fetchFileStructure, fetchFileContent, updateFiles } from '@/api'
-import hljs from 'highlight.js'
 import TreeItem from './TreeItem.vue'
+import SourceViewer from './SourceViewer.vue'
 
 const props = defineProps({
   threadId: {
@@ -18,7 +18,6 @@ const props = defineProps({
 const fileStructure = ref({})
 const selectedFile = ref(null)
 const fileContent = ref('')
-const highlightedContent = ref('')
 const error = ref('')
 const expandToFirstLeaf = ref(false)
 
@@ -42,7 +41,6 @@ const fetchStructure = async () => {
       console.log('Currently selected file is no longer in the structure, resetting selection')
       selectedFile.value = null
       fileContent.value = ''
-      highlightedContent.value = ''
     }
 
     fileStructure.value = newFileStructure
@@ -60,7 +58,6 @@ const resetComponentState = () => {
   fileStructure.value = {}
   selectedFile.value = null
   fileContent.value = ''
-  highlightedContent.value = ''
   expandToFirstLeaf.value = false
 }
 
@@ -101,34 +98,11 @@ const selectFile = async (filePath) => {
     console.log('Fetching content for file:', filePath)
     fileContent.value = await fetchFileContent(filePath)
     console.log('File content fetched, length:', fileContent.value.length)
-    highlightCode()
   } catch (err) {
     console.error('Error fetching file content:', err)
     error.value = 'Error fetching file content. Please try again.'
     fileContent.value = ''
-    highlightedContent.value = ''
   }
-}
-
-const highlightCode = () => {
-  console.log('Highlighting code for file:', selectedFile.value)
-  const language = getLanguage(selectedFile.value)
-  highlightedContent.value = hljs.highlight(fileContent.value, { language }).value
-  console.log('Code highlighted, length:', highlightedContent.value.length)
-}
-
-const getLanguage = (fileName) => {
-  const extension = fileName.split('.').pop().toLowerCase()
-  const languageMap = {
-    'js': 'javascript',
-    'py': 'python',
-    'html': 'html',
-    'css': 'css',
-    'json': 'json',
-    'md': 'markdown',
-    'java': 'java',
-  }
-  return languageMap[extension] || 'plaintext'
 }
 
 const getFileName = (filePath) => filePath.split('/').pop()
@@ -217,12 +191,11 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
             :expand-to-first-leaf="expandToFirstLeaf"
           />
         </div>
-        <div v-if="selectedFile" class="file-content">
-          <div class="file-name">
-            {{ getFileName(selectedFile) }}
-          </div>
-          <pre><code v-html="highlightedContent"></code></pre>
-        </div>
+        <SourceViewer
+          v-if="selectedFile"
+          :file-path="selectedFile"
+          :file-content="fileContent"
+        />
       </div>
     </template>
   </div>
@@ -269,17 +242,6 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
   padding: 10px;
 }
 
-.file-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-}
-
-.file-name {
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
 button {
   padding: 5px 10px;
   background-color: #f0f0f0;
@@ -290,11 +252,6 @@ button {
 
 button:hover {
   background-color: #e0e0e0;
-}
-
-pre {
-  margin: 0;
-  white-space: pre-wrap;
 }
 
 .error-message {

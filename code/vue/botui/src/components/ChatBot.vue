@@ -1,9 +1,9 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { fetchBots, fetchModels, sendMessage, fetchFileStructure } from '../api'
+import { fetchBots, fetchModels, sendMessage } from '../api'
 import ChatMessage from './ChatMessage.vue'
 
-const emit = defineEmits(['thread-created'])
+const emit = defineEmits(['thread-created', 'new-message-displayed'])
 
 const bots = ref([])
 const models = ref([])
@@ -14,7 +14,6 @@ const userInput = ref('')
 const messages = ref([])
 const chatContainer = ref(null)
 const threadId = ref(null)
-const fileStructure = ref(null)
 
 const llmProviders = [
   { label: 'Anthropic', value: 'anthropic' },
@@ -40,11 +39,6 @@ watch(botSelector, () => {
 
 watch(modelSelector, () => {
   addSystemMessage(`Model changed to ${modelSelector.value}`)
-})
-
-watch(threadId, async () => {
-  console.log('threadId changed, calling updateFileStructure')
-  await updateFileStructure()
 })
 
 async function loadBots() {
@@ -74,25 +68,6 @@ function initializeThread() {
   messages.value = []
   addSystemMessage(`New conversation started. Thread ID: ${threadId.value}`)
   emit('thread-created', threadId.value)
-}
-
-async function updateFileStructure() {
-  console.log('updateFileStructure called with threadId:', threadId.value)
-  try {
-    console.log('Fetching file structure...')
-    const newFileStructure = await fetchFileStructure(threadId.value)
-    console.log('Received new file structure:', newFileStructure)
-
-    if (JSON.stringify(fileStructure.value) !== JSON.stringify(newFileStructure)) {
-      console.log('File structure has changed, updating...')
-      fileStructure.value = newFileStructure
-      console.log('File structure updated successfully')
-    } else {
-      console.log('File structure has not changed')
-    }
-  } catch (error) {
-    console.error('Error fetching file structure:', error)
-  }
 }
 
 function addSystemMessage(message) {
@@ -128,9 +103,8 @@ async function handleSendMessage() {
       scrollToBottom()
     }
 
-    // Update file structure after each message
-    console.log('Message sent, calling updateFileStructure')
-    await updateFileStructure()
+    // Emit the new-message-displayed event
+    emit('new-message-displayed')
   } catch (error) {
     console.error('Error sending message:', error)
     addSystemMessage('Failed to send message. Please try again.')

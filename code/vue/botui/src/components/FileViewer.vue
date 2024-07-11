@@ -7,6 +7,10 @@ const props = defineProps({
   threadId: {
     type: String,
     default: ''
+  },
+  fileViewerKey: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -157,14 +161,14 @@ const refreshFileStructure = () => {
 }
 
 onMounted(() => {
-  console.log('FileViewer component mounted, threadId:', props.threadId)
+  console.log('FileViewer component mounted, threadId:', props.threadId, 'fileViewerKey:', props.fileViewerKey)
   if (props.threadId) {
     fetchStructure()
   }
 })
 
-watch(() => props.threadId, (newThreadId, oldThreadId) => {
-  console.log('ThreadId changed:', oldThreadId, '->', newThreadId)
+watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileViewerKey], [oldThreadId, oldFileViewerKey]) => {
+  console.log('ThreadId or fileViewerKey changed:', oldThreadId, '->', newThreadId, 'or', oldFileViewerKey, '->', newFileViewerKey)
   fetchStructure()
 })
 </script>

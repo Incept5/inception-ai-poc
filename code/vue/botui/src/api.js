@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:9870/api'  // Updated to work with nginx proxy
+const API_BASE_URL = '/api' // nginx should proxy this to the backend when running a dev server at http://localhost:5173/
 
 export const fetchBots = async () => {
   try {

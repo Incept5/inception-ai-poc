@@ -20,6 +20,7 @@ const selectedFile = ref(null)
 const fileContent = ref('')
 const highlightedContent = ref('')
 const error = ref('')
+const expandToFirstLeaf = ref(false)
 
 const fetchStructure = async () => {
   console.log('Fetching file structure for threadId:', props.threadId)
@@ -46,10 +47,8 @@ const fetchStructure = async () => {
 
     fileStructure.value = newFileStructure
 
-    // If no file is selected (either because it was reset or not selected before), select the first file
-    if (!selectedFile.value) {
-      selectFirstFile()
-    }
+    // Trigger expansion to the first leaf node
+    expandToFirstLeaf.value = true
   } catch (err) {
     console.error('Error fetching file structure:', err)
     error.value = 'Error fetching file structure. Please try again.'
@@ -62,6 +61,7 @@ const resetComponentState = () => {
   selectedFile.value = null
   fileContent.value = ''
   highlightedContent.value = ''
+  expandToFirstLeaf.value = false
 }
 
 const isFileInStructure = (filePath, structure) => {
@@ -158,6 +158,7 @@ const downloadFile = () => {
 
 const refreshFileStructure = () => {
   console.log('Refreshing file structure')
+  expandToFirstLeaf.value = false // Reset the expansion state
   fetchStructure()
 }
 
@@ -198,6 +199,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
             v-else
             :item="fileStructure"
             @select-file="selectFile"
+            :expand-to-first-leaf="expandToFirstLeaf"
           />
         </div>
         <div v-if="selectedFile" class="file-content">

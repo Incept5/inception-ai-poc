@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { fetchFileStructure, fetchFileContent } from '@/api'
 import hljs from 'highlight.js'
+import TreeItem from './TreeItem.vue'
 
 const props = defineProps({
   threadId: {
@@ -193,37 +194,11 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
           <div v-if="Object.keys(fileStructure).length === 0" class="no-files-message">
             No files available for this thread.
           </div>
-          <ul v-else>
-            <li v-for="(value, key) in fileStructure" :key="key">
-              <span class="folder-item">{{ key }}</span>
-              <ul>
-                <template v-if="typeof value === 'object'">
-                  <li v-for="(subValue, subKey) in value" :key="subKey">
-                    <span v-if="typeof subValue === 'string'" @click="selectFile(subValue)" class="file-item">{{ subKey }}</span>
-                    <template v-else>
-                      <span class="folder-item">{{ subKey }}</span>
-                      <ul>
-                        <li v-for="(leafValue, leafKey) in subValue" :key="leafKey">
-                          <span v-if="typeof leafValue === 'string'" @click="selectFile(leafValue)" class="file-item">{{ leafKey }}</span>
-                          <template v-else>
-                            <span class="folder-item">{{ leafKey }}</span>
-                            <ul>
-                              <li v-for="(finalValue, finalKey) in leafValue" :key="finalKey">
-                                <span @click="selectFile(finalValue)" class="file-item">{{ finalKey }}</span>
-                              </li>
-                            </ul>
-                          </template>
-                        </li>
-                      </ul>
-                    </template>
-                  </li>
-                </template>
-                <li v-else>
-                  <span @click="selectFile(value)" class="file-item">{{ key }}</span>
-                </li>
-              </ul>
-            </li>
-          </ul>
+          <TreeItem
+            v-else
+            :item="fileStructure"
+            @select-file="selectFile"
+          />
         </div>
         <div v-if="selectedFile" class="file-content">
           <div class="file-name">
@@ -275,14 +250,6 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
   padding: 10px;
 }
 
-.file-item {
-  cursor: pointer;
-}
-
-.file-item:hover {
-  text-decoration: underline;
-}
-
 .file-content {
   flex: 1;
   overflow-y: auto;
@@ -319,9 +286,5 @@ pre {
 .no-thread-message, .no-files-message {
   color: #666;
   font-style: italic;
-}
-
-.folder-item {
-  font-weight: bold;
 }
 </style>

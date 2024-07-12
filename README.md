@@ -252,6 +252,7 @@ docker-compose down
 docker-compose up --build
 ```
 
+
 ## Troubleshooting
 
 - If you encounter any issues with API keys, ensure they are correctly set in the `.env` file.

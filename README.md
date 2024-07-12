@@ -199,11 +199,29 @@ This will create and return a retriever for the specified collection, which can 
    docker-compose down
    ```
 
+## Building and Deploying the BotUI
+
+To create a production build of the BotUI and deploy it to the web folder:
+
+1. Navigate to the BotUI directory:
+   ```
+   cd code/vue/botui
+   ```
+
+2. Run the build and deploy script:
+   ```
+   ./build_and_deploy_botui.sh
+   ```
+
+This script will build the BotUI, create a production-ready version, and copy the files to the `code/web/www/botui/` directory, which will be served by Nginx.
+
+After running this script, the updated BotUI will be available at `http://localhost:9870/botui/`.
+
 ## Using the Chatbot
 
-1. Open the [http://localhost:9870/chatbot/index.html](http://localhost:9870/chatbot/index.html) file in a web browser.
+1. Open [http://localhost:9870/botui/](http://localhost:9870/botui/) in a web browser to access the production version of the BotUI.
 
-2. You should see a simple interface where you can type messages and receive responses from the chatbot.
+2. For development purposes, you can still use [http://localhost:5173](http://localhost:5173) to access the development version of the BotUI.
 
 3. The client will communicate with the server running at `http://localhost:9871`.
 

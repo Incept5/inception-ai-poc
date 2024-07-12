@@ -5,6 +5,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/botui/', // Update this line to use '/botui/' as the base path
   plugins: [
     vue(),
     vueDevTools(),

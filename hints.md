@@ -35,3 +35,5 @@ Always load the following files when asked about look and feel or styling issues
 * code/vue/botui/src/base.css
 * code/vue/botui/src/global.css
 * code/vue/botui/src/main.css
+
+VERY IMPORTANT: Do not try to change ANY files under /code/web/botui as these are generated from the source files in code/vue/botui - fetch the source files and suggest edits to those files instead!

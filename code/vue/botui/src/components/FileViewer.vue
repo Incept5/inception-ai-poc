@@ -33,8 +33,11 @@ const fetchStructure = async () => {
   error.value = ''
   try {
     console.log('Calling fetchFileStructure API...')
-    const newFileStructure = await fetchFileStructure(props.threadId)
-    console.log('File structure fetched:', JSON.stringify(newFileStructure, null, 2))
+    const response = await fetchFileStructure(props.threadId)
+    console.log('File structure fetched:', JSON.stringify(response, null, 2))
+
+    // Extract the tree from the response
+    const newFileStructure = response.tree || {}
 
     // Check if the currently selected file is still present in the new structure
     if (selectedFile.value && !isFileInStructure(selectedFile.value, newFileStructure)) {

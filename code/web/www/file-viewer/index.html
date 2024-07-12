@@ -211,7 +211,7 @@
                     axios.get(url)
                         .then(response => {
                             if (typeof response.data === 'object' && response.data !== null) {
-                                this.fileStructure = response.data;
+                                this.fileStructure = response.data.tree;
                                 this.selectFirstFile(this.fileStructure);
                             } else {
                                 console.error('Unexpected data structure received:', response.data);

@@ -15,6 +15,7 @@ const userInput = ref('')
 const messages = ref([])
 const chatContainer = ref(null)
 const threadId = ref(null)
+const thinkingMessageIndex = ref(null) // New ref for tracking the thinking message
 
 const llmProviders = [
   { label: 'Anthropic', value: 'anthropic' },
@@ -83,6 +84,11 @@ async function handleSendMessage() {
   messages.value.push({ sender: 'You', message: userMessage })
   userInput.value = ''
 
+  // Add thinking message
+  thinkingMessageIndex.value = messages.value.length
+  messages.value.push({ sender: 'Bot', message: 'Bot (thinking)...', type: 'thinking' })
+  scrollToBottom()
+
   try {
     const responseStream = await sendMessage(
       botSelector.value,
@@ -92,8 +98,14 @@ async function handleSendMessage() {
       threadId.value
     )
 
+    // Remove thinking message
+    if (thinkingMessageIndex.value !== null) {
+      messages.value.splice(thinkingMessageIndex.value, 1)
+      thinkingMessageIndex.value = null
+    }
+
     for await (const chunk of responseStream) {
-      const label = chunk.type === 'intermediate' ? 'Bot (thinking)' : 'Bot'
+      const label = chunk.type === 'intermediate' ? 'Bot (typing)' : 'Bot'
       messages.value.push({
         sender: 'Bot',
         message: chunk.content,
@@ -108,6 +120,11 @@ async function handleSendMessage() {
     emit('new-message-displayed')
   } catch (error) {
     console.error('Error sending message:', error)
+    // Remove thinking message in case of error
+    if (thinkingMessageIndex.value !== null) {
+      messages.value.splice(thinkingMessageIndex.value, 1)
+      thinkingMessageIndex.value = null
+    }
     addSystemMessage('Failed to send message. Please try again.')
   }
 
@@ -231,5 +248,22 @@ input {
 
 button {
   padding: 5px 10px;
+}
+
+/* Add this new style for the blinking cursor */
+.chat-messages :deep(.thinking::after) {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  margin-left: 0.2em;
+  background-color: currentColor;
+  animation: blink 0.7s infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
 }
 </style>

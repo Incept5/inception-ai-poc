@@ -83,6 +83,10 @@
         .update-button:hover, .action-button:hover {
             background-color: #0056b3;
         }
+        .update-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
         .action-buttons {
             margin-bottom: 10px;
         }
@@ -101,12 +105,18 @@
         .toast.show {
             opacity: 1;
         }
+        .partial-content-message {
+            color: #ff0000;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div class="file-tree">
-            <button @click="updateFiles" class="update-button">Update Files</button>
+            <button @click="updateFiles" class="update-button" :disabled="isUpdateDisabled">Update Files</button>
+            <div v-if="isUpdateDisabled" class="partial-content-message">Partial file content detected</div>
             <h2>Files</h2>
             <ul>
                 <file-item
@@ -184,7 +194,8 @@
                 highlightedContent: '',
                 basePath: '',
                 showToast: false,
-                toastMessage: ''
+                toastMessage: '',
+                isUpdateDisabled: false
             },
             mounted() {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -200,7 +211,7 @@
                     axios.get(url)
                         .then(response => {
                             if (typeof response.data === 'object' && response.data !== null) {
-                                this.fileStructure = response.data;
+                                this.fileStructure = response.data.tree;
                                 this.selectFirstFile(this.fileStructure);
                             } else {
                                 console.error('Unexpected data structure received:', response.data);
@@ -239,11 +250,13 @@
                         .then(response => {
                             this.fileContent = response.data;
                             this.highlightCode();
+                            this.checkPartialContent();
                         })
                         .catch(error => {
                             console.error('Error fetching file content:', error);
                             this.fileContent = 'Error loading file content';
                             this.highlightedContent = this.fileContent;
+                            this.isUpdateDisabled = false;
                         });
                 },
                 getLanguage(fileName) {
@@ -308,6 +321,13 @@
                     setTimeout(() => {
                         this.showToast = false;
                     }, 2000);
+                },
+                checkPartialContent() {
+                    if (this.fileContent.includes("remain unchanged")) {
+                        this.isUpdateDisabled = true;
+                    } else {
+                        this.isUpdateDisabled = false;
+                    }
                 }
             }
         });

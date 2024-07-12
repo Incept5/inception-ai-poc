@@ -8,8 +8,10 @@ file_viewer_blueprint = Blueprint('file_viewer', __name__)
 BASE_DIR = '/data/persisted_files'
 SYSTEM_SRC_DIR = '/system_src'
 
+
 def debug_print(message):
     print(f"[DEBUG] {message}")
+
 
 @file_viewer_blueprint.route('/files', methods=['GET'])
 @file_viewer_blueprint.route('/files/<path:subpath>', methods=['GET'])
@@ -21,23 +23,10 @@ def get_file_structure(subpath=''):
         debug_print(f"Path not found: {root_dir}")
         return jsonify({"error": "Path not found"}), 404
 
-    structure = {}
-    for root, dirs, files in os.walk(root_dir):
-        path = os.path.relpath(root, root_dir)
-        current = structure
-        if path != '.':
-            for folder in path.split(os.sep):
-                if folder not in current:
-                    current[folder] = {}
-                current = current[folder]
-        for file in files:
-            full_path = os.path.join(subpath, path, file)
-            if full_path.startswith(os.sep):
-                full_path = full_path[1:]  # Remove leading slash if present
-            current[file] = full_path
+    structure_response = FileUtils.generate_file_structure_response(root_dir, subpath)
+    debug_print(f"Returning structure: {json.dumps(structure_response, indent=2)}")
+    return jsonify(structure_response)
 
-    debug_print(f"Returning structure: {json.dumps(structure, indent=2)}")
-    return jsonify(structure)
 
 @file_viewer_blueprint.route('/file/<path:file_path>', methods=['GET'])
 def get_file_content(file_path):
@@ -50,6 +39,7 @@ def get_file_content(file_path):
         debug_print(f"File not found: {full_path}")
         return jsonify({"error": "File not found"}), 404
 
+
 @file_viewer_blueprint.route('/update-files', methods=['POST'])
 @file_viewer_blueprint.route('/update-files/<path:subpath>', methods=['POST'])
 def update_files(subpath=''):
@@ -57,7 +47,7 @@ def update_files(subpath=''):
 
     source_path = os.path.join(BASE_DIR, subpath)
     destination_path = SYSTEM_SRC_DIR
-    
+
     debug_print(f"Source path: {source_path}")
     debug_print(f"Destination path: {destination_path}")
 

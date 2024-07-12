@@ -1,0 +1,269 @@
+<script setup>
+import { ref, onMounted, watch } from 'vue'
+import { fetchFileStructure, fetchFileContent, updateFiles } from '@/api'
+import TreeItem from './TreeItem.vue'
+import SourceViewer from './SourceViewer.vue'
+
+const props = defineProps({
+  threadId: {
+    type: String,
+    default: ''
+  },
+  fileViewerKey: {
+    type: Number,
+    default: 0
+  }
+})
+
+const fileStructure = ref({})
+const selectedFile = ref(null)
+const fileContent = ref('')
+const error = ref('')
+const expandToFirstLeaf = ref(false)
+
+const fetchStructure = async () => {
+  console.log('Fetching file structure for threadId:', props.threadId)
+  if (!props.threadId) {
+    console.log('No threadId provided, resetting component state')
+    resetComponentState()
+    error.value = 'No thread selected'
+    return
+  }
+
+  error.value = ''
+  try {
+    console.log('Calling fetchFileStructure API...')
+    const response = await fetchFileStructure(props.threadId)
+    console.log('File structure fetched:', JSON.stringify(response, null, 2))
+
+    // Extract the tree from the response
+    const newFileStructure = response.tree || {}
+
+    // Check if the currently selected file is still present in the new structure
+    if (selectedFile.value && !isFileInStructure(selectedFile.value, newFileStructure)) {
+      console.log('Currently selected file is no longer in the structure, resetting selection')
+      selectedFile.value = null
+      fileContent.value = ''
+    }
+
+    fileStructure.value = newFileStructure
+
+    // Trigger expansion to the first leaf node
+    expandToFirstLeaf.value = true
+  } catch (err) {
+    console.error('Error fetching file structure:', err)
+    error.value = 'Error fetching file structure. Please try again.'
+    resetComponentState()
+  }
+}
+
+const resetComponentState = () => {
+  fileStructure.value = {}
+  selectedFile.value = null
+  fileContent.value = ''
+  expandToFirstLeaf.value = false
+}
+
+const isFileInStructure = (filePath, structure) => {
+  for (const [key, value] of Object.entries(structure)) {
+    if (typeof value === 'string' && value === filePath) {
+      return true
+    } else if (typeof value === 'object') {
+      if (isFileInStructure(filePath, value)) return true
+    }
+  }
+  return false
+}
+
+const selectFirstFile = () => {
+  const firstFile = findFirstFile(fileStructure.value)
+  if (firstFile) {
+    selectFile(firstFile)
+  }
+}
+
+const findFirstFile = (obj) => {
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string') {
+      return value
+    } else if (typeof value === 'object') {
+      const result = findFirstFile(value)
+      if (result) return result
+    }
+  }
+  return null
+}
+
+const selectFile = async (filePath) => {
+  console.log('Selecting file:', filePath)
+  selectedFile.value = filePath
+  try {
+    console.log('Fetching content for file:', filePath)
+    fileContent.value = await fetchFileContent(filePath)
+    console.log('File content fetched, length:', fileContent.value.length)
+  } catch (err) {
+    console.error('Error fetching file content:', err)
+    error.value = 'Error fetching file content. Please try again.'
+    fileContent.value = ''
+  }
+}
+
+const getFileName = (filePath) => filePath.split('/').pop()
+
+const copyToClipboard = () => {
+  navigator.clipboard.writeText(fileContent.value)
+    .then(() => {
+      console.log('File content copied to clipboard')
+      alert('File content copied to clipboard!')
+    })
+    .catch(err => console.error('Error copying to clipboard:', err))
+}
+
+const downloadFile = () => {
+  console.log('Downloading file:', selectedFile.value)
+  const blob = new Blob([fileContent.value], { type: 'text/plain' })
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.style.display = 'none'
+  a.href = url
+  a.download = getFileName(selectedFile.value)
+  document.body.appendChild(a)
+  a.click()
+  window.URL.revokeObjectURL(url)
+  console.log('File download initiated')
+}
+
+const refreshFileStructure = () => {
+  console.log('Refreshing file structure')
+  expandToFirstLeaf.value = false // Reset the expansion state
+  fetchStructure()
+}
+
+const updateSystem = async () => {
+  console.log('Updating system')
+  try {
+    await updateFiles(props.threadId)
+    console.log('System updated successfully')
+    refreshFileStructure() // Refresh the file structure after updating
+  } catch (err) {
+    console.error('Error updating system:', err)
+    error.value = 'Error updating system. Please try again.'
+  }
+}
+
+onMounted(() => {
+  console.log('FileViewer component mounted, threadId:', props.threadId, 'fileViewerKey:', props.fileViewerKey)
+  if (props.threadId) {
+    fetchStructure()
+  }
+})
+
+watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileViewerKey], [oldThreadId, oldFileViewerKey]) => {
+  console.log('ThreadId or fileViewerKey changed:', oldThreadId, '->', newThreadId, 'or', oldFileViewerKey, '->', newFileViewerKey)
+  fetchStructure()
+})
+</script>
+
+<template>
+  <div class="file-viewer-container">
+    <div class="button-row">
+      <button @click="refreshFileStructure" title="Refresh file structure">
+        Refresh
+      </button>
+      <button @click="updateSystem" title="Update System">
+        Update System
+      </button>
+      <div class="action-buttons" v-if="selectedFile">
+        <button @click="copyToClipboard">Copy</button>
+        <button @click="downloadFile">Download</button>
+      </div>
+    </div>
+    <div v-if="error" class="error-message">{{ error }}</div>
+    <div v-else-if="!props.threadId" class="no-thread-message">No thread selected</div>
+    <template v-else>
+      <div class="file-tree-and-content">
+        <div class="file-tree">
+          <h2>Files</h2>
+          <div v-if="Object.keys(fileStructure).length === 0" class="no-files-message">
+            No files available for this thread.
+          </div>
+          <TreeItem
+            v-else
+            :item="fileStructure"
+            @select-file="selectFile"
+            :expand-to-first-leaf="expandToFirstLeaf"
+          />
+        </div>
+        <SourceViewer
+          v-if="selectedFile"
+          :file-path="selectedFile"
+          :file-content="fileContent"
+        />
+      </div>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.file-viewer-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.button-row {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+  gap: 10px;
+}
+
+.action-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+
+.refresh-icon {
+  font-size: 1.2em;
+  vertical-align: middle;
+}
+
+.file-tree-and-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.file-tree {
+  width: 250px;
+  min-width: 250px;
+  overflow-y: auto;
+  border-right: 1px solid #ccc;
+  padding: 10px;
+}
+
+button {
+  padding: 5px 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #e0e0e0;
+}
+
+.error-message {
+  color: red;
+  font-weight: bold;
+}
+
+.no-thread-message, .no-files-message {
+  color: #666;
+  font-style: italic;
+}
+</style>

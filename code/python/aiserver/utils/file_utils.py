@@ -1,6 +1,8 @@
 import os
 import shutil
 import re
+import json
+
 
 class FileUtils:
     # List of regexes to ignore when copying files
@@ -15,6 +17,11 @@ class FileUtils:
         r'snippets',  # Ignore snippets directory
         r'node_modules',  # Ignore node_modules directory
         r'\.DS_Store',  # Ignore macOS system files
+    ]
+
+    # Regexes to detect partial files (placeholder, to be defined later)
+    PARTIAL_FILE_PATTERNS = [
+        r'existing method, unchanged',
     ]
 
     @staticmethod
@@ -71,12 +78,12 @@ class FileUtils:
             # Check for weird characters
             if bool(re.search(r'[^a-zA-Z0-9_\-./\\]', path)):
                 return True
-            
+
             # Check against ignore patterns
             for pattern in FileUtils.IGNORE_PATTERNS:
                 if re.search(pattern, path):
                     return True
-            
+
             return False
 
         try:
@@ -91,7 +98,7 @@ class FileUtils:
                 for root, dirs, files in os.walk(source_path):
                     # Remove directories that should be ignored
                     dirs[:] = [d for d in dirs if not should_ignore(os.path.join(root, d))]
-                    
+
                     for file in files:
                         src_file = os.path.join(root, file)
                         rel_path = os.path.relpath(src_file, source_path)
@@ -105,3 +112,99 @@ class FileUtils:
                             print(f"Warning: Excluded file: {src_file}")
         except Exception as e:
             raise Exception(f"Error copying files: {str(e)}")
+
+    @staticmethod
+    def get_file_structure(root_dir: str, subpath: str = '') -> dict:
+        """
+        Generate the file structure for the given root directory.
+
+        Args:
+            root_dir (str): Path to the root directory
+            subpath (str): Subpath to prepend to all file paths
+
+        Returns:
+            dict: A dictionary representing the file structure
+        """
+        structure = {}
+        for root, dirs, files in os.walk(root_dir):
+            path = os.path.relpath(root, root_dir)
+            current = structure
+            if path != '.':
+                for folder in path.split(os.sep):
+                    if folder not in current:
+                        current[folder] = {}
+                    current = current[folder]
+            for file in files:
+                full_path = os.path.join(path, file)
+                if full_path.startswith(os.sep):
+                    full_path = full_path[1:]  # Remove leading slash if present
+                current[file] = os.path.join(subpath, full_path)
+        return structure
+
+    @staticmethod
+    def is_partial_file(file_path: str) -> bool:
+        """
+        Check if a file is a partial file based on its content.
+
+        Args:
+            file_path (str): Path to the file
+
+        Returns:
+            bool: True if the file is a partial file, False otherwise
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                content = file.read()
+                for pattern in FileUtils.PARTIAL_FILE_PATTERNS:
+                    if re.search(pattern, content):
+                        return True
+        except Exception:
+            # If we can't read the file, assume it's not partial
+            pass
+        return False
+
+    @staticmethod
+    def check_partial_files(structure: dict, root_dir: str) -> bool:
+        """
+        Check if any files in the structure are partial files.
+
+        Args:
+            structure (dict): The file structure dictionary
+            root_dir (str): The root directory path
+
+        Returns:
+            bool: True if any partial files are detected, False otherwise
+        """
+
+        def check_recursive(current_structure, current_path):
+            for key, value in current_structure.items():
+                if isinstance(value, dict):
+                    if check_recursive(value, os.path.join(current_path, key)):
+                        return True
+                else:
+                    full_path = os.path.join(root_dir, value)
+                    if FileUtils.is_partial_file(full_path):
+                        return True
+            return False
+
+        return check_recursive(structure, '')
+
+    @staticmethod
+    def generate_file_structure_response(root_dir: str, subpath: str = '') -> dict:
+        """
+        Generate the file structure response with the 'tree' and 'partial_files_detected' attributes.
+
+        Args:
+            root_dir (str): Path to the root directory
+            subpath (str): Subpath to prepend to all file paths
+
+        Returns:
+            dict: A dictionary containing the file structure and partial files detection status
+        """
+        structure = FileUtils.get_file_structure(root_dir, subpath)
+        partial_files_detected = FileUtils.check_partial_files(structure, root_dir)
+
+        return {
+            "tree": structure,
+            "partial_files_detected": partial_files_detected
+        }

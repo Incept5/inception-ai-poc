@@ -28,3 +28,10 @@ Here is a list of preferred imports:
   * code/python/aiserver/bots/simple_bot.py - default bot
   * code/python/aiserver/bots/simple_retriever_bot.py for a bot that needs to use a retriever
 * IMPORTANT: when creating a method like def create_chatbot(self) don't forget to return the chatbot() function with return chatbot
+
+## BotUI
+When asked to make changes to the BotUI you should look in code/vue/botui for the relevant files
+Always load the following files when asked about look and feel or styling issues:
+* code/vue/botui/src/base.css
+* code/vue/botui/src/global.css
+* code/vue/botui/src/main.css

@@ -231,3 +231,13 @@ System Improver Bot on how to improve your system for example:
     Here are some ideas for good examples to use:
     * /src/widgetsystem/widgets/simple_widget.py - default widget
     * /src/widgetsystem/widgets/complex_widget.py - more complex widget that does x y z
+
+## License and Copyright
+
+This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0). For the full license text, please see the `LICENSE.txt` file in the root directory of this project or visit [http://creativecommons.org/licenses/by-nc/4.0/](http://creativecommons.org/licenses/by-nc/4.0/).
+
+Copyright © 2024 Adam Chesney
+
+For commercial use inquiries, please contact:
+Adam Chesney
+Email: ajchesney@gmail.com

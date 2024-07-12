@@ -1,6 +1,9 @@
 # Inception AI Chatbot Project
 
-This is a playground project for experimenting with different AI models and chatbot configurations. The project consists of a simple web interface for interacting with a chatbot server running in a Docker container.
+This is a playground project for experimenting with different AI models and chatbot configurations.
+It uses Langchain and Langgraph to create a flexible and extensible chatbot system that can interact with various language models and tools.
+
+The project consists of a web interface for interacting with a chatbot server running in a Docker container.
 
 The UI allows you to change the following:
 
@@ -27,29 +30,6 @@ And it will think about it and generate some code for you which you can view by 
 If you are happy with the code you can click on "Update Files" button to update the running system with the new code.
 Note: you will need to refresh the UI to see your new bot in the list of available bots
 
-## External System Improver Bit
-
-Set the following in your .env file to point to another local git based system on you local disk to then chat with via External System Improver Bot
-
-    EXTERNAL_SYSTEM_SRC=/path/to/your/other/system
-
-### Hints File
-
-You can add a file called *hints.md* to the root of your system to provide hints to the 
-External System Improver Bot on how to improve your system for example:
-
-    # General
-
-    You could be asked to improve any part of the system and you should do your best to do that.
-    Below are some hints that might be helpful if you asked for a specific thing to do
-
-    ## Widgets
-    
-    When asked to create a new widget you should fetch an example that makes sense and use it as a template.
-    Here are some ideas for good examples to use:
-    * code/python/widgetsystem/widgets/simple_widget.py - default widget
-    * code/python/widgetsystem/widgets/complex_widget.py - more complex widget that does x y z
-
 ## UI Screenshot
 
 ![docs/images/inception-ui.png](docs/images/inception-ui.png)
@@ -58,20 +38,15 @@ External System Improver Bot on how to improve your system for example:
 
 The project includes several specialized bots, each designed for specific tasks:
 
-* ISO20022 Expert Bot - [code/python/aiserver/bots/iso20022_expert_bot.py](code/python/aiserver/bots/iso20022_expert_bot.py)
-  * An expert bot for ISO20022 financial messaging standards
-* Ollama Bot - [code/python/aiserver/bots/ollama_bot.py](code/python/aiserver/bots/ollama_bot.py)
-  * A bot that interacts directly with Ollama models
-  * Does not use the Langchain framework, providing a different approach to bot interactions
-* Simple Bot - [code/python/aiserver/bots/simple_bot.py](code/python/aiserver/bots/simple_bot.py)
-  * A basic Langgraph bot without any additional tools
-  * Suitable for general conversations and simple queries
-* Simple RAG QA Bot - [code/python/aiserver/bots/simple_rag_qa_bot.py](code/python/aiserver/bots/simple_rag_qa_bot.py)
-  * A bot that uses Retrieval-Augmented Generation (RAG) for question answering
 * System Improver Bot - [code/python/aiserver/bots/system_improver_bot.py](code/python/aiserver/bots/system_improver_bot.py)
   * Specialized in analyzing and suggesting improvements for software systems
   * Can review system structures, answer questions about the system, and propose enhancements
   * Has access to file content and can generate or modify code snippets
+* Simple Bot - [code/python/aiserver/bots/simple_bot.py](code/python/aiserver/bots/simple_bot.py)
+  * A basic Langgraph bot without any additional tools
+  * Suitable for general conversations and simple queries
+* Simple Retriever Bot - [code/python/aiserver/bots/simple_retriever_bot.py](code/python/aiserver/bots/simple_rag_qa_bot.py)
+  * A bot that uses Retrieval-Augmented Generation (RAG) for question answering
 * Web App Bot - [code/python/aiserver/bots/web_app_bot.py](code/python/aiserver/bots/web_app_bot.py)
   * Focused on creating single HTML file web applications
   * Can generate complete, self-contained HTML files with embedded CSS and JavaScript
@@ -79,35 +54,11 @@ The project includes several specialized bots, each designed for specific tasks:
 * Web Search Bot - [code/python/aiserver/bots/web_search_bot.py](code/python/aiserver/bots/web_search_bot.py)
   * A Langgraph bot equipped with a web search tool
   * Capable of providing information from the internet to answer queries
+* Ollama Bot - [code/python/aiserver/bots/ollama_bot.py](code/python/aiserver/bots/ollama_bot.py)
+  * A bot that interacts directly with Ollama models
+  * Does not use the Langchain framework, providing a different approach to bot interactions
 
 Each bot is designed to showcase different capabilities and use cases within the Inception AI Chatbot Project.
-
-## Project Structure
-
-```
-.
-├── code
-│   ├── python
-│   │   └── aiserver
-│   │       ├── bots
-│   │       ├── llms
-│   │       ├── mylangchain
-│   │       ├── playground
-│   │       ├── processors
-│   │       ├── routes
-│   │       ├── tools
-│   │       └── utils
-│   ├── web
-│   │   └── www
-│   │       ├── chatbot
-│   │       └── file-viewer
-│   └── webapp
-├── data
-│   └── persisted_files
-├── docker
-└── docs
-    └── images
-```
 
 ## Prerequisites
 
@@ -141,9 +92,9 @@ The project now includes a retriever functionality that allows bots to access an
 
 1. Retriever Collections:
    A comma-separated list of named retrievers each corresponding to a folder under '/data/imported' that contains the source docs
-   We currently support .pdf, .txt and .xml files
+   We currently support .pdf, .txt and .xml files (although the latter 2 have not been tested yet)
    ```
-   RETRIEVER_COLLECTIONS=iso20022
+   RETRIEVER_COLLECTIONS=uktax
    ```
    This variable specifies the collections that the retriever can access. Each collection corresponds to a specific set of embeddings that can be queried by the bots.
 
@@ -170,15 +121,7 @@ The project now includes a retriever functionality that allows bots to access an
    ```
    This directory is used to store the vector database files.
 
-To use the retriever functionality in a bot, you can utilize the `RetrieverBuilder` class. Here's a basic example of how to get a retriever for a specific collection:
-
-```python
-from mylangchain.retriever.retriever_builder import retriever_builder
-
-retriever = retriever_builder.get_retriever("collection_name")
-```
-
-This will create and return a retriever for the specified collection, which can then be used in your bot's logic for information retrieval tasks.
+See the simple_retriever_bot.py for an example of how to use the retriever functionality.
 
 ## Building and Running
 
@@ -252,7 +195,6 @@ docker-compose down
 docker-compose up --build
 ```
 
-
 ## Troubleshooting
 
 - If you encounter any issues with API keys, ensure they are correctly set in the `.env` file.
@@ -267,8 +209,25 @@ docker-compose up --build
   - Check that the necessary API keys (e.g., OPENAI_API_KEY) are properly configured if using the OpenAI embedding provider.
   - Verify that the persist directory for ChromaDB (/data/embeddings/__chromadb) exists and has the correct permissions within the Docker container.
 
-## External System Improver Bot
+# External System Improver Bot
 
-You can chat with an external system by starting docker with:
+You can chat with an external system instead of this system by starting docker with:
 
     SYSTEM_SOURCE_PATH=~/dev/yourproject docker-compose up --build
+
+## Hints File
+
+You can add a file called *hints.md* to the root of your system to provide hints to the 
+System Improver Bot on how to improve your system for example:
+
+    # General
+
+    You could be asked to improve any part of the system and you should do your best to do that.
+    Below are some hints that might be helpful if you asked for a specific thing to do
+
+    ## Widgets
+    
+    When asked to create a new widget you should fetch an example that makes sense and use it as a template.
+    Here are some ideas for good examples to use:
+    * /src/widgetsystem/widgets/simple_widget.py - default widget
+    * /src/widgetsystem/widgets/complex_widget.py - more complex widget that does x y z

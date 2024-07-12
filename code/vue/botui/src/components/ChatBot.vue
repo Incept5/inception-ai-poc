@@ -15,7 +15,7 @@ const userInput = ref('')
 const messages = ref([])
 const chatContainer = ref(null)
 const threadId = ref(null)
-const thinkingMessageIndex = ref(null) // New ref for tracking the thinking message
+const thinkingMessageIndex = ref(null)
 
 const llmProviders = [
   { label: 'Anthropic', value: 'anthropic' },
@@ -90,12 +90,17 @@ async function handleSendMessage() {
   scrollToBottom()
 
   try {
+    // Ensure we're using the same threadId for all messages in the conversation
+    if (!threadId.value) {
+      initializeThread()
+    }
+
     const responseStream = await sendMessage(
       botSelector.value,
       userMessage,
       llmSelector.value,
       modelSelector.value,
-      threadId.value
+      threadId.value // Always send the current threadId
     )
 
     // Remove thinking message

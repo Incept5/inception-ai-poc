@@ -7,7 +7,6 @@ from bots.system_improver_bot import SystemImproverBot
 from bots.web_app_bot import WebAppBot
 from bots.simple_retriever_bot import SimpleRetrieverBot
 from bots.iso20022_expert_bot import ISO20022ExpertBot
-from bots.external_system_improver_bot import ExternalSystemImproverBot
 
 def get_configured_bots():
     # Check if bots are already stored in the app context
@@ -15,7 +14,6 @@ def get_configured_bots():
         # If not, create new instances and store them
         bots = OrderedDict([
             ("system-improver-bot", SystemImproverBot()),
-            ("external-system-improver-bot", ExternalSystemImproverBot()),
             ("web-app-bot", WebAppBot()),
             ("simple-bot", SimpleBot()),
             ("web-search-bot", WebSearchBot()),

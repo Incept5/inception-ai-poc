@@ -12,7 +12,7 @@ class State(TypedDict):
 
 class SimpleRetrieverBot(LangchainBotInterface):
     def __init__(self):
-        super().__init__(retriever_name="adam")  # We'll keep the same retriever for now
+        super().__init__(retriever_name="uktax")
         self.tools = []  # SimpleRetrieverBot doesn't use any tools
         self.initialize()
 
@@ -28,6 +28,12 @@ class SimpleRetrieverBot(LangchainBotInterface):
         return self.tools
 
     def create_chatbot(self):
+        qa_chain = ConversationalRetrievalChain.from_llm(
+            llm=self.llm_wrapper.llm,
+            retriever=self.retriever,
+            return_source_documents=True
+        )
+
         def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
@@ -46,21 +52,29 @@ class SimpleRetrieverBot(LangchainBotInterface):
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
 
-            qa_chain = ConversationalRetrievalChain.from_llm(
-                llm=self.llm_wrapper.llm,  # Use the underlying LLM, not the wrapper
-                retriever=self.retriever,
-                return_source_documents=True
-            )
+            # Debug print: Show the question being asked to the retriever
+            debug_print(f"Question being asked to the retriever: {messages[-1].content}")
 
-            result = qa_chain({"question": messages[-1].content, "chat_history": messages[:-1]})
+            # Use the invoke method instead of __call__
+            result = qa_chain.invoke({"question": messages[-1].content, "chat_history": messages[:-1]})
             answer = result['answer']
             source_docs = result['source_documents']
+
+            # Debug print: Show the retrieved documents
+            debug_print(f"Retrieved documents:")
+            for i, doc in enumerate(source_docs, 1):
+                debug_print(f"Document {i}:")
+                debug_print(f"  Content: {doc.page_content[:100]}...")  # Print first 100 characters of content
+                debug_print(f"  Metadata: {doc.metadata}")
 
             # Append source information to the answer
             if source_docs:
                 answer += "\n\nSources:"
                 for i, doc in enumerate(source_docs, 1):
                     answer += f"\n{i}. {doc.metadata.get('source', 'Unknown source')}"
+
+            # Debug print: Show the final answer
+            debug_print(f"Final answer: {answer}")
 
             result = {"messages": [HumanMessage(content=answer)]}
             debug_print(f"Chatbot output: {result}")

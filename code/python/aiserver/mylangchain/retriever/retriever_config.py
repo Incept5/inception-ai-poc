@@ -10,6 +10,9 @@ class RetrieverConfig:
         self.persist_directory = "/data/embeddings/__chromadb"
         self.embeddings_cache = {}
 
+        # Set TOKENIZERS_PARALLELISM environment variable
+        os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
     def get_embeddings(self, provider=None, model=None):
         provider = provider or self.default_embedding_provider
         model = model or self.default_embedding_model

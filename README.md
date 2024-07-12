@@ -265,3 +265,9 @@ docker-compose up --build
   - Ensure that the `DEFAULT_EMBEDDING_PROVIDER` and `DEFAULT_EMBEDDING_MODEL` are correctly set in your `.env` file.
   - Check that the necessary API keys (e.g., OPENAI_API_KEY) are properly configured if using the OpenAI embedding provider.
   - Verify that the persist directory for ChromaDB (/data/embeddings/__chromadb) exists and has the correct permissions within the Docker container.
+
+## External System Improver Bot
+
+You can chat with an external system by starting docker with:
+
+    SYSTEM_SOURCE_PATH=~/dev/yourproject docker-compose up --build

@@ -219,7 +219,7 @@ After running this script, the updated BotUI will be available at `http://localh
 
 ## Using the Chatbot
 
-1. Open [http://localhost:9870/botui/](http://localhost:9870/botui/) in a web browser to access the production version of the BotUI.
+1. Open [http://localhost:9870](http://localhost:9870) in a web browser to access the production version of the BotUI.
 
 2. For development purposes, you can still use [http://localhost:5173](http://localhost:5173) to access the development version of the BotUI.
 

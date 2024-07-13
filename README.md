@@ -137,28 +137,23 @@ See the simple_retriever_bot.py for an example of how to use the retriever funct
    ```
    ./buildAndUp.sh
    ```
-   This command will run `docker compose up --build` from the `docker` directory.
+   This command will run `docker compose up --build` from the `docker` directory which will rebuild the containers if needed before running them.
 
 5. You can also pass environment variables to these scripts:
    ```
-   ./up.sh SYSTEM_SOURCE_PATH=/path/to/source ENABLE_HOT_RELOAD=true
+   ./up.sh SYSTEM_SOURCE_PATH=/path/to/source
    ```
    or
    ```
-   ./buildAndUp.sh ENABLE_HOT_RELOAD=false
+   ./buildAndUp.sh ENABLE_HOT_RELOAD=true
    ```
-
-6. The server will be accessible at `http://localhost:9871`.
+    *ENABLE_HOT_RELOAD=true will cause the aiserver to reload when it detects changes in the source code which can cause the system to crash.*
+7. The UI will be accessible at `http://localhost:9870`.
 
 7. To stop the containers, use Ctrl+C in the terminal where the containers are running, or run:
    ```
-   docker compose down
+   ./down.sh
    ```
-   from the `docker` directory.
-
-Note: These scripts replace the need to manually navigate to the `docker` directory and run Docker Compose commands. They provide a more convenient way to start and manage your Docker containers.
-
-For development purposes, you can use the `up.sh` script for quicker startup times when you haven't made changes to the Dockerfile or `docker-compose.yml`. Use the `buildAndUp.sh` script when you've made changes that require rebuilding the Docker images.
 
 ## Building and Deploying the BotUI
 

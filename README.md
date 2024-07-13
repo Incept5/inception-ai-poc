@@ -28,7 +28,10 @@ You can say things like:
 
 And it will think about it and generate some code for you which you can view by clicking on the "Files" button.
 If you are happy with the code you can click on "Update Files" button to update the running system with the new code.
-Note: you will need to refresh the UI to see your new bot in the list of available bots
+
+*Note:* you will have to set ENABLE_HOT_RELOAD=true to see the changes immediately 
+(which can cause the system to crash if the code generation is not 100% correct)
+and then refresh the UI to see your new bot in the list of available bots.
 
 ## UI Screenshot
 
@@ -178,8 +181,6 @@ After running this script, the updated BotUI will be available at `http://localh
 1. Open [http://localhost:9870](http://localhost:9870) in a web browser to access the production version of the BotUI.
 
 2. For development purposes, you can still use [http://localhost:5173](http://localhost:5173) to access the development version of the BotUI.
-
-3. The client will communicate with the server running at `http://localhost:9871`.
 
 ## Development
 

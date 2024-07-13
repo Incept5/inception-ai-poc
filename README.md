@@ -142,7 +142,7 @@ See the simple_retriever_bot.py for an example of how to use the retriever funct
    ```
    This command will run `docker compose up --build` from the `docker` directory which will rebuild the containers if needed before running them.
 
-5. You can also pass environment variables to these scripts:
+4. You can also pass environment variables to these scripts:
    ```
    ./up.sh SYSTEM_SOURCE_PATH=/path/to/source
    ```
@@ -151,9 +151,9 @@ See the simple_retriever_bot.py for an example of how to use the retriever funct
    ./buildAndUp.sh ENABLE_HOT_RELOAD=true
    ```
     *ENABLE_HOT_RELOAD=true will cause the aiserver to reload when it detects changes in the source code which can cause the system to crash.*
-7. The UI will be accessible at `http://localhost:9870`.
+5. The UI will be accessible at [http://localhost:9870](http://localhost:9870)
 
-7. To stop the containers, use Ctrl+C in the terminal where the containers are running, or run:
+6. To stop the containers, use Ctrl+C in the terminal where the containers are running, or run:
    ```
    ./down.sh
    ```

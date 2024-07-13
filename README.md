@@ -125,22 +125,40 @@ See the simple_retriever_bot.py for an example of how to use the retriever funct
 
 ## Building and Running
 
-1. Navigate to the `docker` directory:
+1. In the root directory of the project, you'll find two scripts: `up.sh` and `buildAndUp.sh`. These scripts simplify the process of starting your Docker containers.
+
+2. To start the containers without rebuilding:
    ```
-   cd docker
+   ./up.sh
+   ```
+   This command will run `docker compose up` from the `docker` directory.
+
+3. To rebuild and start the containers:
+   ```
+   ./buildAndUp.sh
+   ```
+   This command will run `docker compose up --build` from the `docker` directory.
+
+5. You can also pass environment variables to these scripts:
+   ```
+   ./up.sh SYSTEM_SOURCE_PATH=/path/to/source ENABLE_HOT_RELOAD=true
+   ```
+   or
+   ```
+   ./buildAndUp.sh ENABLE_HOT_RELOAD=false
    ```
 
-2. Build and start the Docker containers:
-   ```
-   docker-compose up --build
-   ```
+6. The server will be accessible at `http://localhost:9871`.
 
-   This command will build the Python server image and start the container. The server will be accessible at `http://localhost:9871`.
+7. To stop the containers, use Ctrl+C in the terminal where the containers are running, or run:
+   ```
+   docker compose down
+   ```
+   from the `docker` directory.
 
-3. To stop the containers, use:
-   ```
-   docker-compose down
-   ```
+Note: These scripts replace the need to manually navigate to the `docker` directory and run Docker Compose commands. They provide a more convenient way to start and manage your Docker containers.
+
+For development purposes, you can use the `up.sh` script for quicker startup times when you haven't made changes to the Dockerfile or `docker-compose.yml`. Use the `buildAndUp.sh` script when you've made changes that require rebuilding the Docker images.
 
 ## Building and Deploying the BotUI
 
@@ -213,7 +231,7 @@ docker-compose up --build
 
 You can chat with an external system instead of this system by starting docker with:
 
-    SYSTEM_SOURCE_PATH=~/dev/yourproject docker-compose up --build
+    ./up.sh SYSTEM_SOURCE_PATH=/path/to/external/system
 
 ## Hints File
 

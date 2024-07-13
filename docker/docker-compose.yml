@@ -15,6 +15,7 @@ services:
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1
+      - ENABLE_HOT_RELOAD=${ENABLE_HOT_RELOAD:-false}
     env_file:
       - ../.env
 

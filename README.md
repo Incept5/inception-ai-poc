@@ -28,7 +28,10 @@ You can say things like:
 
 And it will think about it and generate some code for you which you can view by clicking on the "Files" button.
 If you are happy with the code you can click on "Update Files" button to update the running system with the new code.
-Note: you will need to refresh the UI to see your new bot in the list of available bots
+
+*Note:* you will have to set ENABLE_HOT_RELOAD=true to see the changes immediately 
+(which can cause the system to crash if the code generation is not 100% correct)
+and then refresh the UI to see your new bot in the list of available bots.
 
 ## UI Screenshot
 
@@ -125,21 +128,34 @@ See the simple_retriever_bot.py for an example of how to use the retriever funct
 
 ## Building and Running
 
-1. Navigate to the `docker` directory:
-   ```
-   cd docker
-   ```
+1. In the root directory of the project, you'll find two scripts: `up.sh` and `buildAndUp.sh`. These scripts simplify the process of starting your Docker containers.
 
-2. Build and start the Docker containers:
+2. To start the containers without rebuilding:
    ```
-   docker-compose up --build
+   ./up.sh
    ```
+   This command will run `docker compose up` from the `docker` directory.
 
-   This command will build the Python server image and start the container. The server will be accessible at `http://localhost:9871`.
-
-3. To stop the containers, use:
+3. To rebuild and start the containers:
    ```
-   docker-compose down
+   ./buildAndUp.sh
+   ```
+   This command will run `docker compose up --build` from the `docker` directory which will rebuild the containers if needed before running them.
+
+5. You can also pass environment variables to these scripts:
+   ```
+   ./up.sh SYSTEM_SOURCE_PATH=/path/to/source
+   ```
+   or
+   ```
+   ./buildAndUp.sh ENABLE_HOT_RELOAD=true
+   ```
+    *ENABLE_HOT_RELOAD=true will cause the aiserver to reload when it detects changes in the source code which can cause the system to crash.*
+7. The UI will be accessible at `http://localhost:9870`.
+
+7. To stop the containers, use Ctrl+C in the terminal where the containers are running, or run:
+   ```
+   ./down.sh
    ```
 
 ## Building and Deploying the BotUI
@@ -165,8 +181,6 @@ After running this script, the updated BotUI will be available at `http://localh
 1. Open [http://localhost:9870](http://localhost:9870) in a web browser to access the production version of the BotUI.
 
 2. For development purposes, you can still use [http://localhost:5173](http://localhost:5173) to access the development version of the BotUI.
-
-3. The client will communicate with the server running at `http://localhost:9871`.
 
 ## Development
 
@@ -213,7 +227,7 @@ docker-compose up --build
 
 You can chat with an external system instead of this system by starting docker with:
 
-    SYSTEM_SOURCE_PATH=~/dev/yourproject docker-compose up --build
+    ./up.sh SYSTEM_SOURCE_PATH=/path/to/external/system
 
 ## Hints File
 

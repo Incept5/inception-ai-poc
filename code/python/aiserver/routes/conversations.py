@@ -3,14 +3,14 @@ import os
 import json
 from datetime import datetime
 
-conversations_blueprint = Blueprint('conversations', __name__)
+conversations_bp = Blueprint('conversations', __name__)
 
 BASE_DIR = '/data/persisted_files/__conversations'
 
 def debug_print(message):
     print(f"[DEBUG] {message}")
 
-@conversations_blueprint.route('/conversations', methods=['POST'])
+@conversations_bp.route('/conversations', methods=['POST'])
 def store_conversation():
     debug_print("Received POST request to store a conversation")
 
@@ -42,7 +42,7 @@ def store_conversation():
         debug_print(f"Error storing conversation: {str(e)}")
         return jsonify({"error": f"Error storing conversation: {str(e)}"}), 500
 
-@conversations_blueprint.route('/conversations', methods=['GET'])
+@conversations_bp.route('/conversations', methods=['GET'])
 def get_conversations():
     debug_print("Received GET request to retrieve conversations")
 

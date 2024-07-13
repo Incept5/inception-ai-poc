@@ -1,14 +1,19 @@
 import os
 import requests
-from typing import List
+from typing import List, Optional
 from langchain_openai import ChatOpenAI
 from langchain.tools import BaseTool
 from llms.base_llm_provider import BaseLLMProvider
 from llms.llm_wrapper import LLMWrapper
+from llms.base_audio_transcriber import BaseAudioTranscriber
+from llms.openai_audio_transcriber import OpenAIAudioTranscriber
 from utils.debug_utils import debug_print
 
 
 class OpenAIProvider(BaseLLMProvider):
+    def __init__(self):
+        self.audio_transcriber = OpenAIAudioTranscriber()
+
     def get_llm(self, tools: List[BaseTool] = None, model: str = None) -> LLMWrapper:
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
@@ -43,3 +48,6 @@ class OpenAIProvider(BaseLLMProvider):
         except Exception as e:
             debug_print(f"Error fetching OpenAI models: {str(e)}")
             return []
+
+    def get_audio_transcriber(self) -> Optional[BaseAudioTranscriber]:
+        return self.audio_transcriber

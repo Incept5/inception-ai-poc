@@ -3,7 +3,7 @@ import os
 import json
 from utils.file_utils import FileUtils
 
-file_viewer_blueprint = Blueprint('file_viewer', __name__)
+file_viewer_bp = Blueprint('file_viewer', __name__)
 
 BASE_DIR = '/data/persisted_files'
 SYSTEM_SRC_DIR = '/system_src'
@@ -13,8 +13,8 @@ def debug_print(message):
     print(f"[DEBUG] {message}")
 
 
-@file_viewer_blueprint.route('/files', methods=['GET'])
-@file_viewer_blueprint.route('/files/<path:subpath>', methods=['GET'])
+@file_viewer_bp.route('/files', methods=['GET'])
+@file_viewer_bp.route('/files/<path:subpath>', methods=['GET'])
 def get_file_structure(subpath=''):
     debug_print(f"Received request for subpath: {subpath}")
     root_dir = os.path.join(BASE_DIR, subpath)
@@ -28,7 +28,7 @@ def get_file_structure(subpath=''):
     return jsonify(structure_response)
 
 
-@file_viewer_blueprint.route('/file/<path:file_path>', methods=['GET'])
+@file_viewer_bp.route('/file/<path:file_path>', methods=['GET'])
 def get_file_content(file_path):
     debug_print(f"Received request for file: {file_path}")
     full_path = os.path.join(BASE_DIR, file_path)
@@ -40,8 +40,8 @@ def get_file_content(file_path):
         return jsonify({"error": "File not found"}), 404
 
 
-@file_viewer_blueprint.route('/update-files', methods=['POST'])
-@file_viewer_blueprint.route('/update-files/<path:subpath>', methods=['POST'])
+@file_viewer_bp.route('/update-files', methods=['POST'])
+@file_viewer_bp.route('/update-files/<path:subpath>', methods=['POST'])
 def update_files(subpath=''):
     debug_print(f"Received POST request to update files for subpath: {subpath}")
 

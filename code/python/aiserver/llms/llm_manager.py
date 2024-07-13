@@ -1,11 +1,13 @@
 import os
-from typing import List
+from typing import List, Optional
 from langchain.tools import BaseTool
 from llms.llm_wrapper import LLMWrapper
+from llms.base_audio_transcriber import BaseAudioTranscriber
 from llms.anthropic_provider import AnthropicProvider
 from llms.ollama_provider import OllamaProvider
 from llms.openai_provider import OpenAIProvider
 from llms.groq_provider import GroqProvider
+from llms.openai_audio_transcriber import OpenAIAudioTranscriber
 from utils.debug_utils import debug_print
 
 class LLMManager:
@@ -40,3 +42,14 @@ class LLMManager:
 
         provider = cls.providers[llm_provider]
         return provider.fetch_models()
+
+    @classmethod
+    def get_audio_transcriber(cls) -> Optional[BaseAudioTranscriber]:
+        transcription_provider = os.environ.get("AUDIO_TRANSCRIPTION_PROVIDER", "openai").lower()
+
+        if transcription_provider in cls.providers:
+            debug_print(f"Using audio transcription provider: {transcription_provider}")
+            return cls.providers[transcription_provider].get_audio_transcriber()
+        else:
+            debug_print(f"Unsupported audio transcription provider: {transcription_provider}")
+            return None

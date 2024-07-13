@@ -3,9 +3,9 @@ from bots.configured_bots import get_configured_bots
 from utils.debug_utils import debug_print
 import json
 
-bot_blueprint = Blueprint('bots', __name__)
+bot_router_bp = Blueprint('bots', __name__)
 
-@bot_blueprint.route('/bots', methods=['GET'])
+@bot_router_bp.route('/bots', methods=['GET'])
 def get_available_bots():
     """
     Returns a list of available bots with their descriptions and config options for the UI.
@@ -21,7 +21,7 @@ def get_available_bots():
     ]
     return jsonify(available_bots)
 
-@bot_blueprint.route('/bots/<bot_type>', methods=['POST'])
+@bot_router_bp.route('/bots/<bot_type>', methods=['POST'])
 def chat(bot_type):
     debug_print(f"Received POST request to /bots/{bot_type}")
     data = request.json

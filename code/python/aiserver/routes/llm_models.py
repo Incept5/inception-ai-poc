@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 from llms.llm_manager import LLMManager
 
-llm_models_blueprint = Blueprint('llm_models', __name__)
+llm_models_bp = Blueprint('llm_models', __name__)
 
-@llm_models_blueprint.route('/llm-models', methods=['GET'])
+@llm_models_bp.route('/llm-models', methods=['GET'])
 def get_llm_models():
     provider = request.args.get('provider', '').lower()
 

@@ -22,7 +22,6 @@ const thinkingMessageIndex = ref(null)
 const isListening = ref(false)
 const isConnecting = ref(false)
 const isTranscriptionDisabled = ref(false)
-const transcriptionError = ref('')
 
 const llmProviders = [
   { label: 'Anthropic', value: 'anthropic' },
@@ -155,9 +154,6 @@ function scrollToBottom() {
 function toggleListening() {
   if (!isConnecting.value && !isTranscriptionDisabled.value) {
     isListening.value = !isListening.value
-    if (!isListening.value) {
-      transcriptionError.value = ''
-    }
   }
 }
 
@@ -171,7 +167,6 @@ function handleFinalTranscription(message) {
 
 function handleTranscriptionError(errorMessage) {
   console.error('Transcription error:', errorMessage)
-  transcriptionError.value = errorMessage
   isListening.value = false
   isConnecting.value = false
   if (errorMessage.includes('ASSEMBLYAI_API_KEY not set') || errorMessage.includes('AssemblyAI configuration')) {
@@ -231,19 +226,18 @@ function handleKeyDown(event) {
         placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
         rows="3"
       ></textarea>
-      <button @click="handleSendMessage">Send</button>
     </div>
-    <div class="transcription-controls">
-      <div class="transcription-status">
-        <span :class="['status-indicator', { 'active': isListening, 'connecting': isConnecting, 'disabled': isTranscriptionDisabled }]"></span>
-        {{ isListening ? 'Listening...' : isConnecting ? 'Connecting...' : isTranscriptionDisabled ? 'Transcription Disabled' : 'Not Listening' }}
+    <div class="transcription-and-send-controls">
+      <div class="transcription-controls">
+        <div class="transcription-status">
+          <span :class="['status-indicator', { 'active': isListening, 'connecting': isConnecting, 'disabled': isTranscriptionDisabled }]"></span>
+          {{ isListening ? 'Listening...' : isConnecting ? 'Connecting...' : isTranscriptionDisabled ? 'Transcription Disabled' : 'Not Listening' }}
+        </div>
+        <button @click="toggleListening" :class="['toggle-button', { 'active': isListening, 'disabled': isConnecting || isTranscriptionDisabled }]" :disabled="isConnecting || isTranscriptionDisabled">
+          {{ isListening ? 'Stop Listening' : isConnecting ? 'Connecting...' : isTranscriptionDisabled ? 'Transcription Unavailable' : 'Start Listening' }}
+        </button>
       </div>
-      <button @click="toggleListening" :class="['toggle-button', { 'active': isListening, 'disabled': isConnecting || isTranscriptionDisabled }]" :disabled="isConnecting || isTranscriptionDisabled">
-        {{ isListening ? 'Stop Listening' : isConnecting ? 'Connecting...' : isTranscriptionDisabled ? 'Transcription Unavailable' : 'Start Listening' }}
-      </button>
-    </div>
-    <div v-if="transcriptionError" class="error-message">
-      {{ transcriptionError }}
+      <button @click="handleSendMessage" class="send-button">Send</button>
     </div>
     <TranscriptionListener
       :enabled="isListening"
@@ -311,7 +305,7 @@ select {
   border: 1px solid #ccc;
   padding: 10px;
   margin-bottom: 10px;
-  max-height: calc(100vh - 280px);
+  max-height: calc(100vh - 360px); /* Adjusted to account for the controls above */
 }
 
 .input-area {
@@ -321,22 +315,23 @@ select {
 }
 
 textarea {
-  flex-grow: 1;
+  width: 100%;
   padding: 5px;
   resize: vertical;
   min-height: 60px;
 }
 
-button {
-  padding: 5px 10px;
-  align-self: flex-end;
-}
-
-.transcription-controls {
+.transcription-and-send-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.transcription-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .transcription-status {
@@ -364,7 +359,7 @@ button {
   background-color: #FF0000;
 }
 
-.toggle-button {
+.toggle-button, .send-button {
   padding: 5px 10px;
   font-size: 14px;
   cursor: pointer;
@@ -375,7 +370,7 @@ button {
   transition: background-color 0.3s;
 }
 
-.toggle-button:hover {
+.toggle-button:hover, .send-button:hover {
   background-color: #45a049;
 }
 
@@ -392,10 +387,12 @@ button {
   cursor: not-allowed;
 }
 
-.error-message {
-  color: #f44336;
-  margin-top: 10px;
-  font-weight: bold;
+.send-button {
+  background-color: #2196F3;
+}
+
+.send-button:hover {
+  background-color: #1976D2;
 }
 
 /* Add this new style for the blinking cursor */

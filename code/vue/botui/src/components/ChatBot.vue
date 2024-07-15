@@ -17,6 +17,7 @@ const messages = ref([])
 const chatContainer = ref(null)
 const threadId = ref(null)
 const thinkingMessageIndex = ref(null)
+const isWaitingForResponse = ref(false)
 
 // Transcription-related refs
 const isListening = ref(false)
@@ -33,7 +34,7 @@ const llmProviders = [
 ]
 
 // Computed property to determine if controls should be disabled
-const areControlsDisabled = computed(() => isConnecting.value || isTranscriptionDisabled.value)
+const areControlsDisabled = computed(() => isConnecting.value || isTranscriptionDisabled.value || isWaitingForResponse.value)
 
 onMounted(async () => {
   await loadBots()
@@ -93,12 +94,14 @@ async function handleSendMessage() {
 
   const userMessage = userInput.value
   messages.value.push({ sender: 'You', message: userMessage })
-  userInput.value = ''
+  userInput.value = '' // Clear the text area immediately after sending the message
 
   // Add thinking message
   thinkingMessageIndex.value = messages.value.length
   messages.value.push({ sender: 'Bot', message: 'Bot (thinking)...', type: 'thinking' })
   scrollToBottom()
+
+  isWaitingForResponse.value = true
 
   try {
     // Ensure we're using the same threadId for all messages in the conversation
@@ -121,12 +124,10 @@ async function handleSendMessage() {
     }
 
     for await (const chunk of responseStream) {
-      const label = chunk.type === 'intermediate' ? 'Bot (typing)' : 'Bot'
       messages.value.push({
         sender: 'Bot',
         message: chunk.content,
-        type: chunk.type,
-        label: label
+        type: chunk.type
       })
 
       scrollToBottom()
@@ -142,6 +143,8 @@ async function handleSendMessage() {
       thinkingMessageIndex.value = null
     }
     addSystemMessage('Failed to send message. Please try again.')
+  } finally {
+    isWaitingForResponse.value = false
   }
 
   scrollToBottom()

@@ -91,6 +91,7 @@ Each bot is designed to showcase different capabilities and use cases within the
    OPENAI_API_KEY=your_openai_api_key_here
    LANGSMITH_API_KEY=your_langsmith_api_key_here
    TAVILY_API_KEY=your_tavily_api_key_here
+   ASSEMBLYAI_API_KEY=your_assemblyai_api_key_here
    ```
 
 ## Retriever Configuration

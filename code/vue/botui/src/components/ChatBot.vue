@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { fetchBots, fetchModels, sendMessage } from '../api'
 import ChatMessage from './ChatMessage.vue'
 import TranscriptionListener from './TranscriptionListener.vue'
@@ -22,6 +22,8 @@ const thinkingMessageIndex = ref(null)
 const isListening = ref(false)
 const isConnecting = ref(false)
 const isTranscriptionDisabled = ref(false)
+const partialTranscription = ref('')
+const lastPartialTranscriptionLength = ref(0)
 
 const llmProviders = [
   { label: 'Anthropic', value: 'anthropic' },
@@ -29,6 +31,9 @@ const llmProviders = [
   { label: 'Ollama', value: 'ollama' },
   { label: 'Groq', value: 'groq' }
 ]
+
+// Computed property to determine if controls should be disabled
+const areControlsDisabled = computed(() => isConnecting.value || isTranscriptionDisabled.value)
 
 onMounted(async () => {
   await loadBots()
@@ -84,7 +89,7 @@ function addSystemMessage(message) {
 }
 
 async function handleSendMessage() {
-  if (!userInput.value.trim()) return
+  if (!userInput.value.trim() || areControlsDisabled.value) return
 
   const userMessage = userInput.value
   messages.value.push({ sender: 'You', message: userMessage })
@@ -154,15 +159,40 @@ function scrollToBottom() {
 function toggleListening() {
   if (!isConnecting.value && !isTranscriptionDisabled.value) {
     isListening.value = !isListening.value
+    if (!isListening.value) {
+      // Reset partial transcription when stopping listening
+      partialTranscription.value = ''
+      lastPartialTranscriptionLength.value = 0
+    }
   }
 }
 
 function handlePartialTranscription(message) {
-  userInput.value = message.text
+  // Remove the previous partial transcription
+  if (lastPartialTranscriptionLength.value > 0) {
+    userInput.value = userInput.value.slice(0, -lastPartialTranscriptionLength.value)
+  }
+
+  // Update the partial transcription and its length
+  partialTranscription.value = message.text
+  lastPartialTranscriptionLength.value = partialTranscription.value.length
+
+  // Append the new partial transcription
+  userInput.value += partialTranscription.value
 }
 
 function handleFinalTranscription(message) {
-  userInput.value = message.text
+  // Remove the last partial transcription
+  if (lastPartialTranscriptionLength.value > 0) {
+    userInput.value = userInput.value.slice(0, -lastPartialTranscriptionLength.value)
+  }
+
+  // Append the final transcription to the existing userInput
+  userInput.value += ' ' + message.text
+
+  // Reset partial transcription and its length
+  partialTranscription.value = ''
+  lastPartialTranscriptionLength.value = 0
 }
 
 function handleTranscriptionError(errorMessage) {
@@ -183,7 +213,7 @@ function handleTranscriptionStatusChange(status) {
 }
 
 function handleKeyDown(event) {
-  if (event.key === 'Enter' && !event.shiftKey) {
+  if (event.key === 'Enter' && !event.shiftKey && !areControlsDisabled.value) {
     event.preventDefault()
     handleSendMessage()
   }
@@ -195,21 +225,21 @@ function handleKeyDown(event) {
     <div class="controls">
       <div class="top-row">
         <div class="bot-selector-wrapper">
-          <select v-model="botSelector">
+          <select v-model="botSelector" :disabled="areControlsDisabled">
             <option v-for="bot in bots" :key="bot.bot_type" :value="bot.bot_type">
               {{ bot.description }}
             </option>
           </select>
         </div>
-        <button @click="initializeThread()" class="new-conversation-btn">New Conversation</button>
+        <button @click="initializeThread()" class="new-conversation-btn" :disabled="areControlsDisabled">New Conversation</button>
       </div>
       <div class="bottom-row">
-        <select v-model="llmSelector">
+        <select v-model="llmSelector" :disabled="areControlsDisabled">
           <option v-for="provider in llmProviders" :key="provider.value" :value="provider.value">
             {{ provider.label }}
           </option>
         </select>
-        <select v-model="modelSelector">
+        <select v-model="modelSelector" :disabled="areControlsDisabled">
           <option v-for="model in models" :key="model" :value="model">
             {{ model }}
           </option>
@@ -225,19 +255,20 @@ function handleKeyDown(event) {
         @keydown="handleKeyDown"
         placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
         rows="3"
+        :disabled="areControlsDisabled"
       ></textarea>
     </div>
     <div class="transcription-and-send-controls">
       <div class="transcription-controls">
+        <button @click="toggleListening" :class="['toggle-button', { 'active': isListening, 'disabled': areControlsDisabled }]" :disabled="areControlsDisabled">
+          {{ isListening ? 'Stop Listening' : isConnecting ? 'Connecting...' : isTranscriptionDisabled ? 'Transcription Unavailable' : 'Start Listening' }}
+        </button>
         <div class="transcription-status">
           <span :class="['status-indicator', { 'active': isListening, 'connecting': isConnecting, 'disabled': isTranscriptionDisabled }]"></span>
           {{ isListening ? 'Listening...' : isConnecting ? 'Connecting...' : isTranscriptionDisabled ? 'Transcription Disabled' : 'Not Listening' }}
         </div>
-        <button @click="toggleListening" :class="['toggle-button', { 'active': isListening, 'disabled': isConnecting || isTranscriptionDisabled }]" :disabled="isConnecting || isTranscriptionDisabled">
-          {{ isListening ? 'Stop Listening' : isConnecting ? 'Connecting...' : isTranscriptionDisabled ? 'Transcription Unavailable' : 'Start Listening' }}
-        </button>
       </div>
-      <button @click="handleSendMessage" class="send-button">Send</button>
+      <button @click="handleSendMessage" class="send-button" :disabled="areControlsDisabled">Send</button>
     </div>
     <TranscriptionListener
       :enabled="isListening"
@@ -374,5 +405,13 @@ textarea {
   50% {
     opacity: 0;
   }
+}
+
+/* Add styles for disabled controls */
+select:disabled,
+button:disabled,
+textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

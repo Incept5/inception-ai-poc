@@ -16,7 +16,7 @@ export default {
       default: false,
     },
   },
-  emits: ['partial-transcription-received', 'final-transcription-received', 'error'],
+  emits: ['partial-transcription-received', 'final-transcription-received', 'error', 'status-change'],
   setup(props, { emit }) {
     const error = ref('');
     let rt = null;
@@ -85,10 +85,14 @@ export default {
 
     const initialize = async () => {
       try {
+        emit('status-change', 'connecting');
         microphone = createMicrophone();
         await microphone.requestPermission();
 
         const response = await fetch("/api/audio-token");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         if (data.error) {
           throw new Error(data.error);
@@ -116,12 +120,14 @@ export default {
         rt.on("close", (event) => {
           console.log("Transcription service closed:", event);
           isConnected.value = false;
+          emit('status-change', 'not listening');
           attemptReconnect();
         });
 
         rt.on("open", () => {
           console.log("WebSocket connection opened");
           isConnected.value = true;
+          emit('status-change', 'listening');
           reconnectAttempts = 0;
         });
 
@@ -129,10 +135,14 @@ export default {
         console.log("Connected to AssemblyAI Realtime Service");
         isInitialized.value = true;
         isConnected.value = true;
+        emit('status-change', 'listening');
       } catch (err) {
         error.value = `Error: ${err.message}`;
         console.error(error.value);
         emit('error', error.value);
+        emit('status-change', 'disabled');
+        isInitialized.value = false;
+        isConnected.value = false;
       }
     };
 
@@ -140,11 +150,13 @@ export default {
       if (reconnectAttempts < maxReconnectAttempts) {
         reconnectAttempts++;
         console.log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})`);
+        emit('status-change', 'connecting');
         await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for 2 seconds before reconnecting
         await initialize();
       } else {
         console.error("Max reconnection attempts reached");
         emit('error', "Unable to establish a stable connection. Please try again later.");
+        emit('status-change', 'disabled');
       }
     };
 
@@ -166,9 +178,11 @@ export default {
           }
         });
         console.log("Started listening");
+        emit('status-change', 'listening');
       } else {
         console.warn("Cannot start listening. Not initialized or not connected.");
         emit('error', "Cannot start listening. Please try again.");
+        emit('status-change', 'disabled');
       }
     };
 
@@ -183,6 +197,7 @@ export default {
       isConnected.value = false;
       isInitialized.value = false;
       console.log("Listening stopped");
+      emit('status-change', 'not listening');
     };
 
     watch(() => props.enabled, async (newValue) => {

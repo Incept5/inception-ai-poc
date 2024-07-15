@@ -1,6 +1,7 @@
 import os
 import requests
 from flask import Blueprint, jsonify
+from utils.debug_utils import debug_print
 
 audio_token_blueprint = Blueprint('audio_token', __name__)
 
@@ -28,4 +29,5 @@ def get_audio_token():
         else:
             return jsonify({"error": "Token not found in response"}), 500
     except requests.RequestException as e:
-        return jsonify({"error": f"API request failed: {str(e)}"}), 500
+        debug_print(f"API request failed: {str(e)}")
+        return jsonify({"error": f"ASSEMBLYAI_API_KEY not set or other issue with AssemblyAI configuration"}), 400

@@ -8,14 +8,14 @@
     </header>
     <div class="transcription-container">
       <div class="transcription-status">
-        <span :class="['status-indicator', { 'active': isListening }]"></span>
-        {{ isListening ? 'Listening...' : 'Not listening' }}
+        <span :class="['status-indicator', { 'active': isListening, 'connecting': isConnecting, 'disabled': isDisabled }]"></span>
+        {{ statusText }}
       </div>
       <div class="transcription-text">
         <p>{{ displayedTranscription }}</p>
       </div>
-      <button @click="toggleListening" :class="['toggle-button', { 'active': isListening }]">
-        {{ isListening ? 'Stop Listening' : 'Start Listening' }}
+      <button @click="toggleListening" :class="['toggle-button', { 'active': isListening, 'disabled': isConnecting || isDisabled }]" :disabled="isConnecting || isDisabled">
+        {{ buttonText }}
       </button>
       <div v-if="error" class="error-message">
         {{ error }}
@@ -26,6 +26,7 @@
       @partial-transcription-received="handlePartialTranscription"
       @final-transcription-received="handleFinalTranscription"
       @error="handleError"
+      @status-change="handleStatusChange"
     />
   </div>
 </template>
@@ -43,10 +44,25 @@ export default {
     const completedTranscription = ref('');
     const partialTranscription = ref('');
     const isListening = ref(false);
+    const isConnecting = ref(false);
+    const isDisabled = ref(false);
     const error = ref('');
 
     const displayedTranscription = computed(() => {
       return completedTranscription.value + (partialTranscription.value ? ' ' + partialTranscription.value : '');
+    });
+
+    const statusText = computed(() => {
+      if (isDisabled.value) return 'Transcription Disabled';
+      if (isConnecting.value) return 'Connecting...';
+      if (isListening.value) return 'Listening...';
+      return 'Not Listening';
+    });
+
+    const buttonText = computed(() => {
+      if (isDisabled.value) return 'Transcription Unavailable';
+      if (isConnecting.value) return 'Connecting...';
+      return isListening.value ? 'Stop Listening' : 'Start Listening';
     });
 
     const handlePartialTranscription = (message) => {
@@ -61,26 +77,45 @@ export default {
     };
 
     const toggleListening = () => {
-      isListening.value = !isListening.value;
-      if (!isListening.value) {
-        error.value = ''; // Clear any previous errors when stopping
+      if (!isConnecting.value && !isDisabled.value) {
+        isListening.value = !isListening.value;
+        if (!isListening.value) {
+          error.value = ''; // Clear any previous errors when stopping
+        }
       }
     };
 
     const handleError = (errorMessage) => {
       console.error('Transcription error:', errorMessage);
       error.value = errorMessage;
-      isListening.value = false; // Stop listening when an error occurs
+      isListening.value = false;
+      isConnecting.value = false;
+      if (errorMessage.includes('ASSEMBLYAI_API_KEY not set') || errorMessage.includes('AssemblyAI configuration')) {
+        isDisabled.value = true;
+      }
+    };
+
+    const handleStatusChange = (status) => {
+      isConnecting.value = status === 'connecting';
+      isDisabled.value = status === 'disabled';
+      if (status === 'disabled') {
+        isListening.value = false;
+      }
     };
 
     return {
       displayedTranscription,
       isListening,
+      isConnecting,
+      isDisabled,
       error,
+      statusText,
+      buttonText,
       handlePartialTranscription,
       handleFinalTranscription,
       toggleListening,
       handleError,
+      handleStatusChange,
     };
   },
 };
@@ -129,6 +164,14 @@ export default {
   background-color: #4CAF50;
 }
 
+.status-indicator.connecting {
+  background-color: #FFA500;
+}
+
+.status-indicator.disabled {
+  background-color: #FF0000;
+}
+
 .transcription-text {
   min-height: 100px;
   background-color: white;
@@ -161,6 +204,11 @@ export default {
 
 .toggle-button.active:hover {
   background-color: #d32f2f;
+}
+
+.toggle-button.disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
 .error-message {

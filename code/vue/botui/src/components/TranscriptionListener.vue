@@ -1,14 +1,30 @@
+<template>
+  <div class="transcription-listener">
+    <!-- TranscriptionListener component -->
+  </div>
+</template>
+
 <script>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as assemblyai from 'assemblyai';
 
 export default {
   name: 'TranscriptionListener',
-  emits: ['partial-transcription-received', 'final-transcription-received'],
-  setup(_, { emit }) {
+  props: {
+    enabled: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  emits: ['partial-transcription-received', 'final-transcription-received', 'error'],
+  setup(props, { emit }) {
     const error = ref('');
     let rt = null;
     let microphone = null;
+    const isInitialized = ref(false);
+    const isConnected = ref(false);
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
 
     const createMicrophone = () => {
       let stream;
@@ -44,15 +60,19 @@ export default {
               const totalSamples = Math.floor(audioContext.sampleRate * 0.1);
               const finalBuffer = new Uint8Array(audioBufferQueue.subarray(0, totalSamples).buffer);
               audioBufferQueue = audioBufferQueue.subarray(totalSamples);
-              if (onAudioCallback) onAudioCallback(finalBuffer);
+              if (onAudioCallback && isConnected.value) onAudioCallback(finalBuffer);
             }
           };
         },
         stopRecording() {
-          stream?.getTracks().forEach((track) => track.stop());
           audioContext?.close();
           audioBufferQueue = new Int16Array(0);
-        }
+        },
+        resumeRecording() {
+          if (audioContext?.state === 'suspended') {
+            audioContext.resume();
+          }
+        },
       };
     };
 
@@ -63,7 +83,7 @@ export default {
       return mergedBuffer;
     };
 
-    const startListening = async () => {
+    const initialize = async () => {
       try {
         microphone = createMicrophone();
         await microphone.requestPermission();
@@ -88,24 +108,67 @@ export default {
 
         rt.on("error", async (error) => {
           console.error("Transcription error:", error);
+          emit('error', error);
           await stopListening();
-          throw new Error("Transcription error occurred");
+          attemptReconnect();
         });
 
         rt.on("close", (event) => {
           console.log("Transcription service closed:", event);
-          rt = null;
+          isConnected.value = false;
+          attemptReconnect();
+        });
+
+        rt.on("open", () => {
+          console.log("WebSocket connection opened");
+          isConnected.value = true;
+          reconnectAttempts = 0;
         });
 
         await rt.connect();
         console.log("Connected to AssemblyAI Realtime Service");
-        await microphone.startRecording((audioData) => {
-          rt.sendAudio(audioData);
-        });
-        console.log("Started listening");
+        isInitialized.value = true;
+        isConnected.value = true;
       } catch (err) {
         error.value = `Error: ${err.message}`;
         console.error(error.value);
+        emit('error', error.value);
+      }
+    };
+
+    const attemptReconnect = async () => {
+      if (reconnectAttempts < maxReconnectAttempts) {
+        reconnectAttempts++;
+        console.log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for 2 seconds before reconnecting
+        await initialize();
+      } else {
+        console.error("Max reconnection attempts reached");
+        emit('error', "Unable to establish a stable connection. Please try again later.");
+      }
+    };
+
+    const startListening = async () => {
+      if (!isInitialized.value || !isConnected.value) {
+        await initialize();
+      }
+
+      if (microphone && rt && isConnected.value) {
+        await microphone.startRecording((audioData) => {
+          if (isConnected.value) {
+            try {
+              rt.sendAudio(audioData);
+            } catch (err) {
+              console.error("Error sending audio:", err);
+              emit('error', "Error sending audio data. Attempting to reconnect.");
+              attemptReconnect();
+            }
+          }
+        });
+        console.log("Started listening");
+      } else {
+        console.warn("Cannot start listening. Not initialized or not connected.");
+        emit('error', "Cannot start listening. Please try again.");
       }
     };
 
@@ -113,21 +176,34 @@ export default {
       console.log("Stopping listening");
       if (rt) {
         await rt.close(false);
-        rt = null;
       }
       if (microphone) {
         microphone.stopRecording();
-        microphone = null;
       }
+      isConnected.value = false;
+      isInitialized.value = false;
       console.log("Listening stopped");
     };
 
+    watch(() => props.enabled, async (newValue) => {
+      if (newValue) {
+        await startListening();
+      } else {
+        await stopListening();
+      }
+    });
+
     onMounted(async () => {
-      await startListening();
+      await initialize();
     });
 
     onUnmounted(async () => {
       await stopListening();
+      if (microphone) {
+        microphone.stopRecording();
+        microphone = null;
+      }
+      rt = null;
     });
 
     return {
@@ -136,3 +212,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.transcription-listener {
+  /* Add any styles if needed */
+}
+</style>

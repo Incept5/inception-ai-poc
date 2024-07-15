@@ -92,6 +92,11 @@ function addSystemMessage(message) {
 async function handleSendMessage() {
   if (!userInput.value.trim() || areControlsDisabled.value) return
 
+  // Stop listening if it's currently active
+  if (isListening.value) {
+    isListening.value = false
+  }
+
   const userMessage = userInput.value
   messages.value.push({ sender: 'You', message: userMessage })
   userInput.value = '' // Clear the text area immediately after sending the message

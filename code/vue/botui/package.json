@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "assemblyai": "^4.6.0",
     "axios": "^1.6.7",
     "highlight.js": "^11.7.0",
     "pinia": "^2.1.7",

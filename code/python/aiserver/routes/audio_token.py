@@ -1,6 +1,6 @@
 import os
+import requests
 from flask import Blueprint, jsonify
-from assemblyai import AssemblyAI
 
 audio_token_blueprint = Blueprint('audio_token', __name__)
 
@@ -10,9 +10,22 @@ def get_audio_token():
     if not api_key:
         return jsonify({"error": "ASSEMBLYAI_API_KEY not set"}), 500
 
-    aai = AssemblyAI(api_key=api_key)
+    url = "https://api.assemblyai.com/v2/realtime/token"
+    headers = {
+        "authorization": api_key,
+        "Content-Type": "application/json"
+    }
+    data = {
+        "expires_in": 3600  # Token expires in 1 hour (3600 seconds)
+    }
+
     try:
-        token = aai.realtime.create_temporary_token(expires_in=3600)
-        return jsonify({"token": token})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()  # Raises an HTTPError for bad responses
+        token = response.json().get('token')
+        if token:
+            return jsonify({"token": token})
+        else:
+            return jsonify({"error": "Token not found in response"}), 500
+    except requests.RequestException as e:
+        return jsonify({"error": f"API request failed: {str(e)}"}), 500

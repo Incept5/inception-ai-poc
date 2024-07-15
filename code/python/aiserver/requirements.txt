@@ -20,4 +20,3 @@ faiss-cpu
 bs4
 wikipedia
 requests
-assemblyai

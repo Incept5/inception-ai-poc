@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { fetchBots, fetchModels, sendMessage } from '../api'
 import ChatMessage from './ChatMessage.vue'
+import TranscriptionListener from './TranscriptionListener.vue'
 
 const props = defineProps(['initialThreadId'])
 const emit = defineEmits(['thread-created', 'new-message-displayed'])
@@ -16,6 +17,12 @@ const messages = ref([])
 const chatContainer = ref(null)
 const threadId = ref(null)
 const thinkingMessageIndex = ref(null)
+
+// Transcription-related refs
+const isListening = ref(false)
+const isConnecting = ref(false)
+const isTranscriptionDisabled = ref(false)
+const transcriptionError = ref('')
 
 const llmProviders = [
   { label: 'Anthropic', value: 'anthropic' },
@@ -143,6 +150,49 @@ function scrollToBottom() {
     }
   }, 0)
 }
+
+// Transcription-related functions
+function toggleListening() {
+  if (!isConnecting.value && !isTranscriptionDisabled.value) {
+    isListening.value = !isListening.value
+    if (!isListening.value) {
+      transcriptionError.value = ''
+    }
+  }
+}
+
+function handlePartialTranscription(message) {
+  userInput.value = message.text
+}
+
+function handleFinalTranscription(message) {
+  userInput.value = message.text
+}
+
+function handleTranscriptionError(errorMessage) {
+  console.error('Transcription error:', errorMessage)
+  transcriptionError.value = errorMessage
+  isListening.value = false
+  isConnecting.value = false
+  if (errorMessage.includes('ASSEMBLYAI_API_KEY not set') || errorMessage.includes('AssemblyAI configuration')) {
+    isTranscriptionDisabled.value = true
+  }
+}
+
+function handleTranscriptionStatusChange(status) {
+  isConnecting.value = status === 'connecting'
+  isTranscriptionDisabled.value = status === 'disabled'
+  if (status === 'disabled') {
+    isListening.value = false
+  }
+}
+
+function handleKeyDown(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    handleSendMessage()
+  }
+}
 </script>
 
 <template>
@@ -175,9 +225,33 @@ function scrollToBottom() {
       <ChatMessage v-for="(message, index) in messages" :key="index" :message="message" />
     </div>
     <div class="input-area">
-      <input v-model="userInput" @keyup.enter="handleSendMessage" placeholder="Type your message here...">
+      <textarea
+        v-model="userInput"
+        @keydown="handleKeyDown"
+        placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
+        rows="3"
+      ></textarea>
       <button @click="handleSendMessage">Send</button>
     </div>
+    <div class="transcription-controls">
+      <div class="transcription-status">
+        <span :class="['status-indicator', { 'active': isListening, 'connecting': isConnecting, 'disabled': isTranscriptionDisabled }]"></span>
+        {{ isListening ? 'Listening...' : isConnecting ? 'Connecting...' : isTranscriptionDisabled ? 'Transcription Disabled' : 'Not Listening' }}
+      </div>
+      <button @click="toggleListening" :class="['toggle-button', { 'active': isListening, 'disabled': isConnecting || isTranscriptionDisabled }]" :disabled="isConnecting || isTranscriptionDisabled">
+        {{ isListening ? 'Stop Listening' : isConnecting ? 'Connecting...' : isTranscriptionDisabled ? 'Transcription Unavailable' : 'Start Listening' }}
+      </button>
+    </div>
+    <div v-if="transcriptionError" class="error-message">
+      {{ transcriptionError }}
+    </div>
+    <TranscriptionListener
+      :enabled="isListening"
+      @partial-transcription-received="handlePartialTranscription"
+      @final-transcription-received="handleFinalTranscription"
+      @error="handleTranscriptionError"
+      @status-change="handleTranscriptionStatusChange"
+    />
   </div>
 </template>
 
@@ -237,22 +311,91 @@ select {
   border: 1px solid #ccc;
   padding: 10px;
   margin-bottom: 10px;
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 280px);
 }
 
 .input-area {
   display: flex;
   gap: 10px;
-  padding-bottom: 10px;
+  margin-bottom: 10px;
 }
 
-input {
+textarea {
   flex-grow: 1;
   padding: 5px;
+  resize: vertical;
+  min-height: 60px;
 }
 
 button {
   padding: 5px 10px;
+  align-self: flex-end;
+}
+
+.transcription-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.transcription-status {
+  display: flex;
+  align-items: center;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 10px;
+  background-color: #ccc;
+}
+
+.status-indicator.active {
+  background-color: #4CAF50;
+}
+
+.status-indicator.connecting {
+  background-color: #FFA500;
+}
+
+.status-indicator.disabled {
+  background-color: #FF0000;
+}
+
+.toggle-button {
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.toggle-button:hover {
+  background-color: #45a049;
+}
+
+.toggle-button.active {
+  background-color: #f44336;
+}
+
+.toggle-button.active:hover {
+  background-color: #d32f2f;
+}
+
+.toggle-button.disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #f44336;
+  margin-top: 10px;
+  font-weight: bold;
 }
 
 /* Add this new style for the blinking cursor */

@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import TranscriptionView from '../views/TranscriptionView.vue'
 
 const router = createRouter({
-  history: createWebHistory('/botui/'), // Update this line to use '/botui/' as the base
+  history: createWebHistory('/botui/'),
   routes: [
     {
       path: '/',
@@ -18,6 +19,11 @@ const router = createRouter({
       path: '/about',
       name: 'about',
       component: () => import('../views/AboutView.vue')
+    },
+    {
+      path: '/transcribe',
+      name: 'transcribe',
+      component: TranscriptionView
     }
   ]
 })

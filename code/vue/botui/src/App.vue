@@ -39,7 +39,8 @@ watch(() => route.params.threadId, (newThreadId) => {
       <h1>Inception AI Chatbot</h1>
     </header>
     <main>
-      <div class="content-wrapper">
+      <RouterView v-if="$route.name === 'transcribe'" />
+      <div v-else class="content-wrapper">
         <ChatBot
           class="chatbot"
           :initialThreadId="threadId"

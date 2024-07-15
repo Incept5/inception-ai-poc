@@ -34,3 +34,42 @@ a,
     padding: 1rem;
   }
 }
+
+/* New global button styles */
+button {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #1976D2;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Specific styles for active toggle buttons */
+.toggle-button.active {
+  background-color: #1976D2;
+}
+
+.toggle-button.active:hover {
+  background-color: #145ea8;
+}
+
+/* New conversation button style */
+.new-conversation-btn {
+  background-color: #4CAF50;
+}
+
+.new-conversation-btn:hover {
+  background-color: #45a049;
+}

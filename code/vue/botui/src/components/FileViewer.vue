@@ -1,8 +1,11 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useToast } from 'vue-toastification'
 import { fetchFileStructure, fetchFileContent, updateFiles } from '@/api'
 import TreeItem from './TreeItem.vue'
 import SourceViewer from './SourceViewer.vue'
+
+const toast = useToast()
 
 const props = defineProps({
   threadId: {
@@ -114,9 +117,16 @@ const copyToClipboard = () => {
   navigator.clipboard.writeText(fileContent.value)
     .then(() => {
       console.log('File content copied to clipboard')
-      alert('File content copied to clipboard!')
+      toast.success('File content copied to clipboard!', {
+        timeout: 2000
+      })
     })
-    .catch(err => console.error('Error copying to clipboard:', err))
+    .catch(err => {
+      console.error('Error copying to clipboard:', err)
+      toast.error('Failed to copy file content. Please try again.', {
+        timeout: 3000
+      })
+    })
 }
 
 const downloadFile = () => {
@@ -131,6 +141,9 @@ const downloadFile = () => {
   a.click()
   window.URL.revokeObjectURL(url)
   console.log('File download initiated')
+  toast.success('File download started', {
+    timeout: 2000
+  })
 }
 
 const refreshFileStructure = () => {
@@ -145,9 +158,15 @@ const updateSystem = async () => {
     await updateFiles(props.threadId)
     console.log('System updated successfully')
     refreshFileStructure() // Refresh the file structure after updating
+    toast.success('System updated successfully', {
+      timeout: 2000
+    })
   } catch (err) {
     console.error('Error updating system:', err)
     error.value = 'Error updating system. Please try again.'
+    toast.error('Failed to update system. Please try again.', {
+      timeout: 3000
+    })
   }
 }
 
@@ -247,14 +266,17 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
 
 button {
   padding: 5px 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
+  background-color: #3490dc; /* Blue background color */
+  color: white; /* White text */
+  border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
 }
 
 button:hover {
-  background-color: #e0e0e0;
+  background-color: #2779bd; /* Darker blue on hover */
 }
 
 .error-message {

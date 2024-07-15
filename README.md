@@ -18,8 +18,9 @@ The UI allows you to change the following:
 * Which LLM model you are using
   * Will query Ollama for the list of installed models
 
-**Now supports audit transcription in the Web UI! 
-Add you ASSEMBLYAI_API_KEY to the .env file to enable this feature. Click "Start Listening" and just ask the chatbot to do something :)**
+Now supports audit transcription in the Web UI! .
+Click "Start Listening" and just ask the chatbot to do something :)
+(Add your ASSEMBLYAI_API_KEY to the .env file to enable this feature)
 
 ## System Improver Bot
 

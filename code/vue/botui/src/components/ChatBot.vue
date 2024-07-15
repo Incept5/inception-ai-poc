@@ -305,7 +305,7 @@ select {
   border: 1px solid #ccc;
   padding: 10px;
   margin-bottom: 10px;
-  max-height: calc(100vh - 360px); /* Adjusted to account for the controls above */
+  max-height: calc(100vh - 360px);
 }
 
 .input-area {
@@ -357,42 +357,6 @@ textarea {
 
 .status-indicator.disabled {
   background-color: #FF0000;
-}
-
-.toggle-button, .send-button {
-  padding: 5px 10px;
-  font-size: 14px;
-  cursor: pointer;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.toggle-button:hover, .send-button:hover {
-  background-color: #45a049;
-}
-
-.toggle-button.active {
-  background-color: #f44336;
-}
-
-.toggle-button.active:hover {
-  background-color: #d32f2f;
-}
-
-.toggle-button.disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.send-button {
-  background-color: #2196F3;
-}
-
-.send-button:hover {
-  background-color: #1976D2;
 }
 
 /* Add this new style for the blinking cursor */

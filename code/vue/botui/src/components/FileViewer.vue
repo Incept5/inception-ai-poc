@@ -247,14 +247,17 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
 
 button {
   padding: 5px 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
+  background-color: #3490dc; /* Blue background color */
+  color: white; /* White text */
+  border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
 }
 
 button:hover {
-  background-color: #e0e0e0;
+  background-color: #2779bd; /* Darker blue on hover */
 }
 
 .error-message {

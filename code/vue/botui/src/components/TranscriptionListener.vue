@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onUnmounted, watch } from 'vue';
 import * as assemblyai from 'assemblyai';
 
 export default {
@@ -208,10 +208,6 @@ export default {
       }
     });
 
-    onMounted(async () => {
-      await initialize();
-    });
-
     onUnmounted(async () => {
       await stopListening();
       if (microphone) {
@@ -223,6 +219,8 @@ export default {
 
     return {
       error,
+      startListening,
+      stopListening,
     };
   },
 };

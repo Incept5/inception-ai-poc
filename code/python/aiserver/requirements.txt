@@ -19,4 +19,5 @@ sentence-transformers
 faiss-cpu
 bs4
 wikipedia
-requests  # Add this line
+requests
+assemblyai

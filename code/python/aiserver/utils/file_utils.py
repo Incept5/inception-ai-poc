@@ -79,7 +79,7 @@ class FileUtils:
 
         def should_ignore(path):
             # Check for weird characters
-            if bool(re.search(r'[^a-zA-Z0-9_\-./\\]', path)):
+            if FileUtils.has_weird_characters(path):
                 return True
 
             # Check against ignore patterns
@@ -211,3 +211,16 @@ class FileUtils:
             "tree": structure,
             "partial_files_detected": partial_files_detected
         }
+
+    @staticmethod
+    def has_weird_characters(path: str) -> bool:
+        """
+        Check if a file path contains weird characters.
+
+        Args:
+            path (str): The file path to check
+
+        Returns:
+            bool: True if the path contains weird characters, False otherwise
+        """
+        return bool(re.search(r'[^a-zA-Z0-9_\-./\\]', path))

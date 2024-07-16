@@ -19,9 +19,12 @@ class FileUtils:
         r'\.DS_Store',  # Ignore macOS system files
     ]
 
-    # Regexes to detect partial files (placeholder, to be defined later)
+    # Updated regexes to detect partial files
     PARTIAL_FILE_PATTERNS = [
-        r'existing method, unchanged',
+        r'#\s*\.\.\.\s*\(',  # Matches "# ... ("
+        r'//\s*\.\.\.\s*\(',  # Matches "// ... ("
+        r'\[\.\.\.\s*existing\s*content\s*\.\.\.\]',  # Matches "[... existing content ...]"
+        r'\[\.\.\.\s*.*?\.\.\.\]',  # Matches "[... ...]" with any content, including "anything"
     ]
 
     @staticmethod
@@ -76,7 +79,7 @@ class FileUtils:
 
         def should_ignore(path):
             # Check for weird characters
-            if bool(re.search(r'[^a-zA-Z0-9_\-./\\]', path)):
+            if FileUtils.has_weird_characters(path):
                 return True
 
             # Check against ignore patterns
@@ -156,7 +159,7 @@ class FileUtils:
             with open(file_path, 'r', encoding='utf-8') as file:
                 content = file.read()
                 for pattern in FileUtils.PARTIAL_FILE_PATTERNS:
-                    if re.search(pattern, content):
+                    if re.search(pattern, content, re.IGNORECASE | re.MULTILINE):
                         return True
         except Exception:
             # If we can't read the file, assume it's not partial
@@ -208,3 +211,16 @@ class FileUtils:
             "tree": structure,
             "partial_files_detected": partial_files_detected
         }
+
+    @staticmethod
+    def has_weird_characters(path: str) -> bool:
+        """
+        Check if a file path contains weird characters.
+
+        Args:
+            path (str): The file path to check
+
+        Returns:
+            bool: True if the path contains weird characters, False otherwise
+        """
+        return bool(re.search(r'[^a-zA-Z0-9_\-./\\]', path))

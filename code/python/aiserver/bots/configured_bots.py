@@ -7,6 +7,7 @@ from bots.system_improver_bot import SystemImproverBot
 from bots.web_app_bot import WebAppBot
 from bots.simple_retriever_bot import SimpleRetrieverBot
 from bots.iso20022_expert_bot import ISO20022ExpertBot
+from bots.system_bots import SystemBotManager
 
 def get_configured_bots():
     # Check if bots are already stored in the app context
@@ -25,3 +26,15 @@ def get_configured_bots():
 
     # Return the stored bots
     return current_app.extensions['configured_bots']
+
+def get_bot(bot_type):
+    configured_bots = get_configured_bots()
+    if bot_type in configured_bots:
+        return configured_bots[bot_type]
+    else:
+        return SystemBotManager.get_system_bot(bot_type)
+
+def get_all_bots():
+    configured_bots = get_configured_bots()
+    system_bots = SystemBotManager.get_all_system_bots()
+    return {**configured_bots, **system_bots}

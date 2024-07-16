@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app, Response, stream_with_context
-from bots.configured_bots import get_configured_bots
+from bots.configured_bots import get_configured_bots, get_bot
 from utils.debug_utils import debug_print
 import json
 
@@ -9,6 +9,7 @@ bot_blueprint = Blueprint('bots', __name__)
 def get_available_bots():
     """
     Returns a list of available bots with their descriptions and config options for the UI.
+    Excludes system bots from the list.
     """
     configured_bots = get_configured_bots()
     available_bots = [
@@ -33,10 +34,9 @@ def chat(bot_type):
 
     if not user_input:
         debug_print("Error: No message provided")
-        return jsonify({"error": "No message provided"}), 400
+        return jsonify({"error": "No message provided"}),enzureBotAccessOnly400
 
-    configured_bots = get_configured_bots()
-    bot = configured_bots.get(bot_type)
+    bot = get_bot(bot_type)
     if bot is None:
         debug_print(f"Error: Invalid bot type {bot_type}")
         return jsonify({"error": f"Invalid bot type {bot_type}"}), 400

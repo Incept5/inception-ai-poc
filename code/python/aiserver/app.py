@@ -6,6 +6,7 @@ from routes import combined_routes
 from config import Config
 from utils.debug_utils import debug_print
 from bots.configured_bots import get_configured_bots
+from bots.system_bots import SystemBotManager
 from mylangchain.retriever_manager import retriever_manager
 
 def run_check_imports():
@@ -22,6 +23,7 @@ def create_app():
     # Initialize bot instances
     with app.app_context():
         get_configured_bots()
+        SystemBotManager.initialize_system_bots()
 
     # Start check_imports in a background thread
     check_imports_thread = threading.Thread(target=run_check_imports)

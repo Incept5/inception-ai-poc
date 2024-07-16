@@ -18,14 +18,14 @@ def persist_files_in_response(thread_id: str, response: str) -> str:
             if last_backticks_index > match.start():
                 file_content = response[match.start(3):last_backticks_index]
 
-        if file_path and ' ' not in file_path:
-            # Call persist_file for each file found, only if the file path doesn't contain spaces
+        # Remove leading '#' and spaces from the file path
+        file_path = re.sub(r'^#\s*', '', file_path)
+
+        if file_path:
+            # Call persist_file for each file found
             persist_file(thread_id, file_path, file_type, file_content)
         else:
-            if not file_path:
-                print(f"Debug: Empty file path found for {file_type} code block")
-            elif ' ' in file_path:
-                print(f"Debug: Skipping file with spaces in path: {file_path}")
+            print(f"Debug: Empty file path found for {file_type} code block")
 
         # Return the original match (to keep the response unchanged)
         return match.group(0)

@@ -34,7 +34,7 @@ def chat(bot_type):
 
     if not user_input:
         debug_print("Error: No message provided")
-        return jsonify({"error": "No message provided"}),enzureBotAccessOnly400
+        return jsonify({"error": "No message provided"}), 400
 
     bot = get_bot(bot_type)
     if bot is None:

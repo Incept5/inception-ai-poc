@@ -2,7 +2,7 @@ import os
 import shutil
 import re
 import json
-
+from .partial_file_utils import PartialFileUtils
 
 class FileUtils:
     # List of regexes to ignore when copying files
@@ -17,14 +17,6 @@ class FileUtils:
         r'snippets',  # Ignore snippets directory
         r'node_modules',  # Ignore node_modules directory
         r'\.DS_Store',  # Ignore macOS system files
-    ]
-
-    # Updated regexes to detect partial files
-    PARTIAL_FILE_PATTERNS = [
-        r'#\s*\.\.\.\s*\(',  # Matches "# ... ("
-        r'//\s*\.\.\.\s*\(',  # Matches "// ... ("
-        r'\[\.\.\.\s*existing\s*content\s*\.\.\.\]',  # Matches "[... existing content ...]"
-        r'\[\.\.\.\s*.*?\.\.\.\]',  # Matches "[... ...]" with any content, including "anything"
     ]
 
     @staticmethod
@@ -145,28 +137,6 @@ class FileUtils:
         return structure
 
     @staticmethod
-    def is_partial_file(file_path: str) -> bool:
-        """
-        Check if a file is a partial file based on its content.
-
-        Args:
-            file_path (str): Path to the file
-
-        Returns:
-            bool: True if the file is a partial file, False otherwise
-        """
-        try:
-            with open(file_path, 'r', encoding='utf-8') as file:
-                content = file.read()
-                for pattern in FileUtils.PARTIAL_FILE_PATTERNS:
-                    if re.search(pattern, content, re.IGNORECASE | re.MULTILINE):
-                        return True
-        except Exception:
-            # If we can't read the file, assume it's not partial
-            pass
-        return False
-
-    @staticmethod
     def check_partial_files(structure: dict, root_dir: str) -> bool:
         """
         Check if any files in the structure are partial files.
@@ -186,7 +156,7 @@ class FileUtils:
                         return True
                 else:
                     full_path = os.path.join(root_dir, value)
-                    if FileUtils.is_partial_file(full_path):
+                    if PartialFileUtils.is_partial_file(full_path):
                         return True
             return False
 

@@ -4,6 +4,7 @@ import { useToast } from 'vue-toastification'
 import { fetchFileStructure, fetchFileContent, updateFiles } from '@/api'
 import TreeItem from './TreeItem.vue'
 import SourceViewer from './SourceViewer.vue'
+import LoadingBar from './LoadingBar.vue'
 
 const toast = useToast()
 
@@ -24,39 +25,55 @@ const fileContent = ref('')
 const error = ref('')
 const expandToFirstLeaf = ref(false)
 
+const isLoading = ref(false);
+let loadingTimeout;
+
+const setLoading = (value) => {
+  clearTimeout(loadingTimeout);
+  if (value) {
+    isLoading.value = true;
+  } else {
+    loadingTimeout = setTimeout(() => {
+      isLoading.value = false;
+    }, 200); // Delay setting isLoading to false to prevent rapid toggling
+  }
+};
+
 const fetchStructure = async () => {
-  console.log('Fetching file structure for threadId:', props.threadId)
+  console.log('FileViewer: Fetching file structure for threadId:', props.threadId)
   if (!props.threadId) {
-    console.log('No threadId provided, resetting component state')
+    console.log('FileViewer: No threadId provided, resetting component state')
     resetComponentState()
     error.value = 'No thread selected'
     return
   }
 
   error.value = ''
+  setLoading(true);
+  console.log('FileViewer: Setting isLoading to true')
   try {
-    console.log('Calling fetchFileStructure API...')
+    console.log('FileViewer: Calling fetchFileStructure API...')
     const response = await fetchFileStructure(props.threadId)
-    console.log('File structure fetched:', JSON.stringify(response, null, 2))
+    console.log('FileViewer: File structure fetched:', JSON.stringify(response, null, 2))
 
-    // Extract the tree from the response
     const newFileStructure = response.tree || {}
 
-    // Check if the currently selected file is still present in the new structure
     if (selectedFile.value && !isFileInStructure(selectedFile.value, newFileStructure)) {
-      console.log('Currently selected file is no longer in the structure, resetting selection')
+      console.log('FileViewer: Currently selected file is no longer in the structure, resetting selection')
       selectedFile.value = null
       fileContent.value = ''
     }
 
     fileStructure.value = newFileStructure
 
-    // Trigger expansion to the first leaf node
     expandToFirstLeaf.value = true
   } catch (err) {
-    console.error('Error fetching file structure:', err)
+    console.error('FileViewer: Error fetching file structure:', err)
     error.value = 'Error fetching file structure. Please try again.'
     resetComponentState()
+  } finally {
+    setLoading(false);
+    console.log('FileViewer: Setting isLoading to false')
   }
 }
 
@@ -98,16 +115,21 @@ const findFirstFile = (obj) => {
 }
 
 const selectFile = async (filePath) => {
-  console.log('Selecting file:', filePath)
+  console.log('FileViewer: Selecting file:', filePath)
   selectedFile.value = filePath
+  setLoading(true);
+  console.log('FileViewer: Setting isLoading to true')
   try {
-    console.log('Fetching content for file:', filePath)
+    console.log('FileViewer: Fetching content for file:', filePath)
     fileContent.value = await fetchFileContent(filePath)
-    console.log('File content fetched, length:', fileContent.value.length)
+    console.log('FileViewer: File content fetched, length:', fileContent.value.length)
   } catch (err) {
-    console.error('Error fetching file content:', err)
+    console.error('FileViewer: Error fetching file content:', err)
     error.value = 'Error fetching file content. Please try again.'
     fileContent.value = ''
+  } finally {
+    setLoading(false);
+    console.log('FileViewer: Setting isLoading to false')
   }
 }
 
@@ -153,32 +175,37 @@ const refreshFileStructure = () => {
 }
 
 const updateSystem = async () => {
-  console.log('Updating system')
+  console.log('FileViewer: Updating system')
+  setLoading(true);
+  console.log('FileViewer: Setting isLoading to true')
   try {
     await updateFiles(props.threadId)
-    console.log('System updated successfully')
-    refreshFileStructure() // Refresh the file structure after updating
+    console.log('FileViewer: System updated successfully')
+    refreshFileStructure()
     toast.success('System updated successfully', {
       timeout: 2000
     })
   } catch (err) {
-    console.error('Error updating system:', err)
+    console.error('FileViewer: Error updating system:', err)
     error.value = 'Error updating system. Please try again.'
     toast.error('Failed to update system. Please try again.', {
       timeout: 3000
     })
+  } finally {
+    setLoading(false);
+    console.log('FileViewer: Setting isLoading to false')
   }
 }
 
 onMounted(() => {
-  console.log('FileViewer component mounted, threadId:', props.threadId, 'fileViewerKey:', props.fileViewerKey)
+  console.log('FileViewer: Component mounted, threadId:', props.threadId, 'fileViewerKey:', props.fileViewerKey)
   if (props.threadId) {
     fetchStructure()
   }
 })
 
 watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileViewerKey], [oldThreadId, oldFileViewerKey]) => {
-  console.log('ThreadId or fileViewerKey changed:', oldThreadId, '->', newThreadId, 'or', oldFileViewerKey, '->', newFileViewerKey)
+  console.log('FileViewer: ThreadId or fileViewerKey changed:', oldThreadId, '->', newThreadId, 'or', oldFileViewerKey, '->', newFileViewerKey)
   fetchStructure()
 })
 </script>
@@ -186,15 +213,15 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
 <template>
   <div class="file-viewer-container">
     <div class="button-row">
-      <button @click="refreshFileStructure" title="Refresh file structure">
+      <button @click="refreshFileStructure" title="Refresh file structure" :disabled="isLoading">
         Refresh
       </button>
-      <button @click="updateSystem" title="Update System">
+      <button @click="updateSystem" title="Update System" :disabled="isLoading">
         Update System
       </button>
       <div class="action-buttons" v-if="selectedFile">
-        <button @click="copyToClipboard">Copy</button>
-        <button @click="downloadFile">Download</button>
+        <button @click="copyToClipboard" :disabled="isLoading">Copy</button>
+        <button @click="downloadFile" :disabled="isLoading">Download</button>
       </div>
     </div>
     <div v-if="error" class="error-message">{{ error }}</div>
@@ -220,6 +247,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
         />
       </div>
     </template>
+    <LoadingBar :is-loading="isLoading" />
   </div>
 </template>
 
@@ -228,6 +256,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;  /* Add this to ensure proper positioning of the LoadingBar */
 }
 
 .button-row {
@@ -272,11 +301,16 @@ button {
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, opacity 0.3s;
 }
 
 button:hover {
   background-color: #2779bd; /* Darker blue on hover */
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .error-message {

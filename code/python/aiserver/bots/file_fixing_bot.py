@@ -1,4 +1,4 @@
-from typing import List, TypedDict, Annotated, Optional
+from typing import List, TypedDict, Annotated, Optional, Dict, Any
 from mylangchain.langchain_bot_interface import LangchainBotInterface
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
@@ -29,39 +29,23 @@ class FileFixingBot(LangchainBotInterface):
         def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
-            system_message = SystemMessage(content="""You are an AI assistant that processes and merges file contents. 
-            You will receive two versions of file content: the original and the new version, separated by markers.
-            Your task is to analyze and process these versions according to the following rules:
+            system_message = SystemMessage(content="You are a helpful AI assistant")
 
-            1. If the new file content looks like a complete file, return it as is.
-            2. If the new file content appears to be a partial file or contains diff-like markers, merge it with the original content.
-            3. For partial files, look for indicators such as:
-               - "# ... (existing method, unchanged)"
-               - "// ... ("
-               - "[... existing content ...]"
-               - "[... anything ...]"
-            4. When merging, replace the corresponding sections in the original file with the new content.
-            5. Ensure that the final output is a complete, valid file.
-
-            Only return the processed file contents with no other information or explanations.""")
-
-            prompt = """Please process the following file contents and provide the resulting merged or new file content:
-
-            <-- Original File Start -->
-            {original_content}
-            <-- Separator -->
-            {new_content}
-            <-- New File End -->
-
-            Remember to only return the processed file contents with no other information."""
+            prompt = """
+            You are an AI assistant that processes and merges file contents. 
+            You will receive two versions of file content: the original and the new version, separated by markers. 
+            Your task is to apply the diff to the original file content and return the result without any markers in. 
+            Once you have the new file content please double check it is valid for the type of file you are processing. 
+            IMPORTANT: Only return the new merged file content and nothing else.
+            """
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
 
-            processed_content = self.llm_wrapper.invoke(messages).content
+            answer = self.llm_wrapper.invoke(messages).content
 
-            result = {"messages": [HumanMessage(content=processed_content)]}
-            debug_print(f"Chatbot output: {result}")
+            result = {"messages": [HumanMessage(content=answer)]}
+            debug_print(f"File Fixing Bot output: {result}")
             return result
 
         return chatbot

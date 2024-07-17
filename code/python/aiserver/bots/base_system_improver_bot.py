@@ -137,7 +137,6 @@ class BaseSystemImproverBot(LangchainBotInterface):
             {hints_section}
 
             IMPORTANT: Remember to ask for specific file contents using the file_content tool when needed.
-            VERY IMPORTANT: Always generate FULL source code files rather than diffs or partial code snippets.
             Context: You are improving and analyzing a complex software system. Your goal is to provide comprehensive and well-thought-out suggestions for improvement.
             """
 

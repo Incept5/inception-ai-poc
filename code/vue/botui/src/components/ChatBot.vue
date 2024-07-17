@@ -19,6 +19,9 @@ const threadId = ref(null)
 const thinkingMessageIndex = ref(null)
 const isWaitingForResponse = ref(false)
 
+// Add this line to define loadingTimeout
+let loadingTimeout = null
+
 // Transcription-related refs
 const isListening = ref(false)
 const isConnecting = ref(false)

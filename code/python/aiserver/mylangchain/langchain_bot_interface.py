@@ -27,10 +27,6 @@ class LangchainBotInterface(BotInterface):
         self.retriever = None
 
     @abstractmethod
-    def create_chatbot(self):
-        pass
-
-    @abstractmethod
     def create_graph(self) -> StateGraph:
         pass
 
@@ -51,8 +47,9 @@ class LangchainBotInterface(BotInterface):
         pass
 
     def lazy_init_langchain(self, llm_provider=None, llm_model=None):
+        # Always update the LLM wrapper in case we are switching providers or models
+        self._update_llm_wrapper(llm_provider, llm_model)
         if not self.is_initialized:
-            self._update_llm_wrapper(llm_provider, llm_model)
             self.lazy_init_retriever()
             self.graph = self.create_graph()
             self.is_initialized = True

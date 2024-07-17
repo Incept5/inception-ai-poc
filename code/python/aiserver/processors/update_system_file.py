@@ -51,14 +51,13 @@ def update_system_file(system_root_dir: str, file_path: str, file_content: str) 
         # Prepare the input for the file fixing bot
         bot_input = f"""<-- Original File Start -->
 {original_content}
-<-- Separator -->
+<-- End of original file and start of diff to apply -->
 {file_content}
-<-- New File End -->"""
+<-- End of diff that needs applying to the original file -->"""
 
         print("[DEBUG] Processing content using file fixing bot")
         # Process the content using the file fixing bot
-        result = file_fixing_bot.process({"messages": [{"content": bot_input}]})
-        processed_content = result["messages"][0]["content"]
+        processed_content = file_fixing_bot.process_request_sync_final_only(bot_input, "")
         print("[DEBUG] File fixing bot processing complete")
     else:
         print("[DEBUG] Using provided content as is (not partial)")

@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 import os
+import traceback
 from utils.file_utils import FileUtils
 from processors.update_system_file import update_system_file
 
@@ -51,8 +52,12 @@ def update_files(subpath=''):
             "updated_files": updated_files
         }), 200
     except FileNotFoundError as e:
-        debug_print(f"Source path not found: {str(e)}")
-        return jsonify({"error": str(e)}), 404
+        error_message = f"Source path not found: {str(e)}"
+        debug_print(error_message)
+        debug_print(f"Full stack trace:\n{traceback.format_exc()}")
+        return jsonify({"error": error_message}), 404
     except Exception as e:
-        debug_print(f"Error updating files: {str(e)}")
-        return jsonify({"error": f"Error updating files: {str(e)}"}), 500
+        error_message = f"Error updating files: {str(e)}"
+        debug_print(error_message)
+        debug_print(f"Full stack trace:\n{traceback.format_exc()}")
+        return jsonify({"error": error_message}), 500

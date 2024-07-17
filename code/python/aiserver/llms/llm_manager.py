@@ -25,7 +25,10 @@ class LLMManager:
             raise ValueError(f"Unsupported LLM provider: {llm_provider}")
 
         provider = cls.providers[llm_provider]
-        return provider.get_llm(tools, model)
+        debug_print(f"Using LLM provider: {llm_provider}")
+        result = provider.get_llm(tools, model)
+        debug_print(f"LLM provider: {result.provider}, model: {model}")
+        return result
 
     @classmethod
     def get_default_llm(cls, tools: List[BaseTool] = None) -> LLMWrapper:

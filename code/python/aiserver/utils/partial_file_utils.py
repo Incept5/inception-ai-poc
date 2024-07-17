@@ -7,6 +7,7 @@ class PartialFileUtils:
         r'//\s*.*?\.\.\.\s*\(',  # Matches "// ... (" with optional whitespace and content before "..."
         r'\[\.\.\.\s*existing\s*content\s*\.\.\.\]',  # Matches "[... existing content ...]"
         r'\[\.\.\.\s*.*?\.\.\.\]',  # Matches "[... ...]" with any content, including "anything"
+        r'<!--\s*\.\.\.',  # Matches "<!-- ..."
     ]
 
     @staticmethod

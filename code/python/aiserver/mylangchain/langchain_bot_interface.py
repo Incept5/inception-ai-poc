@@ -62,16 +62,50 @@ class LangchainBotInterface(BotInterface):
             self.retriever = retriever_builder.get_retriever(self.retriever_name)
 
     def _update_llm_wrapper(self, llm_provider, llm_model):
-        if llm_provider != self.current_llm_provider or llm_model != self.current_llm_model:
-            self.logger.debug(f"Updating LLM wrapper. New provider: {llm_provider}, New model: {llm_model}")
-            if llm_provider or llm_model:
+        debug_print("Updating LLM wrapper")
+        debug_print(f"Current LLM provider: {self.current_llm_provider}, Current LLM model: {self.current_llm_model}")
+        debug_print(f"New LLM provider: {llm_provider}, New LLM model: {llm_model}")
+
+        should_update = (
+            llm_provider != self.current_llm_provider
+            or llm_model != self.current_llm_model
+            or self.llm_wrapper is None
+        )
+
+        if should_update:
+            debug_print(f"Updating LLM wrapper. New provider: {llm_provider}, New model: {llm_model}")
+            if llm_provider and llm_model:
                 self.llm_wrapper = LLMManager.get_llm(self.get_tools(), llm_provider, llm_model)
             else:
+                debug_print("Using default LLM wrapper")
                 self.llm_wrapper = LLMManager.get_default_llm(self.get_tools())
             self.current_llm_provider = llm_provider
             self.current_llm_model = llm_model
         else:
-            self.logger.debug("LLM wrapper unchanged")
+            debug_print("LLM wrapper unchanged")
+
+    def process_request_sync_final_only(self, user_input: str, context: str, **kwargs) -> str:
+        """
+        Process the request synchronously and return only the final response as a string.
+
+        :param user_input: The user's input query
+        :param context: The context for the query
+        :param kwargs: Additional keyword arguments
+        :return: The final response as a string
+        """
+        debug_print(
+            f"{self.__class__.__name__} processing request synchronously (final only). User input: {user_input}")
+
+        final_response = None
+        for response in self.process_request(user_input, context, **kwargs):
+            debug_print(f"Response: {response}")
+            if response["type"] == "final":
+                final_response = response["content"]
+
+        if final_response is None:
+            raise ValueError("No final response was generated")
+
+        return final_response
 
     def process_request(self, user_input: str, context: str, **kwargs) -> Generator[Dict[str, Any], None, None]:
         debug_print(f"{self.__class__.__name__} processing request. User input: {user_input}")
@@ -88,19 +122,28 @@ class LangchainBotInterface(BotInterface):
         config = {"configurable": {"thread_id": thread_id}}
 
         last_event = None
+        event_count = 0
         try:
+            debug_print("Starting graph stream")
             for event in self.graph.stream({"messages": [("user", input_message)]}, config):
-                debug_print(f"Event: {event}")
+                event_count += 1
+                debug_print(f"Event {event_count}: {event}")
 
                 if last_event is not None:
                     yield from self.process_and_emit_content(last_event, "intermediate", thread_id)
 
                 last_event = event
 
+            debug_print(f"Graph stream completed. Total events: {event_count}")
+
             if last_event is not None:
                 yield from self.process_and_emit_content(last_event, "final", thread_id)
+            elif event_count == 0:
+                debug_print("No events were emitted by the graph")
+                yield {"type": "error", "content": "No response generated (no events emitted)"}
             else:
-                yield {"type": "error", "content": "No response generated"}
+                debug_print("No final event was emitted")
+                yield {"type": "error", "content": "No final response generated"}
 
         except Exception as e:
             self.logger.error(f"Error in process_request: {str(e)}", exc_info=True)

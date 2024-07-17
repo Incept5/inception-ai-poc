@@ -121,7 +121,7 @@ class CollaborationAgentBot(LangchainBotInterface):
 
         chart_agent = self.create_agent(
             [self.python_repl],
-            system_message="Any charts you display will be visible by the user.",
+            system_message="Any charts you display will be visible by the user. Always save chart images under /data/persisted_files/charts/<filename>.png (do not start path with /mnt)",
         )
         chart_node = functools.partial(self.agent_node, agent=chart_agent, name="chart_generator")
 

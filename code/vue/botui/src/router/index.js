@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import TranscriptionView from '../views/TranscriptionView.vue'
+import ChatBotView from '../views/ChatBotView.vue'
 
 const router = createRouter({
   history: createWebHistory('/botui/'),
@@ -8,22 +7,17 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView
+      component: ChatBotView
     },
     {
       path: '/thread/:threadId?',
       name: 'thread',
-      component: HomeView
+      component: ChatBotView
     },
     {
       path: '/about',
       name: 'about',
       component: () => import('../views/AboutView.vue')
-    },
-    {
-      path: '/transcribe',
-      name: 'transcribe',
-      component: TranscriptionView
     }
   ]
 })

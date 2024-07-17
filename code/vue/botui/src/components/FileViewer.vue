@@ -4,7 +4,6 @@ import { useToast } from 'vue-toastification'
 import { fetchFileStructure, fetchFileContent, updateFiles } from '@/api'
 import TreeItem from './TreeItem.vue'
 import SourceViewer from './SourceViewer.vue'
-import LoadingBar from './LoadingBar.vue'
 
 const toast = useToast()
 
@@ -18,6 +17,8 @@ const props = defineProps({
     default: 0
   }
 })
+
+const emit = defineEmits(['loading-change'])
 
 const fileStructure = ref({})
 const selectedFile = ref(null)
@@ -37,10 +38,12 @@ const setLoading = (value) => {
   clearTimeout(loadingTimeout);
   if (value) {
     isLoading.value = true;
+    emit('loading-change', true);
   } else {
     loadingTimeout = setTimeout(() => {
       isLoading.value = false;
-    }, 200); // Delay setting isLoading to false to prevent rapid toggling
+      emit('loading-change', false);
+    }, 200);
   }
 };
 
@@ -276,7 +279,6 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
         />
       </div>
     </template>
-    <LoadingBar :is-loading="isLoading" />
   </div>
 </template>
 

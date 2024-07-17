@@ -3,10 +3,9 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { fetchBots, fetchModels, sendMessage } from '../api'
 import ChatMessage from './ChatMessage.vue'
 import TranscriptionListener from './TranscriptionListener.vue'
-import LoadingBar from './LoadingBar.vue'  // Import the LoadingBar component
 
 const props = defineProps(['initialThreadId'])
-const emit = defineEmits(['thread-created', 'new-message-displayed'])
+const emit = defineEmits(['thread-created', 'new-message-displayed', 'loading-change'])
 
 const bots = ref([])
 const models = ref([])
@@ -90,6 +89,19 @@ function addSystemMessage(message) {
   scrollToBottom()
 }
 
+const setLoading = (value) => {
+  clearTimeout(loadingTimeout);
+  if (value) {
+    isWaitingForResponse.value = true;
+    emit('loading-change', true);
+  } else {
+    loadingTimeout = setTimeout(() => {
+      isWaitingForResponse.value = false;
+      emit('loading-change', false);
+    }, 200);
+  }
+};
+
 async function handleSendMessage() {
   if (!userInput.value.trim() || areControlsDisabled.value) return
 
@@ -107,7 +119,7 @@ async function handleSendMessage() {
   messages.value.push({ sender: 'Bot', message: 'Bot (thinking)...', type: 'thinking' })
   scrollToBottom()
 
-  isWaitingForResponse.value = true
+  setLoading(true)
 
   try {
     // Ensure we're using the same threadId for all messages in the conversation
@@ -150,7 +162,7 @@ async function handleSendMessage() {
     }
     addSystemMessage('Failed to send message. Please try again.')
   } finally {
-    isWaitingForResponse.value = false
+    setLoading(false)
   }
 
   scrollToBottom()
@@ -286,7 +298,6 @@ function handleKeyDown(event) {
       @error="handleTranscriptionError"
       @status-change="handleTranscriptionStatusChange"
     />
-    <LoadingBar :is-loading="isWaitingForResponse" />
   </div>
 </template>
 

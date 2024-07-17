@@ -276,7 +276,7 @@ function handleKeyDown(event) {
           {{ isListening ? 'Listening...' : isConnecting ? 'Connecting...' : isTranscriptionDisabled ? 'Transcription Disabled' : 'Not Listening' }}
         </div>
       </div>
-      <button @click="handleSendMessage" class="send-button" :disabled="areControlsDisabled">Send</button>
+      <button @click="handleSendMessage" class="send-button" :disabled="areControlsDisabled">Go</button>
     </div>
     <TranscriptionListener
       :enabled="isListening"

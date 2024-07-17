@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import ChatBot from '../components/ChatBot.vue'
-import FileViewer from '../components/FileViewer.vue'
+import ChatBot from '../components/chatbot/ChatBot.vue'
+import FileViewer from '../components/chatbot/FileViewer.vue'
 import LoadingBar from '../components/LoadingBar.vue'
 
 const threadId = ref('')

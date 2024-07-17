@@ -4,6 +4,7 @@ import { useToast } from 'vue-toastification'
 import { fetchFileStructure, fetchFileContent, updateFiles } from '@/api'
 import TreeItem from './TreeItem.vue'
 import SourceViewer from './SourceViewer.vue'
+import './css/FileViewer.css'
 
 const toast = useToast()
 
@@ -281,82 +282,3 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
     </template>
   </div>
 </template>
-
-<style scoped>
-.file-viewer-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
-}
-
-.button-row {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #ccc;
-  gap: 10px;
-}
-
-.action-buttons {
-  margin-left: auto;
-  display: flex;
-  gap: 10px;
-}
-
-.refresh-icon {
-  font-size: 1.2em;
-  vertical-align: middle;
-}
-
-.file-tree-and-content {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-.file-tree {
-  min-width: 250px;
-  overflow-y: auto;
-  border-right: 1px solid #ccc;
-  padding: 10px;
-  resize: horizontal;
-}
-
-.resizer {
-  width: 5px;
-  background: #ccc;
-  cursor: col-resize;
-}
-
-button {
-  padding: 5px 10px;
-  background-color: #3490dc;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s, opacity 0.3s;
-}
-
-button:hover {
-  background-color: #2779bd;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.error-message {
-  color: red;
-  font-weight: bold;
-}
-
-.no-thread-message, .no-files-message {
-  color: #666;
-  font-style: italic;
-}
-</style>

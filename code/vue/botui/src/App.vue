@@ -1,11 +1,13 @@
 <script setup>
 import { RouterView } from 'vue-router'
+import HamburgerMenu from './components/HamburgerMenu.vue'
 </script>
 
 <template>
   <div class="app-container">
     <header>
       <h1>Inception AI Chatbot</h1>
+      <HamburgerMenu />
     </header>
     <main>
       <RouterView />
@@ -48,6 +50,7 @@ header {
   color: white;
   padding: 1rem;
   text-align: center;
+  position: relative;
 }
 
 main {

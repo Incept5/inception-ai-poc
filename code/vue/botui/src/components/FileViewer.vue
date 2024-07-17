@@ -28,6 +28,11 @@ const expandToFirstLeaf = ref(false)
 const isLoading = ref(false);
 let loadingTimeout;
 
+// New refs for resizable panels
+const fileTreePanel = ref(null)
+const resizer = ref(null)
+const fileTreeWidth = ref(250) // Initial width of the file tree panel
+
 const setLoading = (value) => {
   clearTimeout(loadingTimeout);
   if (value) {
@@ -197,10 +202,33 @@ const updateSystem = async () => {
   }
 }
 
+// New function to handle panel resizing
+const initResize = (e) => {
+  window.addEventListener('mousemove', resize)
+  window.addEventListener('mouseup', stopResize)
+}
+
+const resize = (e) => {
+  const newWidth = e.clientX - fileTreePanel.value.getBoundingClientRect().left
+  if (newWidth >= 250) {
+    fileTreeWidth.value = newWidth
+  }
+}
+
+const stopResize = () => {
+  window.removeEventListener('mousemove', resize)
+  window.removeEventListener('mouseup', stopResize)
+}
+
 onMounted(() => {
   console.log('FileViewer: Component mounted, threadId:', props.threadId, 'fileViewerKey:', props.fileViewerKey)
   if (props.threadId) {
     fetchStructure()
+  }
+  
+  // Set up resizer event listener
+  if (resizer.value) {
+    resizer.value.addEventListener('mousedown', initResize)
   }
 })
 
@@ -228,7 +256,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
     <div v-else-if="!props.threadId" class="no-thread-message">No thread selected</div>
     <template v-else>
       <div class="file-tree-and-content">
-        <div class="file-tree">
+        <div class="file-tree" ref="fileTreePanel" :style="{ width: `${fileTreeWidth}px` }">
           <h2>Files</h2>
           <div v-if="Object.keys(fileStructure).length === 0" class="no-files-message">
             No files available for this thread.
@@ -240,6 +268,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
             :expand-to-first-leaf="expandToFirstLeaf"
           />
         </div>
+        <div class="resizer" ref="resizer"></div>
         <SourceViewer
           v-if="selectedFile"
           :file-path="selectedFile"
@@ -256,7 +285,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
   display: flex;
   flex-direction: column;
   height: 100%;
-  position: relative;  /* Add this to ensure proper positioning of the LoadingBar */
+  position: relative;
 }
 
 .button-row {
@@ -286,17 +315,23 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
 }
 
 .file-tree {
-  width: 250px;
   min-width: 250px;
   overflow-y: auto;
   border-right: 1px solid #ccc;
   padding: 10px;
+  resize: horizontal;
+}
+
+.resizer {
+  width: 5px;
+  background: #ccc;
+  cursor: col-resize;
 }
 
 button {
   padding: 5px 10px;
-  background-color: #3490dc; /* Blue background color */
-  color: white; /* White text */
+  background-color: #3490dc;
+  color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -305,7 +340,7 @@ button {
 }
 
 button:hover {
-  background-color: #2779bd; /* Darker blue on hover */
+  background-color: #2779bd;
 }
 
 button:disabled {

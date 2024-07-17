@@ -3,6 +3,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { fetchBots, fetchModels, sendMessage } from '../api'
 import ChatMessage from './ChatMessage.vue'
 import TranscriptionListener from './TranscriptionListener.vue'
+import LoadingBar from './LoadingBar.vue'  // Import the LoadingBar component
 
 const props = defineProps(['initialThreadId'])
 const emit = defineEmits(['thread-created', 'new-message-displayed'])
@@ -285,6 +286,7 @@ function handleKeyDown(event) {
       @error="handleTranscriptionError"
       @status-change="handleTranscriptionStatusChange"
     />
+    <LoadingBar :is-loading="isWaitingForResponse" />
   </div>
 </template>
 
@@ -296,6 +298,7 @@ function handleKeyDown(event) {
   max-width: 800px;
   margin: 0 auto;
   padding-bottom: 20px;
+  position: relative;  /* Added to position the LoadingBar */
 }
 
 .controls {

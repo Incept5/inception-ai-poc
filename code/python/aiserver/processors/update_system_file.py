@@ -58,6 +58,10 @@ def update_system_file(system_root_dir: str, file_path: str, file_content: str) 
         print("[DEBUG] Processing content using file fixing bot")
         # Process the content using the file fixing bot
         processed_content = file_fixing_bot.process_request_sync_final_only(bot_input, "")
+        if PartialFileUtils.is_partial_file_content(processed_content):
+            print("[ERROR] File fixing bot returned partial content")
+            raise Exception("File fixing bot failed to fix the partial file content")
+
         print("[DEBUG] File fixing bot processing complete")
     else:
         print("[DEBUG] Using provided content as is (not partial)")

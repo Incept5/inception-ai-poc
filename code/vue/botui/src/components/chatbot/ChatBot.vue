@@ -1,11 +1,12 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
-import { fetchBots, fetchModels, sendMessage } from '../api'
+import { fetchBots, fetchModels, sendMessage } from '../../api'
 import ChatMessage from './ChatMessage.vue'
 import TranscriptionListener from './TranscriptionListener.vue'
+import './css/ChatBot.css'
 
 const props = defineProps(['initialThreadId'])
-const emit = defineEmits(['thread-created', 'new-message-displayed'])
+const emit = defineEmits(['thread-created', 'new-message-displayed', 'loading-change'])
 
 const bots = ref([])
 const models = ref([])
@@ -18,6 +19,9 @@ const chatContainer = ref(null)
 const threadId = ref(null)
 const thinkingMessageIndex = ref(null)
 const isWaitingForResponse = ref(false)
+
+// Add this line to define loadingTimeout
+let loadingTimeout = null
 
 // Transcription-related refs
 const isListening = ref(false)
@@ -89,6 +93,19 @@ function addSystemMessage(message) {
   scrollToBottom()
 }
 
+const setLoading = (value) => {
+  clearTimeout(loadingTimeout);
+  if (value) {
+    isWaitingForResponse.value = true;
+    emit('loading-change', true);
+  } else {
+    loadingTimeout = setTimeout(() => {
+      isWaitingForResponse.value = false;
+      emit('loading-change', false);
+    }, 200);
+  }
+};
+
 async function handleSendMessage() {
   if (!userInput.value.trim() || areControlsDisabled.value) return
 
@@ -106,7 +123,7 @@ async function handleSendMessage() {
   messages.value.push({ sender: 'Bot', message: 'Bot (thinking)...', type: 'thinking' })
   scrollToBottom()
 
-  isWaitingForResponse.value = true
+  setLoading(true)
 
   try {
     // Ensure we're using the same threadId for all messages in the conversation
@@ -149,7 +166,7 @@ async function handleSendMessage() {
     }
     addSystemMessage('Failed to send message. Please try again.')
   } finally {
-    isWaitingForResponse.value = false
+    setLoading(false)
   }
 
   scrollToBottom()
@@ -287,139 +304,3 @@ function handleKeyDown(event) {
     />
   </div>
 </template>
-
-<style scoped>
-.chatbot-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  padding-bottom: 20px;
-}
-
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.top-row, .bottom-row {
-  display: flex;
-  gap: 10px;
-}
-
-.top-row {
-  justify-content: space-between;
-  align-items: center;
-}
-
-.bottom-row {
-  justify-content: flex-start;
-}
-
-.bot-selector-wrapper {
-  flex: 1;
-  min-width: 0;
-}
-
-select, button {
-  padding: 5px 10px;
-  font-size: 14px;
-}
-
-select {
-  width: 100%;
-}
-
-.new-conversation-btn {
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.chat-messages {
-  flex-grow: 1;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-bottom: 10px;
-  max-height: calc(100vh - 360px);
-}
-
-.input-area {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-textarea {
-  width: 100%;
-  padding: 5px;
-  resize: vertical;
-  min-height: 60px;
-}
-
-.transcription-and-send-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.transcription-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.transcription-status {
-  display: flex;
-  align-items: center;
-}
-
-.status-indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-right: 10px;
-  background-color: #ccc;
-}
-
-.status-indicator.active {
-  background-color: #4CAF50;
-}
-
-.status-indicator.connecting {
-  background-color: #FFA500;
-}
-
-.status-indicator.disabled {
-  background-color: #FF0000;
-}
-
-/* Add this new style for the blinking cursor */
-.chat-messages :deep(.thinking::after) {
-  content: '';
-  display: inline-block;
-  width: 0.5em;
-  height: 1em;
-  margin-left: 0.2em;
-  background-color: currentColor;
-  animation: blink 0.7s infinite;
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
-}
-
-/* Add styles for disabled controls */
-select:disabled,
-button:disabled,
-textarea:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-</style>

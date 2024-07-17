@@ -4,7 +4,7 @@ import { useToast } from 'vue-toastification'
 import { fetchFileStructure, fetchFileContent, updateFiles } from '@/api'
 import TreeItem from './TreeItem.vue'
 import SourceViewer from './SourceViewer.vue'
-import LoadingBar from './LoadingBar.vue'
+import './css/FileViewer.css'
 
 const toast = useToast()
 
@@ -19,6 +19,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['loading-change'])
+
 const fileStructure = ref({})
 const selectedFile = ref(null)
 const fileContent = ref('')
@@ -28,14 +30,21 @@ const expandToFirstLeaf = ref(false)
 const isLoading = ref(false);
 let loadingTimeout;
 
+// New refs for resizable panels
+const fileTreePanel = ref(null)
+const resizer = ref(null)
+const fileTreeWidth = ref(250) // Initial width of the file tree panel
+
 const setLoading = (value) => {
   clearTimeout(loadingTimeout);
   if (value) {
     isLoading.value = true;
+    emit('loading-change', true);
   } else {
     loadingTimeout = setTimeout(() => {
       isLoading.value = false;
-    }, 200); // Delay setting isLoading to false to prevent rapid toggling
+      emit('loading-change', false);
+    }, 200);
   }
 };
 
@@ -197,10 +206,33 @@ const updateSystem = async () => {
   }
 }
 
+// New function to handle panel resizing
+const initResize = (e) => {
+  window.addEventListener('mousemove', resize)
+  window.addEventListener('mouseup', stopResize)
+}
+
+const resize = (e) => {
+  const newWidth = e.clientX - fileTreePanel.value.getBoundingClientRect().left
+  if (newWidth >= 250) {
+    fileTreeWidth.value = newWidth
+  }
+}
+
+const stopResize = () => {
+  window.removeEventListener('mousemove', resize)
+  window.removeEventListener('mouseup', stopResize)
+}
+
 onMounted(() => {
   console.log('FileViewer: Component mounted, threadId:', props.threadId, 'fileViewerKey:', props.fileViewerKey)
   if (props.threadId) {
     fetchStructure()
+  }
+  
+  // Set up resizer event listener
+  if (resizer.value) {
+    resizer.value.addEventListener('mousedown', initResize)
   }
 })
 
@@ -228,7 +260,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
     <div v-else-if="!props.threadId" class="no-thread-message">No thread selected</div>
     <template v-else>
       <div class="file-tree-and-content">
-        <div class="file-tree">
+        <div class="file-tree" ref="fileTreePanel" :style="{ width: `${fileTreeWidth}px` }">
           <h2>Files</h2>
           <div v-if="Object.keys(fileStructure).length === 0" class="no-files-message">
             No files available for this thread.
@@ -240,6 +272,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
             :expand-to-first-leaf="expandToFirstLeaf"
           />
         </div>
+        <div class="resizer" ref="resizer"></div>
         <SourceViewer
           v-if="selectedFile"
           :file-path="selectedFile"
@@ -247,79 +280,5 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
         />
       </div>
     </template>
-    <LoadingBar :is-loading="isLoading" />
   </div>
 </template>
-
-<style scoped>
-.file-viewer-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;  /* Add this to ensure proper positioning of the LoadingBar */
-}
-
-.button-row {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #ccc;
-  gap: 10px;
-}
-
-.action-buttons {
-  margin-left: auto;
-  display: flex;
-  gap: 10px;
-}
-
-.refresh-icon {
-  font-size: 1.2em;
-  vertical-align: middle;
-}
-
-.file-tree-and-content {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-.file-tree {
-  width: 250px;
-  min-width: 250px;
-  overflow-y: auto;
-  border-right: 1px solid #ccc;
-  padding: 10px;
-}
-
-button {
-  padding: 5px 10px;
-  background-color: #3490dc; /* Blue background color */
-  color: white; /* White text */
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s, opacity 0.3s;
-}
-
-button:hover {
-  background-color: #2779bd; /* Darker blue on hover */
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.error-message {
-  color: red;
-  font-weight: bold;
-}
-
-.no-thread-message, .no-files-message {
-  color: #666;
-  font-style: italic;
-}
-</style>

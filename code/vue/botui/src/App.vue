@@ -1,58 +1,16 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
 import { RouterView } from 'vue-router'
-import ChatBot from './components/ChatBot.vue'
-import FileViewer from './components/FileViewer.vue'
-
-const router = useRouter()
-const route = useRoute()
-
-const threadId = ref('')
-const fileViewerKey = ref(0)
-
-const updateThreadId = (newThreadId) => {
-  threadId.value = newThreadId
-  router.push({ name: 'thread', params: { threadId: newThreadId } })
-}
-
-const handleNewMessageDisplayed = () => {
-  fileViewerKey.value += 1
-}
-
-onMounted(() => {
-  if (route.params.threadId) {
-    threadId.value = route.params.threadId
-  }
-})
-
-watch(() => route.params.threadId, (newThreadId) => {
-  if (newThreadId) {
-    threadId.value = newThreadId
-  }
-})
+import HamburgerMenu from './components/HamburgerMenu.vue'
 </script>
 
 <template>
   <div class="app-container">
     <header>
       <h1>Inception AI Chatbot</h1>
+      <HamburgerMenu />
     </header>
     <main>
-      <RouterView v-if="$route.name === 'transcribe'" />
-      <div v-else class="content-wrapper">
-        <ChatBot
-          class="chatbot"
-          :initialThreadId="threadId"
-          @thread-created="updateThreadId"
-          @new-message-displayed="handleNewMessageDisplayed"
-        />
-        <FileViewer
-          class="file-viewer"
-          :threadId="threadId"
-          :fileViewerKey="fileViewerKey"
-        />
-      </div>
+      <RouterView />
     </main>
   </div>
 </template>
@@ -92,26 +50,11 @@ header {
   color: white;
   padding: 1rem;
   text-align: center;
+  position: relative;
 }
 
 main {
   flex: 1;
   overflow: hidden;
-}
-
-.content-wrapper {
-  display: flex;
-  height: 100%;
-  width: 100%;
-}
-
-.chatbot, .file-viewer {
-  flex: 1;
-  overflow: auto;
-  padding: 1rem;
-}
-
-.chatbot {
-  border-right: 1px solid #ccc;
 }
 </style>

@@ -17,7 +17,7 @@
         {{ key }}
       </div>
       <TreeItem
-        v-if="typeof value === 'object'"
+        v-if="typeof value === 'object' && isOpen"
         :item="value"
         @select-file="$emit('select-file', $event)"
         class="nested"
@@ -74,6 +74,10 @@ export default {
       }
     }, { immediate: true })
 
+    watch(() => props.isExpanded, (newValue) => {
+      isOpen.value = newValue
+    })
+
     return {
       isOpen,
       toggle
@@ -88,9 +92,10 @@ export default {
   padding-left: 20px;
 }
 
-.folder {
+.folder, .file {
   cursor: pointer;
   user-select: none;
+  color: black; /* Change text color to black */
 }
 
 .folder::before {
@@ -98,17 +103,14 @@ export default {
   display: inline-block;
   margin-right: 6px;
   transition: transform 0.2s;
+  color: #3490dc; /* Keep the arrow icon color blue */
 }
 
 .folder-open::before {
   transform: rotate(90deg);
 }
 
-.file {
-  cursor: pointer;
-}
-
-.file:hover {
+.file:hover, .folder:hover {
   text-decoration: underline;
 }
 

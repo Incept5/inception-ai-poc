@@ -17,7 +17,7 @@ class AgentState(TypedDict):
 
 class CollaborationAgentBot(LangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None):
-        super().__init__(retriever_name)
+        super().__init__(retriever_name,default_llm_provider="openai", default_llm_model="gpt-4-turbo-preview")
         self.initialize()
 
     @property

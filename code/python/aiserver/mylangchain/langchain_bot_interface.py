@@ -14,7 +14,7 @@ import logging
 
 
 class LangchainBotInterface(BotInterface):
-    def __init__(self, retriever_name: Optional[str] = None):
+    def __init__(self, retriever_name: Optional[str] = None, default_llm_provider: Optional[str] = None, default_llm_model: Optional[str] = None):
         self.checkpointer = None
         self.graph = None
         self.llm_wrapper = None
@@ -25,6 +25,8 @@ class LangchainBotInterface(BotInterface):
         self.retriever_manager = RetrieverManager()
         self.retriever_name = retriever_name
         self.retriever = None
+        self.default_llm_provider = default_llm_provider
+        self.default_llm_model = default_llm_model
 
     @abstractmethod
     def create_graph(self) -> StateGraph:
@@ -227,12 +229,12 @@ class LangchainBotInterface(BotInterface):
             "llm_provider": {
                 "type": "string",
                 "description": "The LLM provider to use",
-                "default": None
+                "default": self.default_llm_provider
             },
             "llm_model": {
                 "type": "string",
                 "description": "The specific LLM model to use",
-                "default": None
+                "default": self.default_llm_model
             },
             "thread_id": {
                 "type": "string",

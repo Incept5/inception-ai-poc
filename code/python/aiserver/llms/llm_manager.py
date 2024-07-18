@@ -6,6 +6,7 @@ from llms.anthropic_provider import AnthropicProvider
 from llms.ollama_provider import OllamaProvider
 from llms.openai_provider import OpenAIProvider
 from llms.groq_provider import GroqProvider
+from llms.fastmlx_provider import FastMLXProvider
 from utils.debug_utils import debug_print
 
 class LLMManager:
@@ -13,7 +14,8 @@ class LLMManager:
         "anthropic": AnthropicProvider(),
         "ollama": OllamaProvider(),
         "openai": OpenAIProvider(),
-        "groq": GroqProvider()
+        "groq": GroqProvider(),
+        "fastmlx": FastMLXProvider()
     }
 
     @classmethod

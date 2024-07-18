@@ -1,10 +1,12 @@
-FROM python:3.9
+FROM python:3.11
 
 WORKDIR /app
 
 # We'll install dependencies at build time
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY constraints.txt .
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 
 # We're not copying any code files here, as they'll be mounted at runtime
 

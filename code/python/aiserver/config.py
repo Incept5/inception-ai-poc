@@ -10,6 +10,7 @@ class Config:
     LANGCHAIN_PROJECT = os.environ.get("LANGCHAIN_PROJECT", "LangGraph Tutorial")
     LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic").lower()
     OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama2")
+    FASTMLX_MODELS = os.environ.get("FASTMLX_MODELS", "mlx-community/gemma-2-9b-it-4bit")
 
     @classmethod
     def validate(cls):
@@ -22,5 +23,6 @@ class Config:
         debug_print(f"LANGCHAIN_PROJECT: {cls.LANGCHAIN_PROJECT}")
         debug_print(f"LLM_PROVIDER: {cls.LLM_PROVIDER}")
         debug_print(f"OLLAMA_MODEL: {cls.OLLAMA_MODEL}")
+        debug_print(f"FASTMLX_MODELS: {cls.FASTMLX_MODELS}")
 
 Config.validate()

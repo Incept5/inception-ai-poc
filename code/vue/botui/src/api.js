@@ -2,10 +2,33 @@ import axios from 'axios'
 
 const API_BASE_URL = '/api' // nginx should proxy this to the backend when running a dev server at http://localhost:5173/
 
+export const fetchLLMProviders = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/llm-providers`)
+    return response.data.providers
+  } catch (error) {
+    console.error('Error fetching LLM providers:', error)
+    return []
+  }
+}
+
 export const fetchBots = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/bots`)
-    return response.data
+    return response.data.map(bot => ({
+      ...bot,
+      config_options: {
+        ...bot.config_options,
+        llm_provider: bot.config_options?.llm_provider ? {
+          ...bot.config_options.llm_provider,
+          default: bot.config_options.llm_provider.default || 'None'
+        } : { default: 'None' },
+        llm_model: bot.config_options?.llm_model ? {
+          ...bot.config_options.llm_model,
+          default: bot.config_options.llm_model.default || 'None'
+        } : { default: 'None' }
+      }
+    }))
   } catch (error) {
     console.error('Error fetching bots:', error)
     return []
@@ -113,7 +136,6 @@ export const fetchFileStructure = async (threadId) => {
     return {}
   }
 }
-
 
 export const fetchFileContent = async (filePath) => {
   try {

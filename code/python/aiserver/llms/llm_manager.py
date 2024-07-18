@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Dict
 from langchain.tools import BaseTool
 from llms.llm_wrapper import LLMWrapper
 from llms.anthropic_provider import AnthropicProvider
@@ -9,7 +9,7 @@ from llms.groq_provider import GroqProvider
 from utils.debug_utils import debug_print
 
 class LLMManager:
-    providers = {
+    providers: Dict[str, BaseTool] = {
         "anthropic": AnthropicProvider(),
         "ollama": OllamaProvider(),
         "openai": OpenAIProvider(),

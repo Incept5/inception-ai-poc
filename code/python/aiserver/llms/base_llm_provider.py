@@ -11,3 +11,7 @@ class BaseLLMProvider(ABC):
     @abstractmethod
     def fetch_models(self) -> List[str]:
         pass
+
+    @abstractmethod
+    def get_default_model(self) -> str:
+        pass

@@ -34,3 +34,9 @@ class OllamaProvider(BaseLLMProvider):
         except Exception as e:
             debug_print(f"Error fetching Ollama models: {str(e)}")
             return []
+
+    def get_default_model(self) -> str:
+        available_models = self.fetch_models()
+        if available_models:
+            return available_models[0]
+        return "No models available"

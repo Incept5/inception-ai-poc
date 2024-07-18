@@ -29,3 +29,6 @@ class AnthropicProvider(BaseLLMProvider):
             "claude-3-haiku-20240307"
         ]
         return models
+
+    def get_default_model(self) -> str:
+        return os.environ.get("ANTHROPIC_MODEL", "claude-3-5-sonnet-20240620")

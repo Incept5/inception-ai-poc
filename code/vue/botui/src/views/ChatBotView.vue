@@ -3,7 +3,6 @@ import { ref, watch } from 'vue'
 import ChatBot from '../components/chatbot/ChatBot.vue'
 import FileViewer from '../components/chatbot/FileViewer.vue'
 import LoadingBar from '../components/LoadingBar.vue'
-import InfoTab from '../components/chatbot/InfoTab.vue'
 import OutputTab from '../components/chatbot/OutputTab.vue'
 
 const threadId = ref('')

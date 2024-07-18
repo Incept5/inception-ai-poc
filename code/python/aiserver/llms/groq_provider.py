@@ -47,3 +47,6 @@ class GroqProvider:
         except Exception as e:
             debug_print(f"Error fetching Groq models: {str(e)}")
             return []
+
+    def get_default_model(self) -> str:
+        return os.environ.get("GROQ_MODEL", "llama3-70b-8192")

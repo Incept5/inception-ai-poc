@@ -11,13 +11,16 @@ from langchain_experimental.utilities import PythonREPL
 import functools
 import operator
 
+# The agent doesn't work with Claude's model due to a Langchain/Anthropic issue
+# So we are setting the default provider to OpenAI and the model to gpt-4-turbo
+
 class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
     sender: str
 
 class CollaborationAgentBot(LangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None):
-        super().__init__(retriever_name)
+        super().__init__(retriever_name,default_llm_provider="openai", default_llm_model="gpt-4-turbo")
         self.initialize()
 
     @property
@@ -121,7 +124,7 @@ class CollaborationAgentBot(LangchainBotInterface):
 
         chart_agent = self.create_agent(
             [self.python_repl],
-            system_message="Any charts you display will be visible by the user. Always save chart images under /data/persisted_files/charts/<filename>.png (do not start path with /mnt)",
+            system_message="Any charts you display will be visible by the user. When generating a chart use the thread_id from the context to save the chart image to /mnt/__threads/{thread_id}/{chart_name}.png. Also remember to create the dir if necessary before saving the file.",
         )
         chart_node = functools.partial(self.agent_node, agent=chart_agent, name="chart_generator")
 

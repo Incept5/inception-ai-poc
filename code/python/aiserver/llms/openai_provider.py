@@ -14,7 +14,7 @@ class OpenAIProvider(BaseLLMProvider):
         if not api_key:
             raise ValueError("OPENAI_API_KEY not found in environment variables")
 
-        model = model or os.environ.get("OPENAI_MODEL", "gpt-3.5-turbo")
+        model = model or os.environ.get("OPENAI_MODEL", "gpt-4-turbo")
         llm = ChatOpenAI(model=model)
 
         if tools:
@@ -43,3 +43,6 @@ class OpenAIProvider(BaseLLMProvider):
         except Exception as e:
             debug_print(f"Error fetching OpenAI models: {str(e)}")
             return []
+
+    def get_default_model(self) -> str:
+        return os.environ.get("OPENAI_MODEL", "gpt-4-turbo")

@@ -108,20 +108,22 @@ const setLoading = (value) => {
 
 function processMarkdownUrl(message) {
   console.log('Processing message for markdown URL:', message)
-  const regex = /!\[.*?\]\((sandbox:\/mnt\/__threads\/\d+\/.*?\.png)\)/
-  const match = message.match(regex)
-  if (match) {
-    console.log('Markdown URL detected:', match[1])
-    const sandboxUrl = match[1]
+  // Updated regex to match the new format
+  const regex = /\[([^\]]+)\]\((sandbox:\/mnt\/__threads\/\d+\/[^)]+)\)/g
+  let match;
+  let processedMessage = message;
+
+  while ((match = regex.exec(message)) !== null) {
+    console.log('Markdown URL detected:', match[2])
+    const sandboxUrl = match[2]
     const publishedUrl = sandboxUrl.replace('sandbox:/mnt', '/published')
     console.log('Emitting output-url-detected event with URL:', publishedUrl)
     emit('output-url-detected', publishedUrl)
-    const processedMessage = message.replace(sandboxUrl, publishedUrl)
-    console.log('Processed message:', processedMessage)
-    return processedMessage
+    processedMessage = processedMessage.replace(sandboxUrl, publishedUrl)
   }
-  console.log('No markdown URL detected in the message')
-  return message
+
+  console.log('Processed message:', processedMessage)
+  return processedMessage
 }
 
 async function handleSendMessage() {

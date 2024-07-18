@@ -8,6 +8,7 @@ services:
     volumes:
       - ../code/python/aiserver:/app
       - ../data:/data
+      - ../data/published:/mnt
       - ${SYSTEM_SOURCE_PATH:-..}:/system_src:rw
       - ../data/huggingface_cache:/root/.cache/huggingface
     environment:
@@ -26,6 +27,7 @@ services:
     volumes:
       - ../code/web/www:/usr/share/nginx/html
       - ../code/web/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../data/published:/data/published:ro
     depends_on:
       - aiserver
 

@@ -115,7 +115,7 @@ class LangchainBotInterface(BotInterface):
 
         self.lazy_init_langchain(llm_provider, llm_model)
 
-        input_message = f"Context: {context}\n\nUser query: {user_input}"
+        input_message = f"Context: {context}\n\nthread_id: {thread_id}\n\nUser query: {user_input}"
         config = {"configurable": {"thread_id": thread_id}}
 
         last_event = None
@@ -151,7 +151,7 @@ class LangchainBotInterface(BotInterface):
         for key, value in event.items():
             if isinstance(value.get("messages", [])[-1], BaseMessage):
                 content = value["messages"][-1].content
-                if content is not None:
+                if content is not None and content != "":
                     if isinstance(content, str):
                         yield from self.process_content(content, step_type, thread_id)
                     else:

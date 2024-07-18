@@ -13,7 +13,7 @@ class AnthropicProvider(BaseLLMProvider):
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
 
-        model = model or os.environ.get("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
+        model = model or os.environ.get("ANTHROPIC_MODEL", "claude-3-5-sonnet-20240620")
         llm = ChatAnthropic(model=model,max_tokens=4096)
 
         if tools:

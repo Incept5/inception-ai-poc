@@ -1,11 +1,11 @@
 import os
 import requests
 from typing import Dict, Any
-from bots.bot_interface import BotInterface
+from bots.bot_interface import SimpleBotInterface
 from utils.debug_utils import debug_print
 
 
-class OllamaBot(BotInterface):
+class OllamaBot(SimpleBotInterface):
     def __init__(self):
         self.base_url = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
         debug_print(f"OllamaBot initialized with base URL: {self.base_url}")
@@ -18,7 +18,7 @@ class OllamaBot(BotInterface):
     def description(self) -> str:
         return "Ollama Bot - Direct interaction with Ollama models"
 
-    def process_request(self, user_input: str, context: str, **kwargs) -> str:
+    def simple_process_request(self, user_input: str, context: str, **kwargs) -> str:
         debug_print(f"OllamaBot processing request. User input: {user_input}")
         debug_print(f"Context: {context}")
         debug_print(f"Additional kwargs: {kwargs}")
@@ -49,9 +49,13 @@ class OllamaBot(BotInterface):
 
     def get_config_options(self) -> Dict[str, Any]:
         return {
+            "llm_provider": {
+                "type": "string",
+                "description": "The LLM provider to use",
+                "default": "ollama"
+            },
             "llm_model": {
                 "type": "string",
                 "description": "The Ollama model to use",
-                "default": "llama2"
             }
         }

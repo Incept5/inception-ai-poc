@@ -9,6 +9,7 @@ from bots.simple_retriever_bot import SimpleRetrieverBot
 from bots.iso20022_expert_bot import ISO20022ExpertBot
 from bots.system_bots import SystemBotManager
 from bots.collaboration_agent_bot import CollaborationAgentBot
+from bots.fast_mlx_bot import FastMlxBot
 
 def get_configured_bots():
     # Check if bots are already stored in the app context
@@ -22,7 +23,8 @@ def get_configured_bots():
             ("ollama-bot", OllamaBot()),
             ("simple-retriever-bot", SimpleRetrieverBot()),
             ("iso20022-expert-bot", ISO20022ExpertBot()),
-            ("collaboration-agent-bot", CollaborationAgentBot())
+            ("collaboration-agent-bot", CollaborationAgentBot()),
+            ("fast-mlx-bot", FastMlxBot())
         ])
         current_app.extensions['configured_bots'] = bots
 

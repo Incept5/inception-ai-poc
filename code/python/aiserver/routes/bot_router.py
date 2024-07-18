@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app, Response, stream_with_context
 from bots.configured_bots import get_configured_bots, get_bot
 from utils.debug_utils import debug_print
+from bots.bot_interface import SimpleBotInterface
+from mylangchain.langchain_bot_interface import LangchainBotInterface
 import json
 import traceback
 
@@ -44,8 +46,14 @@ def chat(bot_type):
 
     def generate():
         try:
-            for response in bot.process_request(user_input, context, **config):
-                yield f"data: {json.dumps(response)}\n\n"
+            if isinstance(bot, LangchainBotInterface):
+                for response in bot.process_request(user_input, context, **config):
+                    yield f"data: {json.dumps(response)}\n\n"
+            elif isinstance(bot, SimpleBotInterface):
+                response = bot.simple_process_request(user_input, context, **config)
+                yield f"data: {json.dumps({'type': 'final', 'content': response})}\n\n"
+            else:
+                raise ValueError(f"Unsupported bot type: {type(bot)}")
         except Exception as e:
             error_message = f"Error processing request: {str(e)}"
             stack_trace = traceback.format_exc()

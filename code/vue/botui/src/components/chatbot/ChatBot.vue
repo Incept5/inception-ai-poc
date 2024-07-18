@@ -6,7 +6,7 @@ import TranscriptionListener from './TranscriptionListener.vue'
 import './css/ChatBot.css'
 
 const props = defineProps(['initialThreadId'])
-const emit = defineEmits(['thread-created', 'new-message-displayed', 'loading-change'])
+const emit = defineEmits(['thread-created', 'new-message-displayed', 'loading-change', 'output-url-detected'])
 
 const bots = ref([])
 const models = ref([])
@@ -106,6 +106,18 @@ const setLoading = (value) => {
   }
 };
 
+function processMarkdownUrl(message) {
+  const regex = /!\[.*?\]\((sandbox:\/mnt\/__threads\/\d+\/.*?\.png)\)/
+  const match = message.match(regex)
+  if (match) {
+    const sandboxUrl = match[1]
+    const publishedUrl = sandboxUrl.replace('sandbox:/mnt', '/published')
+    emit('output-url-detected', publishedUrl)
+    return message.replace(sandboxUrl, publishedUrl)
+  }
+  return message
+}
+
 async function handleSendMessage() {
   if (!userInput.value.trim() || areControlsDisabled.value) return
 
@@ -146,9 +158,10 @@ async function handleSendMessage() {
     }
 
     for await (const chunk of responseStream) {
+      const processedMessage = processMarkdownUrl(chunk.content)
       messages.value.push({
         sender: 'Bot',
-        message: chunk.content,
+        message: processedMessage,
         type: chunk.type
       })
 

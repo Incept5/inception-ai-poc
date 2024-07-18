@@ -11,13 +11,16 @@ from langchain_experimental.utilities import PythonREPL
 import functools
 import operator
 
+# The agent doesn't work with Claude's model due to a Langchain/Anthropic issue
+# So we are setting the default provider to OpenAI and the model to gpt-4-turbo
+
 class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
     sender: str
 
 class CollaborationAgentBot(LangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None):
-        super().__init__(retriever_name,default_llm_provider="openai", default_llm_model="gpt-4-turbo-preview")
+        super().__init__(retriever_name,default_llm_provider="openai", default_llm_model="gpt-4-turbo")
         self.initialize()
 
     @property

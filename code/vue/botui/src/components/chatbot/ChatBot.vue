@@ -107,14 +107,20 @@ const setLoading = (value) => {
 };
 
 function processMarkdownUrl(message) {
+  console.log('Processing message for markdown URL:', message)
   const regex = /!\[.*?\]\((sandbox:\/mnt\/__threads\/\d+\/.*?\.png)\)/
   const match = message.match(regex)
   if (match) {
+    console.log('Markdown URL detected:', match[1])
     const sandboxUrl = match[1]
     const publishedUrl = sandboxUrl.replace('sandbox:/mnt', '/published')
+    console.log('Emitting output-url-detected event with URL:', publishedUrl)
     emit('output-url-detected', publishedUrl)
-    return message.replace(sandboxUrl, publishedUrl)
+    const processedMessage = message.replace(sandboxUrl, publishedUrl)
+    console.log('Processed message:', processedMessage)
+    return processedMessage
   }
+  console.log('No markdown URL detected in the message')
   return message
 }
 
@@ -158,6 +164,7 @@ async function handleSendMessage() {
     }
 
     for await (const chunk of responseStream) {
+      console.log('Received chunk:', chunk)
       const processedMessage = processMarkdownUrl(chunk.content)
       messages.value.push({
         sender: 'Bot',
@@ -168,6 +175,7 @@ async function handleSendMessage() {
       scrollToBottom()
     }
 
+    console.log('Final messages array:', messages.value)
     // Emit the new-message-displayed event
     emit('new-message-displayed')
   } catch (error) {

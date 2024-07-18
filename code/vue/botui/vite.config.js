@@ -21,6 +21,11 @@ export default defineConfig({
         target: 'http://localhost:9870',
         changeOrigin: true,
         secure: false,
+      },
+      '/published': {
+        target: 'http://localhost:9870',
+        changeOrigin: true,
+        secure: false,
       }
     }
   }

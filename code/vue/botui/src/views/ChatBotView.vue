@@ -59,12 +59,6 @@ watch(outputUrl, (newUrl) => {
           File Viewer
         </button>
         <button
-          @click="switchTab('infoTab')"
-          :class="{ active: activeTab === 'infoTab' }"
-        >
-          Info
-        </button>
-        <button
           @click="switchTab('output')"
           :class="{ active: activeTab === 'output' }"
         >
@@ -78,11 +72,6 @@ watch(outputUrl, (newUrl) => {
           :threadId="threadId"
           :fileViewerKey="fileViewerKey"
           @loading-change="setLoading"
-        />
-        <InfoTab
-          v-else-if="activeTab === 'infoTab'"
-          class="info-tab"
-          :threadId="threadId"
         />
         <OutputTab
           v-else-if="activeTab === 'output'"

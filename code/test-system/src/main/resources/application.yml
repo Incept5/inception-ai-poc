@@ -1,0 +1,17 @@
+quarkus:
+  http:
+    port: 8080
+  log:
+    level: INFO
+  logbook:
+    exclude:
+      - /health
+      - /metrics
+    format:
+      style: http
+    write:
+      max-body-size: 1000
+
+app:
+  name: "Test System"
+  version: "1.0.0"

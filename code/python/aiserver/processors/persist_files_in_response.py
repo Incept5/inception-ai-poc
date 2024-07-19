@@ -1,42 +1,64 @@
 import re
 from processors.persist_file import persist_file
+from utils.debug_utils import debug_print
 
 def persist_files_in_response(thread_id: str, response: str) -> str:
-    # Regular expression to find code blocks with file paths
-    pattern = r"```(\w+)\s+([^\n]+)\n(.*?)\n```"
+    lines = response.split('\n')
+    current_file = None
+    file_content = []
+    file_type = None
+    file_path = None
 
-    def process_match(match):
-        file_type = match.group(1)
-        file_path = match.group(2).strip()
-        file_content = match.group(3)
-
-        # Check if there are nested code blocks
-        nested_blocks = re.findall(r"```.*?```", file_content, re.DOTALL)
-        if nested_blocks:
-            # If nested blocks exist, find the last closing backticks
-            last_backticks_index = response.rfind("```", match.start())
-            if last_backticks_index > match.start():
-                file_content = response[match.start(3):last_backticks_index]
-
-        # Trim any content after the last closing backticks
-        file_content = file_content.rsplit("```", 1)[0].strip()
-
-        # Remove leading '#' and spaces from the file path
-        file_path = re.sub(r'^#\s*', '', file_path)
-
-        if file_path and ' ' not in file_path:
-            # Call persist_file for each file found, only if there are no spaces in the path
-            persist_file(thread_id, file_path, file_type, file_content)
-        else:
+    for line in lines:
+        if line.startswith('```') and current_file is None:
+            # Start of a new file block
+            parts = line.strip('`').split(maxsplit=1)
+            file_type = parts[0] if parts else None
+            file_path = parts[1] if len(parts) > 1 else None
+            current_file = True
+            debug_print(f"Starting new file block: type={file_type}, path={file_path}")
+        elif line.startswith('```') and current_file:
+            # End of the current file block
+            if file_type and file_path and file_content:
+                file_content_str = '\n'.join(file_content)
+                persist_file(thread_id, file_path, file_type, file_content_str)
+                debug_print(f"Persisted file: {file_path}")
+            current_file = None
+            file_content = []
+            file_type = None
+            file_path = None
+        elif current_file:
             if not file_path:
-                print(f"Debug: Empty file path found for {file_type} code block")
-            elif ' ' in file_path:
-                print(f"Debug: File path '{file_path}' contains spaces, skipping persistence")
+                # Check if this line contains the file path
+                if line.startswith('#'):
+                    file_path = line.lstrip('#').strip()
+                    debug_print(f"Found file path in comment: {file_path}")
+                elif not line.strip():
+                    # Skip empty lines
+                    continue
+                else:
+                    file_path = line.strip()
+                    debug_print(f"Found file path: {file_path}")
+            else:
+                file_content.append(line)
 
-        # Return the original match (to keep the response unchanged)
-        return match.group(0)
+    # Handle case where the last block wasn't closed
+    if current_file and file_type and file_path and file_content:
+        file_content_str = '\n'.join(file_content)
+        persist_file(thread_id, file_path, file_type, file_content_str)
+        debug_print(f"Persisted last file: {file_path}")
 
-    # Process all matches in the response
-    processed_response = re.sub(pattern, process_match, response, flags=re.DOTALL)
+    return response
 
-    return processed_response
+def extract_file_info(line: str) -> tuple:
+    """Extract file type and path from a line."""
+    parts = line.strip('`').split(maxsplit=1)
+    file_type = parts[0] if parts else None
+    file_path = parts[1] if len(parts) > 1 else None
+    return file_type, file_path
+
+def process_file_path(line: str) -> str:
+    """Process a line to extract the file path."""
+    if line.startswith('#'):
+        return line.lstrip('#').strip()
+    return line.strip()

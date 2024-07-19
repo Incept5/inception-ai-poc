@@ -25,6 +25,11 @@ dependencies {
     implementation("org.junit.jupiter:junit-jupiter-engine:5.10.2")
     implementation("io.quarkus:quarkus-junit5")
 
+    // Add Jackson dependencies
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
+    implementation("io.quarkus:quarkus-jackson")
+
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
 }
@@ -48,16 +53,10 @@ allOpen {
     annotation("io.quarkus.test.junit.QuarkusTest")
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_21.toString()
-    kotlinOptions.javaParameters = true
-}
-
-// Add a new source set for system tests
 sourceSets {
     main {
         kotlin {
-            srcDirs("src/main/kotlin", "src/main/kotlin/com/incept5/systemtests")
+            srcDirs("src/main/kotlin", "src/system-tests/kotlin")
         }
     }
 }

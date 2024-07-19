@@ -9,6 +9,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.tools import Tool
 from prompts.system_prompts import file_saving_prompt
+from tools.file_content_tool import file_content
 
 
 class State(TypedDict):
@@ -19,15 +20,8 @@ class BaseSystemImproverBot(LangchainBotInterface):
     def __init__(self, system_src: str = '/system_src'):
         super().__init__()
         self.system_src = system_src
-        self.tools = [self._create_file_content_tool()]
+        self.tools = [file_content]
         self.initialize()
-
-    def _create_file_content_tool(self):
-        return Tool(
-            name="file_content",
-            func=self.file_content,
-            description="Get the content of a file, handling paths that may or may not start with the system source directory."
-        )
 
     @property
     def bot_type(self) -> str:
@@ -40,42 +34,6 @@ class BaseSystemImproverBot(LangchainBotInterface):
     def get_tools(self) -> List:
         return self.tools
 
-    def file_content(self, file_path: Optional[str] = None) -> str:
-        """Get the content of a file, handling paths that may or may not start with the system source directory."""
-        debug_print(f"file_content tool called with file_path: {file_path}")
-
-        if file_path is None:
-            debug_print("Error: No file path provided.")
-            return "Error: No file path provided."
-
-        debug_print(f"System source directory: {self.system_src}")
-
-        if file_path.startswith(self.system_src):
-            full_path = file_path
-        else:
-            full_path = os.path.join(self.system_src, file_path)
-
-        debug_print(f"Full path: {full_path}")
-
-        if os.path.exists(full_path):
-            debug_print(f"File exists: {full_path}")
-            if os.path.isfile(full_path):
-                debug_print(f"Is a file: {full_path}")
-                try:
-                    with open(full_path, 'r') as file:
-                        content = file.read()
-                    debug_print(f"File content read successfully: {full_path}")
-                    return content
-                except Exception as e:
-                    debug_print(f"Error reading file: {full_path}. Error: {str(e)}")
-                    return f"Error reading file: {file_path}. Error: {str(e)}"
-            else:
-                debug_print(f"Path is not a file: {full_path}")
-                return f"Error: {file_path} is not a file."
-        else:
-            debug_print(f"File not found: {full_path}")
-            return f"Error: File {file_path} not found."
-
     def create_chatbot(self):
         def chatbot(state: State):
             file_structure = file_tree(self.system_src)
@@ -87,7 +45,7 @@ class BaseSystemImproverBot(LangchainBotInterface):
 
             # Check for hints.md file
             debug_print("Attempting to read hints.md")
-            hints_content = self.file_content("hints.md")
+            hints_content = file_content("hints.md")
             hints_section = ""
             if not hints_content.startswith("Error:"):
                 hints_section = f"""

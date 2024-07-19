@@ -1,0 +1,22 @@
+quarkus:
+  http:
+    port: 8080
+  log:
+    level: INFO
+    category:
+      "com.incept5": DEBUG
+  logbook:
+    exclude:
+      - /health
+      - /metrics
+    format:
+      style: http
+    write:
+      max-body-size: 1000
+
+  jackson:
+    write-dates-as-timestamps: false
+
+app:
+  name: "Test System"
+  version: "1.0.0"

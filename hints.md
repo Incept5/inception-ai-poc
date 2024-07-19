@@ -37,3 +37,8 @@ Always load the following files when asked about look and feel or styling issues
 * code/vue/botui/src/main.css
 
 VERY IMPORTANT: Do not try to change ANY files under /code/web/botui as these are generated from the source files in code/vue/botui - fetch the source files and suggest edits to those files instead!
+
+## test-system
+When making changes to the test-system you should look under /code/test-system and bare these things in mind:
+* The gradle build file is located at code/test-system/build.gradle.kts
+* We are using yaml for application configuration in code/test-system/src/main/resources/application.yml

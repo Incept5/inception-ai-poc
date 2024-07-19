@@ -1,4 +1,4 @@
-package com.incept5
+package com.incept5.controllers
 
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
@@ -14,7 +14,7 @@ class GreetingResourceTest {
           .`when`().get("/hello")
           .then()
              .statusCode(200)
-             .body(`is`("Hello from Quarkus REST"))
+             .body(`is`("Hello from test-system"))
     }
 
 }

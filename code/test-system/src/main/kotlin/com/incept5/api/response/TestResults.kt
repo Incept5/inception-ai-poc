@@ -1,4 +1,4 @@
-package com.incept5
+package com.incept5.api.response
 
 data class TestResults(
     val totalTests: Long,

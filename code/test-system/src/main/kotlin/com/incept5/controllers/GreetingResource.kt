@@ -1,4 +1,4 @@
-package com.incept5
+package com.incept5.controllers
 
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
@@ -10,7 +10,7 @@ class GreetingResource {
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    fun hello() = "Hello from RESTEasy Reactive"
+    fun hello() = "Hello from test-system"
 
     @GET
     @Path("/system-tests")

@@ -3,6 +3,8 @@ quarkus:
     port: 8080
   log:
     level: INFO
+    category:
+      "com.incept5": DEBUG
   logbook:
     exclude:
       - /health
@@ -11,6 +13,9 @@ quarkus:
       style: http
     write:
       max-body-size: 1000
+
+  jackson:
+    write-dates-as-timestamps: false
 
 app:
   name: "Test System"

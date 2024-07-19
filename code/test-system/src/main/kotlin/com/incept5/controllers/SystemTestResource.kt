@@ -1,5 +1,6 @@
-package com.incept5
+package com.incept5.controllers
 
+import com.incept5.api.response.TestResults
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
@@ -43,4 +44,3 @@ class SystemTestResource {
         return details
     }
 }
-

@@ -41,3 +41,4 @@ VERY IMPORTANT: Do not try to change ANY files under /code/web/botui as these ar
 ## test-system
 When making changes to the test-system you should look under /code/test-system and bare these things in mind:
 * The gradle build file is located at code/test-system/build.gradle.kts
+* We are using yaml for application configuration in code/test-system/src/main/resources/application.yml

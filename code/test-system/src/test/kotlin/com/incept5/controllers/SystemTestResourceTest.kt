@@ -1,16 +1,38 @@
-package com.incept5
+package com.incept5.controllers
 
+import com.incept5.api.response.TestResults
 import io.quarkus.test.junit.QuarkusTest
+import io.restassured.RestAssured
 import io.restassured.RestAssured.given
-import org.hamcrest.CoreMatchers.`is`
+import io.restassured.filter.log.LogDetail
+import io.restassured.filter.log.RequestLoggingFilter
+import io.restassured.filter.log.ResponseLoggingFilter
 import org.hamcrest.CoreMatchers.notNullValue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.slf4j.LoggerFactory
 
 @QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SystemTestResourceTest {
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(SystemTestResourceTest::class.java)
+    }
+
+    @BeforeAll
+    fun setup() {
+        logger.info("Setting up SystemTestResourceTest")
+        RestAssured.filters(
+            RequestLoggingFilter(LogDetail.ALL),
+            ResponseLoggingFilter(LogDetail.ALL)
+        )
+    }
 
     @Test
     fun testRunSystemTestsEndpoint() {
+        logger.info("Running testRunSystemTestsEndpoint")
         given()
             .`when`().get("/system-tests")
             .then()
@@ -24,6 +46,7 @@ class SystemTestResourceTest {
 
     @Test
     fun testRunSystemTestsEndpointResults() {
+        logger.info("Running testRunSystemTestsEndpointResults")
         val response = given()
             .`when`().get("/system-tests")
             .then()

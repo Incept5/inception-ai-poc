@@ -30,6 +30,9 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
     implementation("io.quarkus:quarkus-jackson")
 
+    runtimeOnly("io.quarkus:quarkus-resteasy-reactive")
+    runtimeOnly("io.quarkus:quarkus-resteasy-reactive-jackson")
+
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
 }

@@ -50,19 +50,19 @@ const setLoading = (value) => {
   }
 };
 
-function processMarkdownUrl(message) {
-  console.log('Processing message for markdown URL:', message)
-  const regex = /\[([^\]]+)\]\((sandbox:\/mnt\/__threads\/\d+\/[^)]+)\)/g
+function processPublishedFiles(message) {
+  console.log('Processing message for published files:', message)
+  const regex = /(\S+:\/mnt\/__threads\/\d+\/[^\s)]+)/g
   let match;
   let processedMessage = message;
 
   while ((match = regex.exec(message)) !== null) {
-    console.log('Markdown URL detected:', match[2])
-    const sandboxUrl = match[2]
-    const publishedUrl = sandboxUrl.replace('sandbox:/mnt', '/published')
+    console.log('Published file path detected:', match[1])
+    const sandboxPath = match[1]
+    const publishedUrl = sandboxPath.replace(/^\S+:\/mnt/, '/published')
     console.log('Emitting output-url-detected event with URL:', publishedUrl)
     emit('output-url-detected', publishedUrl)
-    processedMessage = processedMessage.replace(sandboxUrl, publishedUrl)
+    processedMessage = processedMessage.replace(sandboxPath, publishedUrl)
   }
 
   console.log('Processed message:', processedMessage)
@@ -106,7 +106,7 @@ async function handleSendMessage() {
 
     for await (const chunk of responseStream) {
       console.log('Received chunk:', chunk)
-      const processedMessage = processMarkdownUrl(chunk.content)
+      const processedMessage = processPublishedFiles(chunk.content)
       messages.value.push({
         sender: 'Bot',
         message: processedMessage,

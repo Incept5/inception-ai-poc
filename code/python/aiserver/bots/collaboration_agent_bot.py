@@ -108,7 +108,7 @@ class CollaborationAgentBot(LangchainBotInterface):
         if last_message.tool_calls:
             debug_print("Router: Routing to 'call_tool' due to tool calls in the last message")
             return "call_tool"
-        if sender is not "Researcher" and "FINAL ANSWER" in last_message.content:
+        if "FINAL ANSWER" in last_message.content:
             debug_print("Router: Routing to '__end__' due to 'FINAL ANSWER' in the last message")
             return "__end__"
         
@@ -124,7 +124,23 @@ class CollaborationAgentBot(LangchainBotInterface):
 
         chart_agent = self.create_agent(
             [self.python_repl],
-            system_message="Any charts you display will be visible by the user. When generating a chart use the thread_id from the context to save the chart image to /mnt/__threads/{thread_id}/{chart_name}.png. Also remember to create the dir if necessary before saving the file.",
+            system_message="""
+            Any charts you display will be visible by the user. 
+            IMPORTANT: When generating a chart use the thread_id from the context to update the python code to save the chart image to disk at: /mnt/__threads/{thread_id}/{chart_name}.png
+            IMPORTANT: Also remember to create the dir if necessary before saving the file.
+            IMPORTANT: Always respond with the full path of the saved chart image.
+            Example python code that includes saving the chart to disk and creating the directory if needed:
+            
+            # IMPORTANT: Ensure the directory exists and is using the thread_id
+            save_dir = '/mnt/__threads/1721485325915'
+            os.makedirs(save_dir, exist_ok=True)
+        
+            file = os.path.join(save_dir, 'uk_gdp_line_graph.png')
+            
+            # Save the figure
+            plt.savefig(file)
+            print(f"Saved chart to: {file}")
+            """,
         )
         chart_node = functools.partial(self.agent_node, agent=chart_agent, name="chart_generator")
 

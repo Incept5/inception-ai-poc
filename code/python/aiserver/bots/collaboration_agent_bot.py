@@ -108,7 +108,7 @@ class CollaborationAgentBot(LangchainBotInterface):
         if last_message.tool_calls:
             debug_print("Router: Routing to 'call_tool' due to tool calls in the last message")
             return "call_tool"
-        if "FINAL ANSWER" in last_message.content:
+        if sender is not "Researcher" and "FINAL ANSWER" in last_message.content:
             debug_print("Router: Routing to '__end__' due to 'FINAL ANSWER' in the last message")
             return "__end__"
         
@@ -125,21 +125,51 @@ class CollaborationAgentBot(LangchainBotInterface):
         chart_agent = self.create_agent(
             [self.python_repl],
             system_message="""
-            Any charts you display will be visible by the user. 
-            IMPORTANT: When generating a chart use the thread_id from the context to update the python code to save the chart image to disk at: /mnt/__threads/{thread_id}/{chart_name}.png
-            IMPORTANT: Also remember to create the dir if necessary before saving the file.
-            IMPORTANT: Always respond with the full path of the saved chart image.
-            Example python code that includes saving the chart to disk and creating the directory if needed:
+            Write Python code to generate a chart using the data provided by the Researcher.
+            Then run the code to generate the chart and save it to disk.
+            Follow these steps carefully:
             
-            # IMPORTANT: Ensure the directory exists and is using the thread_id
-            save_dir = '/mnt/__threads/1721485325915'
+            1. IMPORTANT: Use the thread_id from the context to construct the save path:
+               save_dir = f'/mnt/__threads/{thread_id}'
+            
+            2. CRITICAL: Create the directory before generating the chart:
+               - Import the 'os' module
+               - Use os.makedirs(save_dir, exist_ok=True) to ensure the directory exists
+            
+            3. Generate the chart using matplotlib or another appropriate library
+            
+            4. Save the chart image to disk at: {save_dir}/{chart_name}.png
+            
+            5. Check the output for errors and make any necessary adjustments
+            
+            6. IMPORTANT: Always respond with the full path of the saved chart image
+            
+            Example Python code that demonstrates these steps:
+            
+            import matplotlib.pyplot as plt
+            import os
+            
+            # Step 1: Construct the save path using thread_id
+            thread_id = '1721485325915'  # Replace with actual thread_id from context
+            save_dir = f'/mnt/__threads/{thread_id}'
+            
+            # Step 2: Ensure the directory exists
             os.makedirs(save_dir, exist_ok=True)
-        
-            file = os.path.join(save_dir, 'uk_gdp_line_graph.png')
             
-            # Save the figure
-            plt.savefig(file)
-            print(f"Saved chart to: {file}")
+            # Step 3: Generate the chart (example)
+            # Use the data provided by the Researcher to create your chart
+            plt.plot([1, 2, 3, 4], [1, 4, 2, 3])
+            plt.title('Example Chart')
+            
+            # Step 4: Save the chart
+            chart_name = 'example_chart.png'
+            file_path = os.path.join(save_dir, chart_name)
+            plt.savefig(file_path)
+            
+            # Step 5: Check for errors (add error handling as needed)
+            
+            # Step 6: Respond with the full path
+            print(f"Saved chart to: {file_path}")
             """,
         )
         chart_node = functools.partial(self.agent_node, agent=chart_agent, name="chart_generator")

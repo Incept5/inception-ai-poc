@@ -7,4 +7,4 @@ node_modules
 __threads
 __chromadb
 retriever-info.json
-data/huggingface_cache/hub
+**/huggingface_cache/**

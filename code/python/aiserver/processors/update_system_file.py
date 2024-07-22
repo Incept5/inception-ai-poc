@@ -5,6 +5,7 @@ from utils.partial_file_utils import PartialFileUtils
 def update_system_file(system_root_dir: str, file_path: str, file_content: str, target_dir: str = None) -> None:
     """
     Update a system file, checking for partial content and invoking the file fixing bot if necessary.
+    Ignores files where the path contains '__snippets/'.
 
     Args:
         system_root_dir (str): The root directory of the system
@@ -19,6 +20,11 @@ def update_system_file(system_root_dir: str, file_path: str, file_content: str, 
     print(f"[DEBUG] Updating system file: {file_path}")
     print(f"[DEBUG] System root directory: {system_root_dir}")
     print(f"[DEBUG] Target directory: {target_dir}")
+
+    # Check if the file path contains '__snippets/'
+    if '__snippets/' in file_path:
+        print(f"[INFO] Ignoring file in __snippets/: {file_path}")
+        return
 
     if target_dir:
         full_path = os.path.join(target_dir, file_path)

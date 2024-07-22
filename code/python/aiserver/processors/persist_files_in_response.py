@@ -20,8 +20,11 @@ def persist_files_in_response(thread_id: str, response: str) -> str:
             debug_print(f"Starting new file block: type={file_type}, path={file_path}")
         elif line.startswith('```') and current_file:
             # End of the current file block
-            if file_type and file_path and file_content:
+            if file_content:
                 file_content_str = '\n'.join(file_content)
+                if not file_path:
+                    file_path = generate_random_file_path(file_type)
+                    debug_print(f"Generated random file path: {file_path}")
                 persist_file(thread_id, file_path, file_type, file_content_str)
                 debug_print(f"Persisted file: {file_path}")
             current_file = None
@@ -41,16 +44,17 @@ def persist_files_in_response(thread_id: str, response: str) -> str:
                     # Skip empty lines
                     continue
                 else:
-                    # If we couldn't extract a path, generate a random one and include this line
-                    file_path = generate_random_file_path(file_type)
-                    debug_print(f"Generated random file path: {file_path}")
+                    # If we couldn't extract a path, we'll generate a random one later
                     file_content.append(line)
             else:
                 file_content.append(line)
 
     # Handle case where the last block wasn't closed
-    if current_file and file_type and file_path and file_content:
+    if current_file and file_content:
         file_content_str = '\n'.join(file_content)
+        if not file_path:
+            file_path = generate_random_file_path(file_type)
+            debug_print(f"Generated random file path for last block: {file_path}")
         persist_file(thread_id, file_path, file_type, file_content_str)
         debug_print(f"Persisted last file: {file_path}")
 
@@ -108,5 +112,9 @@ def generate_random_file_path(file_type: str) -> str:
         'text': '.txt'
     }
     
-    extension = file_extensions.get(file_type.lower(), '')
+    if file_type is None:
+        debug_print("Warning: file_type is None in generate_random_file_path")
+        file_type = 'text'  # Default to text file if type is unknown
+    
+    extension = file_extensions.get(file_type.lower(), '.txt')
     return os.path.join("__snippets", f"{random_chars}{extension}")

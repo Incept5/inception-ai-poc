@@ -257,6 +257,10 @@ System Improver Bot on how to improve your system for example:
     * /src/widgetsystem/widgets/simple_widget.py - default widget
     * /src/widgetsystem/widgets/complex_widget.py - more complex widget that does x y z
 
+## Supabase
+
+If you want to play with the database integration (e.g. simple-db-bot) then you can start a supabase stack by following the instructions [here](docker/supabase/README.md).
+
 ## License and Copyright
 
 This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0). For the full license text, please see the `LICENSE.txt` file in the root directory of this project or visit [http://creativecommons.org/licenses/by-nc/4.0/](http://creativecommons.org/licenses/by-nc/4.0/).

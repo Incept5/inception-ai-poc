@@ -5,7 +5,7 @@ from utils.debug_utils import debug_print
 
 @tool("file_content")
 def file_content(file_path: Optional[str] = None) -> str:
-    """Get the content of a file, handling paths that may or may not start with the system source directory."""
+    """Get the content of a file, handling paths that may or may not start with the system source directory or a forward slash."""
     debug_print(f"file_content tool called with file_path: {file_path}")
 
     system_src = os.environ.get("SYSTEM_SOURCE_PATH", "/system_src")
@@ -16,8 +16,11 @@ def file_content(file_path: Optional[str] = None) -> str:
 
     debug_print(f"System source directory: {system_src}")
 
-    if file_path.startswith(system_src):
-        full_path = file_path
+    # Remove leading slash if present
+    file_path = file_path.lstrip('/')
+
+    if file_path.startswith(system_src.lstrip('/')):
+        full_path = os.path.join('/', file_path)
     else:
         full_path = os.path.join(system_src, file_path)
 

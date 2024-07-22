@@ -1,10 +1,6 @@
 import os
-from typing import Optional
-from flask import current_app
 from bots.system_bots import SystemBotManager
-from utils.file_utils import FileUtils
 from utils.partial_file_utils import PartialFileUtils
-
 
 def update_system_file(system_root_dir: str, file_path: str, file_content: str) -> None:
     """

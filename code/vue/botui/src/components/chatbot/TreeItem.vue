@@ -2,7 +2,7 @@
   <ul class="tree-item">
     <li v-for="(value, key) in item" :key="key">
       <div
-        v-if="typeof value === 'object'"
+        v-if="value.type === 'directory'"
         @click="toggle"
         class="folder"
         :class="{ 'folder-open': isOpen }"
@@ -10,15 +10,16 @@
         {{ key }}
       </div>
       <div
-        v-else
-        @click="$emit('select-file', value)"
+        v-else-if="value.type === 'file'"
+        @click="$emit('select-file', value.path)"
         class="file"
+        :class="{ 'partial-file': value.is_partial }"
       >
         {{ key }}
       </div>
       <TreeItem
-        v-if="typeof value === 'object' && isOpen"
-        :item="value"
+        v-if="value.type === 'directory' && isOpen"
+        :item="value.children"
         @select-file="$emit('select-file', $event)"
         class="nested"
         :expand-to-first-leaf="expandToFirstLeaf"
@@ -59,10 +60,10 @@ export default {
         const keys = Object.keys(props.item)
         if (keys.length > 0) {
           const firstValue = props.item[keys[0]]
-          if (typeof firstValue === 'object') {
+          if (firstValue.type === 'directory') {
             isOpen.value = true
-          } else {
-            emit('select-file', firstValue)
+          } else if (firstValue.type === 'file') {
+            emit('select-file', firstValue.path)
           }
         }
       }
@@ -95,7 +96,7 @@ export default {
 .folder, .file {
   cursor: pointer;
   user-select: none;
-  color: black; /* Change text color to black */
+  color: black;
 }
 
 .folder::before {
@@ -103,7 +104,7 @@ export default {
   display: inline-block;
   margin-right: 6px;
   transition: transform 0.2s;
-  color: #3490dc; /* Keep the arrow icon color blue */
+  color: #3490dc;
 }
 
 .folder-open::before {
@@ -116,5 +117,9 @@ export default {
 
 .nested {
   padding-left: 20px;
+}
+
+.partial-file {
+  color: #e74c3c;
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useToast } from 'vue-toastification'
 import { fetchFileStructure, fetchFileContent, updateFiles } from '@/api'
 import TreeItem from './TreeItem.vue'
@@ -21,14 +21,15 @@ const props = defineProps({
 
 const emit = defineEmits(['loading-change'])
 
-const fileStructure = ref({})
+const fileList = ref([])
+const treeStructure = ref({})
 const selectedFile = ref(null)
 const fileContent = ref('')
 const error = ref('')
 const expandToFirstLeaf = ref(false)
 
-const isLoading = ref(false);
-let loadingTimeout;
+const isLoading = ref(false)
+let loadingTimeout
 
 // New refs for resizable panels
 const fileTreePanel = ref(null)
@@ -36,17 +37,17 @@ const resizer = ref(null)
 const fileTreeWidth = ref(250) // Initial width of the file tree panel
 
 const setLoading = (value) => {
-  clearTimeout(loadingTimeout);
+  clearTimeout(loadingTimeout)
   if (value) {
-    isLoading.value = true;
-    emit('loading-change', true);
+    isLoading.value = true
+    emit('loading-change', true)
   } else {
     loadingTimeout = setTimeout(() => {
-      isLoading.value = false;
-      emit('loading-change', false);
-    }, 200);
+      isLoading.value = false
+      emit('loading-change', false)
+    }, 200)
   }
-};
+}
 
 const fetchStructure = async () => {
   console.log('FileViewer: Fetching file structure for threadId:', props.threadId)
@@ -58,22 +59,21 @@ const fetchStructure = async () => {
   }
 
   error.value = ''
-  setLoading(true);
+  setLoading(true)
   console.log('FileViewer: Setting isLoading to true')
   try {
     console.log('FileViewer: Calling fetchFileStructure API...')
     const response = await fetchFileStructure(props.threadId)
     console.log('FileViewer: File structure fetched:', JSON.stringify(response, null, 2))
 
-    const newFileStructure = response.tree || {}
+    fileList.value = response.files || []
+    treeStructure.value = buildTreeStructure(fileList.value)
 
-    if (selectedFile.value && !isFileInStructure(selectedFile.value, newFileStructure)) {
+    if (selectedFile.value && !isFileInStructure(selectedFile.value, treeStructure.value)) {
       console.log('FileViewer: Currently selected file is no longer in the structure, resetting selection')
       selectedFile.value = null
       fileContent.value = ''
     }
-
-    fileStructure.value = newFileStructure
 
     expandToFirstLeaf.value = true
   } catch (err) {
@@ -81,42 +81,65 @@ const fetchStructure = async () => {
     error.value = 'Error fetching file structure. Please try again.'
     resetComponentState()
   } finally {
-    setLoading(false);
+    setLoading(false)
     console.log('FileViewer: Setting isLoading to false')
   }
 }
 
 const resetComponentState = () => {
-  fileStructure.value = {}
+  fileList.value = []
+  treeStructure.value = {}
   selectedFile.value = null
   fileContent.value = ''
   expandToFirstLeaf.value = false
 }
 
+const buildTreeStructure = (files) => {
+  const tree = {}
+  const prefix = `__threads/${props.threadId}/`
+  files.forEach(file => {
+    const strippedPath = file.path.startsWith(prefix) ? file.path.slice(prefix.length) : file.path
+    const parts = strippedPath.split('/')
+    let current = tree
+    parts.forEach((part, index) => {
+      if (index === parts.length - 1) {
+        current[part] = { ...file, type: 'file', path: strippedPath }
+      } else {
+        if (!current[part]) {
+          current[part] = { type: 'directory', children: {} }
+        }
+        current = current[part].children
+      }
+    })
+  })
+  return tree
+}
+
 const isFileInStructure = (filePath, structure) => {
-  for (const [key, value] of Object.entries(structure)) {
-    if (typeof value === 'string' && value === filePath) {
-      return true
-    } else if (typeof value === 'object') {
-      if (isFileInStructure(filePath, value)) return true
-    }
+  const prefix = `__threads/${props.threadId}/`
+  const strippedPath = filePath.startsWith(prefix) ? filePath.slice(prefix.length) : filePath
+  const parts = strippedPath.split('/')
+  let current = structure
+  for (const part of parts) {
+    if (!current[part]) return false
+    current = current[part].children || current[part]
   }
-  return false
+  return true
 }
 
 const selectFirstFile = () => {
-  const firstFile = findFirstFile(fileStructure.value)
+  const firstFile = findFirstFile(treeStructure.value)
   if (firstFile) {
-    selectFile(firstFile)
+    selectFile(firstFile.path)
   }
 }
 
 const findFirstFile = (obj) => {
   for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === 'string') {
+    if (value.type === 'file') {
       return value
-    } else if (typeof value === 'object') {
-      const result = findFirstFile(value)
+    } else if (value.type === 'directory') {
+      const result = findFirstFile(value.children)
       if (result) return result
     }
   }
@@ -126,18 +149,19 @@ const findFirstFile = (obj) => {
 const selectFile = async (filePath) => {
   console.log('FileViewer: Selecting file:', filePath)
   selectedFile.value = filePath
-  setLoading(true);
+  setLoading(true)
   console.log('FileViewer: Setting isLoading to true')
   try {
     console.log('FileViewer: Fetching content for file:', filePath)
-    fileContent.value = await fetchFileContent(filePath)
+    const fullPath = `__threads/${props.threadId}/${filePath}`
+    fileContent.value = await fetchFileContent(fullPath)
     console.log('FileViewer: File content fetched, length:', fileContent.value.length)
   } catch (err) {
     console.error('FileViewer: Error fetching file content:', err)
     error.value = 'Error fetching file content. Please try again.'
     fileContent.value = ''
   } finally {
-    setLoading(false);
+    setLoading(false)
     console.log('FileViewer: Setting isLoading to false')
   }
 }
@@ -185,7 +209,7 @@ const refreshFileStructure = () => {
 
 const updateSystem = async () => {
   console.log('FileViewer: Updating system')
-  setLoading(true);
+  setLoading(true)
   console.log('FileViewer: Setting isLoading to true')
   try {
     await updateFiles(props.threadId)
@@ -201,7 +225,7 @@ const updateSystem = async () => {
       timeout: 3000
     })
   } finally {
-    setLoading(false);
+    setLoading(false)
     console.log('FileViewer: Setting isLoading to false')
   }
 }
@@ -262,12 +286,12 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
       <div class="file-tree-and-content">
         <div class="file-tree" ref="fileTreePanel" :style="{ width: `${fileTreeWidth}px` }">
           <h2>Files</h2>
-          <div v-if="Object.keys(fileStructure).length === 0" class="no-files-message">
+          <div v-if="Object.keys(treeStructure).length === 0" class="no-files-message">
             No files available for this thread.
           </div>
           <TreeItem
             v-else
-            :item="fileStructure"
+            :item="treeStructure"
             @select-file="selectFile"
             :expand-to-first-leaf="expandToFirstLeaf"
           />

@@ -3,106 +3,118 @@ import os
 import json
 import re
 from utils.partial_file_utils import PartialFileUtils
+import logging
 
 file_viewer_blueprint = Blueprint('file_viewer', __name__)
 
 BASE_DIR = '/data/persisted_files'
 
-def debug_print(message):
-    print(f"[DEBUG] {message}")
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
-def get_file_structure(root_dir: str, subpath: str = '') -> dict:
+
+def get_file_list(root_dir: str, subpath: str = '') -> list:
     """
-    Generate the file structure for the given root directory.
+    Generate a list of files for the given root directory.
 
     Args:
         root_dir (str): Path to the root directory
         subpath (str): Subpath to prepend to all file paths
 
     Returns:
-        dict: A dictionary representing the file structure
+        list: A list of dictionaries representing the files
     """
-    structure = {}
-    for root, dirs, files in os.walk(root_dir):
-        path = os.path.relpath(root, root_dir)
-        current = structure
-        if path != '.':
-            for folder in path.split(os.sep):
-                if folder not in current:
-                    current[folder] = {}
-                current = current[folder]
-        for file in files:
-            full_path = os.path.join(path, file)
-            if full_path.startswith(os.sep):
-                full_path = full_path[1:]  # Remove leading slash if present
-            current[file] = os.path.join(subpath, full_path)
-    return structure
+    file_list = []
+    try:
+        for root, _, files in os.walk(root_dir):
+            for file in files:
+                full_path = os.path.join(root, file)
+                relative_path = os.path.relpath(full_path, root_dir)
+                file_path = os.path.join(subpath, relative_path)
+                if file_path.startswith(os.sep):
+                    file_path = file_path[1:]  # Remove leading slash if present
+                file_list.append({
+                    "name": file,
+                    "path": file_path,
+                    "is_partial": PartialFileUtils.is_partial_file(full_path)
+                })
+    except Exception as e:
+        logger.error(f"Error in get_file_list: {str(e)}")
+        raise
+    return file_list
 
-def check_partial_files(structure: dict, root_dir: str) -> bool:
+
+def check_partial_files(file_list: list) -> bool:
     """
-    Check if any files in the structure are partial files.
+    Check if any files in the list are partial files.
 
     Args:
-        structure (dict): The file structure dictionary
-        root_dir (str): The root directory path
+        file_list (list): The list of file dictionaries
 
     Returns:
         bool: True if any partial files are detected, False otherwise
     """
+    return any(file['is_partial'] for file in file_list)
 
-    def check_recursive(current_structure, current_path):
-        for key, value in current_structure.items():
-            if isinstance(value, dict):
-                if check_recursive(value, os.path.join(current_path, key)):
-                    return True
-            else:
-                full_path = os.path.join(root_dir, value)
-                if PartialFileUtils.is_partial_file(full_path):
-                    return True
-        return False
-
-    return check_recursive(structure, '')
 
 def generate_file_structure_response(root_dir: str, subpath: str = '') -> dict:
     """
-    Generate the file structure response with the 'tree' and 'partial_files_detected' attributes.
+    Generate the file structure response with the 'files' and 'partial_files_detected' attributes.
 
     Args:
         root_dir (str): Path to the root directory
         subpath (str): Subpath to prepend to all file paths
 
     Returns:
-        dict: A dictionary containing the file structure and partial files detection status
+        dict: A dictionary containing the file list and partial files detection status
     """
-    structure = get_file_structure(root_dir, subpath)
-    partial_files_detected = check_partial_files(structure, root_dir)
+    file_list = get_file_list(root_dir, subpath)
+    partial_files_detected = check_partial_files(file_list)
 
     return {
-        "tree": structure,
+        "files": file_list,
         "partial_files_detected": partial_files_detected
     }
+
 
 @file_viewer_blueprint.route('/files', methods=['GET'])
 @file_viewer_blueprint.route('/files/<path:subpath>', methods=['GET'])
 def get_file_structure_route(subpath=''):
-    debug_print(f"Received request for subpath: {subpath}")
+    logger.debug(f"Received request for subpath: {subpath}")
+
+    # Input validation for subpath
+    if not re.match(r'^[a-zA-Z0-9_\-./]*$', subpath):
+        logger.warning(f"Invalid subpath: {subpath}")
+        return jsonify({"error": "Invalid subpath"}), 400
+
     root_dir = os.path.join(BASE_DIR, subpath)
 
     if not os.path.exists(root_dir):
-        debug_print(f"Path not found: {root_dir}")
+        logger.warning(f"Path not found: {root_dir}")
         return jsonify({"error": "Path not found"}), 404
 
-    structure_response = generate_file_structure_response(root_dir, subpath)
-    debug_print(f"Returning structure: {json.dumps(structure_response, indent=2)}")
-    return jsonify(structure_response)
+    try:
+        structure_response = generate_file_structure_response(root_dir, subpath)
+        logger.debug(f"Returning structure: {json.dumps(structure_response, indent=2)}")
+        return jsonify(structure_response)
+    except Exception as e:
+        logger.error(f"Error generating file structure: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
 
 @file_viewer_blueprint.route('/file/<path:file_path>', methods=['GET'])
 def get_file_content(file_path):
-    debug_print(f"Received request for file: {file_path}")
+    logger.debug(f"Received request for file: {file_path}")
+
+    # Input validation for file_path
+    if not re.match(r'^[a-zA-Z0-9_\-./]*$', file_path):
+        logger.warning(f"Invalid file path: {file_path}")
+        return jsonify({"error": "Invalid file path"}), 400
+
     full_path = os.path.join(BASE_DIR, file_path)
     if os.path.isfile(full_path):
-        debug_print(f"Sending file: {full_path}")
+        logger.debug(f"Sending file: {full_path}")
         return send_file(full_path)
     else:
-        debug_print(f"File not found: {full_path}")
+        logger.warning(f"File not found: {full_path}")
         return jsonify({"error": "File not found"}), 404

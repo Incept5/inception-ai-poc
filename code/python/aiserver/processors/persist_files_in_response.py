@@ -1,4 +1,7 @@
 import re
+import random
+import string
+import os
 from processors.persist_file import persist_file
 from utils.debug_utils import debug_print
 
@@ -12,15 +15,16 @@ def persist_files_in_response(thread_id: str, response: str) -> str:
     for line in lines:
         if line.startswith('```') and current_file is None:
             # Start of a new file block
-            parts = line.strip('`').split(maxsplit=1)
-            file_type = parts[0] if parts else None
-            file_path = parts[1] if len(parts) > 1 else None
+            file_type, file_path = extract_file_info(line)
             current_file = True
             debug_print(f"Starting new file block: type={file_type}, path={file_path}")
         elif line.startswith('```') and current_file:
             # End of the current file block
-            if file_type and file_path and file_content:
+            if file_content:
                 file_content_str = '\n'.join(file_content)
+                if not file_path:
+                    file_path = generate_random_file_path(file_type)
+                    debug_print(f"Generated random file path: {file_path}")
                 persist_file(thread_id, file_path, file_type, file_content_str)
                 debug_print(f"Persisted file: {file_path}")
             current_file = None
@@ -30,21 +34,27 @@ def persist_files_in_response(thread_id: str, response: str) -> str:
         elif current_file:
             if not file_path:
                 # Check if this line contains the file path
-                if line.startswith('#'):
-                    file_path = line.lstrip('#').strip()
-                    debug_print(f"Found file path in comment: {file_path}")
+                file_path = process_file_path(line, file_type)
+                if file_path:
+                    debug_print(f"Found file path: {file_path}")
+                    if file_path.startswith("__snippets"):
+                        # If we generated a random path, include this line in the content
+                        file_content.append(line)
                 elif not line.strip():
                     # Skip empty lines
                     continue
                 else:
-                    file_path = line.strip()
-                    debug_print(f"Found file path: {file_path}")
+                    # If we couldn't extract a path, we'll generate a random one later
+                    file_content.append(line)
             else:
                 file_content.append(line)
 
     # Handle case where the last block wasn't closed
-    if current_file and file_type and file_path and file_content:
+    if current_file and file_content:
         file_content_str = '\n'.join(file_content)
+        if not file_path:
+            file_path = generate_random_file_path(file_type)
+            debug_print(f"Generated random file path for last block: {file_path}")
         persist_file(thread_id, file_path, file_type, file_content_str)
         debug_print(f"Persisted last file: {file_path}")
 
@@ -57,8 +67,54 @@ def extract_file_info(line: str) -> tuple:
     file_path = parts[1] if len(parts) > 1 else None
     return file_type, file_path
 
-def process_file_path(line: str) -> str:
-    """Process a line to extract the file path."""
-    if line.startswith('#'):
-        return line.lstrip('#').strip()
-    return line.strip()
+def process_file_path(line: str, file_type: str) -> str:
+    """Process a line to extract the file path, handling various comment types and invalid characters."""
+    # Regular expression to match common comment styles
+    comment_pattern = r'^\s*(#|//|/\*|\*|<!--|--)\s*'
+    
+    # Remove common comment prefixes
+    cleaned_line = re.sub(comment_pattern, '', line.strip())
+    
+    # Remove trailing comment closures if present
+    cleaned_line = re.sub(r'\s*(-->|\*/)\s*$', '', cleaned_line)
+    
+    if cleaned_line:
+        # Check if the path contains spaces or other unexpected characters
+        if is_valid_path(cleaned_line):
+            return cleaned_line
+        else:
+            debug_print(f"Invalid path detected: {cleaned_line}. Returning None.")
+            return None
+    else:
+        return None
+
+def is_valid_path(path: str) -> bool:
+    """Check if the given path is valid (no spaces or unexpected characters)."""
+    # Allow alphanumeric characters, underscores, hyphens, periods, and forward slashes
+    return bool(re.match(r'^[\w\-./]+$', path))
+
+def generate_random_file_path(file_type: str) -> str:
+    """Generate a random file path based on the file type."""
+    random_chars = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+    
+    file_extensions = {
+        'python': '.py',
+        'kotlin': '.kt',
+        'java': '.java',
+        'javascript': '.js',
+        'typescript': '.ts',
+        'html': '.html',
+        'css': '.css',
+        'json': '.json',
+        'xml': '.xml',
+        'yaml': '.yml',
+        'markdown': '.md',
+        'text': '.txt'
+    }
+    
+    if file_type is None:
+        debug_print("Warning: file_type is None in generate_random_file_path")
+        file_type = 'text'  # Default to text file if type is unknown
+    
+    extension = file_extensions.get(file_type.lower(), '.txt')
+    return os.path.join("__snippets", f"{random_chars}{extension}")

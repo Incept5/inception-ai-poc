@@ -1,19 +1,17 @@
 import os
-from typing import Optional
-from flask import current_app
 from bots.system_bots import SystemBotManager
-from utils.file_utils import FileUtils
 from utils.partial_file_utils import PartialFileUtils
 
-
-def update_system_file(system_root_dir: str, file_path: str, file_content: str) -> None:
+def update_system_file(system_root_dir: str, file_path: str, file_content: str, target_dir: str = None) -> None:
     """
     Update a system file, checking for partial content and invoking the file fixing bot if necessary.
+    Ignores files where the path contains '__snippets/'.
 
     Args:
         system_root_dir (str): The root directory of the system
         file_path (str): The path of the file to update, relative to the system root
         file_content (str): The new content for the file
+        target_dir (str, optional): The target directory to save the file, if different from system_root_dir
 
     Raises:
         FileNotFoundError: If the file doesn't exist and partial content is detected
@@ -21,8 +19,17 @@ def update_system_file(system_root_dir: str, file_path: str, file_content: str) 
     """
     print(f"[DEBUG] Updating system file: {file_path}")
     print(f"[DEBUG] System root directory: {system_root_dir}")
+    print(f"[DEBUG] Target directory: {target_dir}")
 
-    full_path = os.path.join(system_root_dir, file_path)
+    # Check if the file path contains '__snippets/'
+    if '__snippets/' in file_path:
+        print(f"[INFO] Ignoring file in __snippets/: {file_path}")
+        return
+
+    if target_dir:
+        full_path = os.path.join(target_dir, file_path)
+    else:
+        full_path = os.path.join(system_root_dir, file_path)
     print(f"[DEBUG] Full file path: {full_path}")
 
     # Check if the file content is partial using PartialFileUtils

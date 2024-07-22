@@ -49,9 +49,8 @@ class LangchainBotInterface(BotInterface):
         pass
 
     def lazy_init_langchain(self, llm_provider=None, llm_model=None):
-        # Always update the LLM wrapper in case we are switching providers or models
-        self._update_llm_wrapper(llm_provider, llm_model)
-        if not self.is_initialized:
+        llm_changed = self._update_llm_wrapper(llm_provider, llm_model)
+        if not self.is_initialized or llm_changed:
             self.lazy_init_retriever()
             self.graph = self.create_graph()
             self.is_initialized = True
@@ -60,7 +59,7 @@ class LangchainBotInterface(BotInterface):
         if self.retriever_name and self.retriever is None:
             self.retriever = retriever_builder.get_retriever(self.retriever_name)
 
-    def _update_llm_wrapper(self, llm_provider, llm_model):
+    def _update_llm_wrapper(self, llm_provider, llm_model) -> bool:
         debug_print("Updating LLM wrapper")
         debug_print(f"Current LLM provider: {self.current_llm_provider}, Current LLM model: {self.current_llm_model}")
         debug_print(f"New LLM provider: {llm_provider}, New LLM model: {llm_model}")
@@ -82,6 +81,8 @@ class LangchainBotInterface(BotInterface):
             self.current_llm_model = llm_model
         else:
             debug_print("LLM wrapper unchanged")
+
+        return should_update
 
     def process_request_sync_final_only(self, user_input: str, context: str, **kwargs) -> str:
         """

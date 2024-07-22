@@ -9,6 +9,7 @@ class PartialFileUtils:
         r'\[\.\.\.\s*.*?\.\.\.\]',  # Matches "[... ...]" with any content, including "anything"
         r'<!--\s*\.\.\.',  # Matches "<!-- ..."
         r'/\*\s*\.\.\.\s*\(', # Matches "/* ... (" with optional whitespace and content before "..."
+        r'/\*\s*\w+\s+remain\s+unchanged\s*\*/',  # Matches "/* Any word remain unchanged */"
     ]
 
     @staticmethod

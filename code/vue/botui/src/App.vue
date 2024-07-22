@@ -10,7 +10,14 @@ import HamburgerMenu from './components/HamburgerMenu.vue'
       <HamburgerMenu />
     </header>
     <main>
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <template v-if="Component">
+          <component :is="Component" />
+        </template>
+        <template v-else>
+          <p>No component loaded</p>
+        </template>
+      </RouterView>
     </main>
   </div>
 </template>

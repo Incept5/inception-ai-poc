@@ -116,5 +116,6 @@ def generate_random_file_path(file_type: str) -> str:
         debug_print("Warning: file_type is None in generate_random_file_path")
         file_type = 'text'  # Default to text file if type is unknown
     
-    extension = file_extensions.get(file_type.lower(), '.txt')
+    # If the file_type is not in our predefined mapping, use it as the extension
+    extension = file_extensions.get(file_type.lower(), f'.{file_type.lower()}')
     return os.path.join("__snippets", f"{random_chars}{extension}")

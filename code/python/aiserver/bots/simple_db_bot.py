@@ -12,9 +12,23 @@ from langchain.sql_database import SQLDatabase
 class State(TypedDict):
     messages: Annotated[List, add_messages]
 
+SQL_PREFIX = """You are an agent designed to interact with a SQL database.
+Given an input question, create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer.
+Unless the user specifies a specific number of examples they wish to obtain, always limit your query to at most {top_k} results.
+You can order the results by a relevant column to return the most interesting examples in the database.
+Never query for all the columns from a specific table, only ask for the relevant columns given the question.
+You have access to tools for interacting with the database.
+Only use the below tools. Only use the information returned by the below tools to construct your final answer.
+You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
+
+It is okay to create new tables and update existing tables and also to delete tables.
+
+If the question does not seem related to the database, just return "I don't know" as the answer.
+"""
+
 class SimpleDBBot(LangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None, db_url: str = os.environ.get("DB_READER_DB_URI")):
-        super().__init__(retriever_name)
+        super().__init__(retriever_name,default_llm_provider="openai", default_llm_model="gpt-4-turbo")
         self.db_url = db_url
         self.initialize()
 
@@ -51,7 +65,7 @@ class SimpleDBBot(LangchainBotInterface):
 
             llm = self.llm_wrapper.llm
             db = SQLDatabase.from_uri(self.db_url)
-            agent_executor = create_sql_agent(llm, db=db, agent_type="tool-calling", verbose=True)
+            agent_executor = create_sql_agent(llm, db=db, agent_type="tool-calling", verbose=True, prefix=SQL_PREFIX)
 
             # Use the SQL agent to process the user's query
             result = agent_executor.invoke({"input": messages[-1].content})

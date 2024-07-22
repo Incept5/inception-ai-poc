@@ -1,9 +1,13 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import ChatBot from '../components/chatbot/ChatBot.vue'
 import FileViewer from '../components/chatbot/FileViewer.vue'
 import LoadingBar from '../components/LoadingBar.vue'
 import OutputTab from '../components/chatbot/OutputTab.vue'
+
+const router = useRouter()
+const route = useRoute()
 
 const threadId = ref('')
 const fileViewerKey = ref(0)
@@ -13,6 +17,11 @@ const outputUrl = ref('')
 
 const updateThreadId = (newThreadId) => {
   threadId.value = newThreadId
+  if (newThreadId) {
+    router.push({ name: 'thread', params: { threadId: newThreadId } })
+  } else {
+    router.push({ name: 'home' })
+  }
 }
 
 const handleNewMessageDisplayed = () => {
@@ -37,6 +46,15 @@ watch(outputUrl, (newUrl) => {
     activeTab.value = 'output'
   }
 })
+
+// Watch for route changes and update threadId
+watch(() => route.params.threadId, (newThreadId) => {
+  if (newThreadId) {
+    threadId.value = newThreadId
+  } else {
+    threadId.value = ''
+  }
+}, { immediate: true })
 </script>
 
 <template>

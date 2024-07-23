@@ -1,10 +1,12 @@
-from flask import Blueprint, jsonify, request
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
+from typing import List, Optional
 import os
 import traceback
 from utils.file_utils import FileUtils
 from processors.update_system_file import update_system_file
 
-file_updater_blueprint = Blueprint('file_updater', __name__)
+file_updater_router = APIRouter()
 
 BASE_DIR = '/data/persisted_files'
 SYSTEM_SRC_DIR = '/system_src'
@@ -14,9 +16,9 @@ def debug_print(message):
     print(f"[DEBUG] {message}")
 
 
-@file_updater_blueprint.route('/update-files', methods=['POST'])
-@file_updater_blueprint.route('/update-files/<path:subpath>', methods=['POST'])
-def update_files(subpath=''):
+@file_updater_router.post('/update-files')
+@file_updater_router.post('/update-files/{subpath:path}')
+async def update_files(subpath: Optional[str] = ''):
     debug_print(f"Received POST request to update files for subpath: {subpath}")
 
     source_path = os.path.join(BASE_DIR, subpath)
@@ -26,7 +28,7 @@ def update_files(subpath=''):
     debug_print(f"Destination path: {destination_path}")
 
     try:
-        updated_files = []
+        updated_files: List[str] = []
         for root, _, files in os.walk(source_path):
             for file in files:
                 src_file = os.path.join(root, file)
@@ -47,17 +49,17 @@ def update_files(subpath=''):
                     debug_print(f"Skipped file with weird characters: {rel_path}")
 
         debug_print(f"Files updated in the system: {updated_files}")
-        return jsonify({
+        return JSONResponse(content={
             "message": f"Files in {subpath} have been updated in the system",
             "updated_files": updated_files
-        }), 200
+        }, status_code=200)
     except FileNotFoundError as e:
         error_message = f"Source path not found: {str(e)}"
         debug_print(error_message)
         debug_print(f"Full stack trace:\n{traceback.format_exc()}")
-        return jsonify({"error": error_message}), 404
+        raise HTTPException(status_code=404, detail=error_message)
     except Exception as e:
         error_message = f"Error updating files: {str(e)}"
         debug_print(error_message)
         debug_print(f"Full stack trace:\n{traceback.format_exc()}")
-        return jsonify({"error": error_message}), 500
+        raise HTTPException(status_code=500, detail=error_message)

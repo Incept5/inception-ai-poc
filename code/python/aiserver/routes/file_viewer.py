@@ -1,11 +1,13 @@
-from flask import Blueprint, jsonify, send_file, request
+from fastapi import APIRouter, HTTPException, Response
+from fastapi.responses import JSONResponse, FileResponse
+from typing import List, Dict, Optional
 import os
 import json
 import re
 from utils.partial_file_utils import PartialFileUtils
 import logging
 
-file_viewer_blueprint = Blueprint('file_viewer', __name__)
+file_viewer_router = APIRouter()
 
 BASE_DIR = '/data/persisted_files'
 
@@ -13,7 +15,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-def get_file_list(root_dir: str, subpath: str = '') -> list:
+def get_file_list(root_dir: str, subpath: str = '') -> List[Dict[str, str]]:
     """
     Generate a list of files for the given root directory.
 
@@ -22,7 +24,7 @@ def get_file_list(root_dir: str, subpath: str = '') -> list:
         subpath (str): Subpath to prepend to all file paths
 
     Returns:
-        list: A list of dictionaries representing the files
+        List[Dict[str, str]]: A list of dictionaries representing the files
     """
     file_list = []
     try:
@@ -44,12 +46,12 @@ def get_file_list(root_dir: str, subpath: str = '') -> list:
     return file_list
 
 
-def check_partial_files(file_list: list) -> bool:
+def check_partial_files(file_list: List[Dict[str, str]]) -> bool:
     """
     Check if any files in the list are partial files.
 
     Args:
-        file_list (list): The list of file dictionaries
+        file_list (List[Dict[str, str]]): The list of file dictionaries
 
     Returns:
         bool: True if any partial files are detected, False otherwise
@@ -57,7 +59,7 @@ def check_partial_files(file_list: list) -> bool:
     return any(file['is_partial'] for file in file_list)
 
 
-def generate_file_structure_response(root_dir: str, subpath: str = '') -> dict:
+def generate_file_structure_response(root_dir: str, subpath: str = '') -> Dict[str, any]:
     """
     Generate the file structure response with the 'files' and 'partial_files_detected' attributes.
 
@@ -66,7 +68,7 @@ def generate_file_structure_response(root_dir: str, subpath: str = '') -> dict:
         subpath (str): Subpath to prepend to all file paths
 
     Returns:
-        dict: A dictionary containing the file list and partial files detection status
+        Dict[str, any]: A dictionary containing the file list and partial files detection status
     """
     file_list = get_file_list(root_dir, subpath)
     partial_files_detected = check_partial_files(file_list)
@@ -77,44 +79,44 @@ def generate_file_structure_response(root_dir: str, subpath: str = '') -> dict:
     }
 
 
-@file_viewer_blueprint.route('/files', methods=['GET'])
-@file_viewer_blueprint.route('/files/<path:subpath>', methods=['GET'])
-def get_file_structure_route(subpath=''):
+@file_viewer_router.get('/files')
+@file_viewer_router.get('/files/{subpath:path}')
+async def get_file_structure_route(subpath: Optional[str] = ''):
     logger.debug(f"Received request for subpath: {subpath}")
 
     # Input validation for subpath
     if not re.match(r'^[a-zA-Z0-9_\-./]*$', subpath):
         logger.warning(f"Invalid subpath: {subpath}")
-        return jsonify({"error": "Invalid subpath"}), 400
+        raise HTTPException(status_code=400, detail="Invalid subpath")
 
     root_dir = os.path.join(BASE_DIR, subpath)
 
     if not os.path.exists(root_dir):
         logger.warning(f"Path not found: {root_dir}")
-        return jsonify({"error": "Path not found"}), 404
+        raise HTTPException(status_code=404, detail="Path not found")
 
     try:
         structure_response = generate_file_structure_response(root_dir, subpath)
         logger.debug(f"Returning structure: {json.dumps(structure_response, indent=2)}")
-        return jsonify(structure_response)
+        return JSONResponse(content=structure_response)
     except Exception as e:
         logger.error(f"Error generating file structure: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@file_viewer_blueprint.route('/file/<path:file_path>', methods=['GET'])
-def get_file_content(file_path):
+@file_viewer_router.get('/file/{file_path:path}')
+async def get_file_content(file_path: str):
     logger.debug(f"Received request for file: {file_path}")
 
     # Input validation for file_path
     if not re.match(r'^[a-zA-Z0-9_\-./]*$', file_path):
         logger.warning(f"Invalid file path: {file_path}")
-        return jsonify({"error": "Invalid file path"}), 400
+        raise HTTPException(status_code=400, detail="Invalid file path")
 
     full_path = os.path.join(BASE_DIR, file_path)
     if os.path.isfile(full_path):
         logger.debug(f"Sending file: {full_path}")
-        return send_file(full_path)
+        return FileResponse(full_path)
     else:
         logger.warning(f"File not found: {full_path}")
-        return jsonify({"error": "File not found"}), 404
+        raise HTTPException(status_code=404, detail="File not found")

@@ -6,8 +6,7 @@ from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_community.agent_toolkits import create_sql_agent
-from langchain_openai import ChatOpenAI
-from langchain.sql_database import SQLDatabase
+from langchain_community.utilities import SQLDatabase
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]

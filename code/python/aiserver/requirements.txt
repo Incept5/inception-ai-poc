@@ -24,3 +24,6 @@ matplotlib
 psycopg2
 playwright
 beautifulsoup4
+fastapi
+uvicorn
+starlette

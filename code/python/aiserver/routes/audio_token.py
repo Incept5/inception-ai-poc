@@ -1,10 +1,11 @@
 import os
 import requests
 import time
-from flask import Blueprint, jsonify
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 from utils.debug_utils import debug_print
 
-audio_token_blueprint = Blueprint('audio_token', __name__)
+audio_token_router = APIRouter()
 
 # Global variables to store the token and its expiry time
 current_token = None
@@ -35,8 +36,11 @@ def fetch_new_token():
         debug_print(f"API request failed: {str(e)}")
         raise
 
-@audio_token_blueprint.route('/audio-token', methods=['GET'])
-def get_audio_token():
+class AudioTokenResponse(BaseModel):
+    token: str
+
+@audio_token_router.get('/audio-token', response_model=AudioTokenResponse)
+async def get_audio_token():
     global current_token, token_expiry_time
 
     current_time = time.time()
@@ -48,6 +52,6 @@ def get_audio_token():
             token_expiry_time = current_time + 3540  # Set expiry to 59 minutes (3540 seconds) to allow for some buffer
             debug_print("Fetched new audio token")
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            raise HTTPException(status_code=500, detail=str(e))
 
-    return jsonify({"token": current_token})
+    return AudioTokenResponse(token=current_token)

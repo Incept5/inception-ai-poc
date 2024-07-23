@@ -1,6 +1,5 @@
-
-from flask import current_app
 from collections import OrderedDict
+from fastapi import FastAPI
 from bots.simple_bot import SimpleBot
 from bots.web_search_bot import WebSearchBot
 from bots.ollama_bot import OllamaBot
@@ -17,39 +16,47 @@ from bots.simple.company_search_bot import CompanySearchBot
 from bots.advanced_company_search_bot import AdvancedCompanySearchBot
 from bots.webscrapers.base_webscraper_bot import BaseWebScraperBot
 
+
 def get_configured_bots():
-    # Check if bots are already stored in the app context
-    if 'configured_bots' not in current_app.extensions:
-        # If not, create new instances and store them
-        bots = OrderedDict([
-            ("system-improver-bot", SystemImproverBot()),
-            ("web-app-bot", WebAppBot()),
-            ("simple-bot", SimpleBot()),
-            ("web-search-bot", WebSearchBot()),
-            ("ollama-bot", OllamaBot()),
-            ("simple-retriever-bot", SimpleRetrieverBot()),
-            ("iso20022-expert-bot", ISO20022ExpertBot()),
-            ("collaboration-agent-bot", CollaborationAgentBot()),
-            ("fast-mlx-bot", FastMlxBot()),
-            ("simple-db-bot", SimpleDBBot()),
-            ("example-base-bot", ExampleBaseBot()),
-            ("company-search-bot", CompanySearchBot()),
-            ("advanced-company-search-bot", AdvancedCompanySearchBot()),
-            ("base-webscraper-bot", BaseWebScraperBot())
-        ])
-        current_app.extensions['configured_bots'] = bots
+    return OrderedDict([
+        ("system-improver-bot", SystemImproverBot()),
+        ("web-app-bot", WebAppBot()),
+        ("simple-bot", SimpleBot()),
+        ("web-search-bot", WebSearchBot()),
+        ("ollama-bot", OllamaBot()),
+        ("simple-retriever-bot", SimpleRetrieverBot()),
+        ("iso20022-expert-bot", ISO20022ExpertBot()),
+        ("collaboration-agent-bot", CollaborationAgentBot()),
+        ("fast-mlx-bot", FastMlxBot()),
+        ("simple-db-bot", SimpleDBBot()),
+        ("example-base-bot", ExampleBaseBot()),
+        ("company-search-bot", CompanySearchBot()),
+        ("advanced-company-search-bot", AdvancedCompanySearchBot()),
+        ("base-webscraper-bot", BaseWebScraperBot())
+    ])
 
-    # Return the stored bots
-    return current_app.extensions['configured_bots']
 
-def get_bot(bot_type):
-    configured_bots = get_configured_bots()
-    if bot_type in configured_bots:
-        return configured_bots[bot_type]
+def get_bot(app: FastAPI, bot_type: str):
+    if not hasattr(app.state, 'configured_bots'):
+        app.state.configured_bots = get_configured_bots()
+
+    if bot_type in app.state.configured_bots:
+        return app.state.configured_bots[bot_type]
     else:
         return SystemBotManager.get_system_bot(bot_type)
 
-def get_all_bots():
-    configured_bots = get_configured_bots()
+
+def get_all_bots(app: FastAPI):
+    if not hasattr(app.state, 'configured_bots'):
+        app.state.configured_bots = get_configured_bots()
+
     system_bots = SystemBotManager.get_all_system_bots()
-    return {**configured_bots, **system_bots}
+    return {**app.state.configured_bots, **system_bots}
+
+
+# Dependency function for FastAPI
+def get_bot_dependency(app: FastAPI):
+    def _get_bot(bot_type: str):
+        return get_bot(app, bot_type)
+
+    return _get_bot

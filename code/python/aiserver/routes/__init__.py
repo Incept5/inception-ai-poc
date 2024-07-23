@@ -1,17 +1,17 @@
-from flask import Blueprint
-from .bot_router import bot_blueprint
-from .llm_models import llm_models_blueprint
-from .file_viewer import file_viewer_blueprint
-from .file_updater import file_updater_blueprint
-from .conversations import conversations_blueprint
-from .audio_token import audio_token_blueprint
+from fastapi import APIRouter
+from .bot_router import bot_router
+from .llm_models import llm_models_router
+from .file_viewer import file_viewer_router
+from .file_updater import file_updater_router
+from .conversations import conversations_router
+from .audio_token import audio_token_router
 
-combined_routes = Blueprint('combined_routes', __name__)
+combined_routes = APIRouter()
 
-# Register all blueprints with the combined_routes
-combined_routes.register_blueprint(bot_blueprint)
-combined_routes.register_blueprint(llm_models_blueprint)
-combined_routes.register_blueprint(file_viewer_blueprint)
-combined_routes.register_blueprint(file_updater_blueprint)
-combined_routes.register_blueprint(conversations_blueprint)
-combined_routes.register_blueprint(audio_token_blueprint)
+# Include all routers
+combined_routes.include_router(bot_router)
+combined_routes.include_router(llm_models_router)
+combined_routes.include_router(file_viewer_router)
+combined_routes.include_router(file_updater_router)
+combined_routes.include_router(conversations_router)
+combined_routes.include_router(audio_token_router)

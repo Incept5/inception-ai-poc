@@ -1,3 +1,4 @@
+
 from flask import current_app
 from collections import OrderedDict
 from bots.simple_bot import SimpleBot
@@ -11,7 +12,10 @@ from bots.system_bots import SystemBotManager
 from bots.collaboration_agent_bot import CollaborationAgentBot
 from bots.fast_mlx_bot import FastMlxBot
 from bots.simple_db_bot import SimpleDBBot
-from bots.example_base_bot import ExampleBaseBot  # Add this import
+from bots.example_base_bot import ExampleBaseBot
+from bots.simple.company_search_bot import CompanySearchBot
+from bots.advanced_company_search_bot import AdvancedCompanySearchBot
+from bots.webscrapers.base_webscraper_bot import BaseWebScraperBot
 
 def get_configured_bots():
     # Check if bots are already stored in the app context
@@ -28,7 +32,10 @@ def get_configured_bots():
             ("collaboration-agent-bot", CollaborationAgentBot()),
             ("fast-mlx-bot", FastMlxBot()),
             ("simple-db-bot", SimpleDBBot()),
-            ("example-base-bot", ExampleBaseBot())  # Add this line
+            ("example-base-bot", ExampleBaseBot()),
+            ("company-search-bot", CompanySearchBot()),
+            ("advanced-company-search-bot", AdvancedCompanySearchBot()),
+            ("base-webscraper-bot", BaseWebScraperBot())
         ])
         current_app.extensions['configured_bots'] = bots
 

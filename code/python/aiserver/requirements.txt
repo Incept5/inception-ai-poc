@@ -22,3 +22,5 @@ wikipedia
 requests
 matplotlib
 psycopg2
+playwright
+beautifulsoup4

@@ -11,6 +11,7 @@ from bots.system_bots import SystemBotManager
 from bots.collaboration_agent_bot import CollaborationAgentBot
 from bots.fast_mlx_bot import FastMlxBot
 from bots.simple_db_bot import SimpleDBBot
+from bots.example_base_bot import ExampleBaseBot  # Add this import
 
 def get_configured_bots():
     # Check if bots are already stored in the app context
@@ -26,7 +27,8 @@ def get_configured_bots():
             ("iso20022-expert-bot", ISO20022ExpertBot()),
             ("collaboration-agent-bot", CollaborationAgentBot()),
             ("fast-mlx-bot", FastMlxBot()),
-            ("simple-db-bot", SimpleDBBot())
+            ("simple-db-bot", SimpleDBBot()),
+            ("example-base-bot", ExampleBaseBot())  # Add this line
         ])
         current_app.extensions['configured_bots'] = bots
 

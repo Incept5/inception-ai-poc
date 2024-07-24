@@ -8,6 +8,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from toolkits.playwright_toolkit import PlaywrightBrowserToolkit
 from playwright.async_api import async_playwright
 from playwright.sync_api import sync_playwright
+from langchain_core.messages import AIMessage
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]
@@ -49,7 +50,7 @@ class WebScrapingBot(AsyncLangchainBotInterface):
         return self.tools
 
     def create_chatbot(self):
-        def chatbot(state: State):
+        async def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
             system_message = SystemMessage(content="You are an expert web scraping AI assistant using Playwright browser tools.")
@@ -68,8 +69,9 @@ class WebScrapingBot(AsyncLangchainBotInterface):
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
             ai_message = await self.llm_wrapper.llm.ainvoke(messages)
-            result = {"messages": [self.llm_wrapper.llm.ainvoke(messages)]}
-            debug_print(f"Chatbot output: {result}")
+            debug_print(f"Chatbot output ai_message: {ai_message}")
+            result = {"messages": [ai_message]}
+            debug_print(f"Chatbot output result: {result}")
             return result
 
         return chatbot
@@ -82,5 +84,5 @@ class WebScrapingBot(AsyncLangchainBotInterface):
         graph_builder.add_conditional_edges("chatbot", tools_condition)
         graph_builder.add_edge("tools", "chatbot")
         graph_builder.set_entry_point("chatbot")
-        mycheckpointer = self.get_checkpointer()
+        mycheckpointer = self.get_checkpointer_async()
         return graph_builder.compile(checkpointer=mycheckpointer)

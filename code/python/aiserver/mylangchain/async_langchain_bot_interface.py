@@ -6,6 +6,7 @@ from utils.debug_utils import debug_print
 from langchain_core.messages import AIMessage
 from mylangchain.langchain_bot_interface import LangchainBotInterface
 from processors.persist_files_in_response import persist_files_in_response
+from langgraph.checkpoint.aiosqlite import AsyncSqliteSaver
 
 
 class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
@@ -13,6 +14,11 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
     # An opportunity to perform any asynchronous initialization
     async def _async_lazy_init(self):
         pass
+
+    def get_checkpointer_async(self, checkpointer_type: str = "sqlite", **kwargs):
+        if self.checkpointer is None:
+            self.checkpointer = AsyncSqliteSaver.from_conn_string(":memory:")
+        return self.checkpointer
 
     async def process_request_async(self, user_input: str, context: str, **kwargs) -> AsyncGenerator[Dict[str, Any], None]:
         debug_print(f"{self.__class__.__name__} processing request asynchronously. User input: {user_input}")
@@ -34,7 +40,7 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
         event_count = 0
         try:
             debug_print("Starting graph stream")
-            for event in self.graph.stream({"messages": [("user", input_message)]}, config):
+            async for event in self.graph.astream({"messages": [("user", input_message)]}, config):
                 event_count += 1
                 debug_print(f"Event {event_count}: {event}")
 
@@ -76,7 +82,8 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
 
         return final_response
 
-    async def process_and_emit_content_async(self, event: Dict[str, Any], step_type: str, thread_id: str) -> AsyncGenerator[
+    async def process_and_emit_content_async(self, event: Dict[str, Any], step_type: str, thread_id: str) -> \
+    AsyncGenerator[
         Dict[str, Any], None]:
         for key, value in event.items():
             if isinstance(value.get("messages", [])[-1], AIMessage):
@@ -84,6 +91,10 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
                 if content is not None and content != "":
                     if isinstance(content, str):
                         async for response in self.process_content_async(content, step_type, thread_id):
+                            yield response
+                    elif asyncio.iscoroutine(content):
+                        resolved_content = await content
+                        async for response in self.process_content_async(resolved_content, step_type, thread_id):
                             yield response
                     else:
                         async for response in self.process_content_async(json.dumps(content), step_type, thread_id):

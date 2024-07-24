@@ -29,3 +29,4 @@ uvicorn
 starlette
 aiofiles
 aiosqlite
+lxml  # Added lxml parser for BeautifulSoup

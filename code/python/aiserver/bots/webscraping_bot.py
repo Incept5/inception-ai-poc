@@ -84,5 +84,5 @@ class WebScrapingBot(AsyncLangchainBotInterface):
         graph_builder.add_conditional_edges("chatbot", tools_condition)
         graph_builder.add_edge("tools", "chatbot")
         graph_builder.set_entry_point("chatbot")
-        mycheckpointer = self.get_checkpointer_async()
+        mycheckpointer = self.get_checkpointer()
         return graph_builder.compile(checkpointer=mycheckpointer)

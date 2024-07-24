@@ -15,7 +15,7 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
     async def _async_lazy_init(self):
         pass
 
-    def get_checkpointer_async(self, checkpointer_type: str = "sqlite", **kwargs):
+    def get_checkpointer(self, checkpointer_type: str = "sqlite", **kwargs):
         if self.checkpointer is None:
             self.checkpointer = AsyncSqliteSaver.from_conn_string(":memory:")
         return self.checkpointer

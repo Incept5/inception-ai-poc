@@ -1,17 +1,15 @@
 import asyncio
 from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
-from bots.configured_bots import get_configured_bots, get_bot_dependency, get_all_bots
-from bots.system_bots import SystemBotManager
+from bots.configured_bots import get_all_bots
 from mylangchain.retriever_manager import retriever_manager
-from routes import combined_routes  # Import the combined_routes
+from routes.all_routers import include_all_routers
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize bot instances
-    app.state.configured_bots = get_configured_bots()
-    SystemBotManager.initialize_system_bots(app)
+
+    get_all_bots(app)  # Initialize configured bots
 
     # Start check_imports as a background task
     check_imports_task = asyncio.create_task(run_check_imports())
@@ -28,9 +26,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Include the combined routes
-app.include_router(combined_routes)
-
+# Include all routers and wire them together
+include_all_routers(app)
 
 async def run_check_imports():
     try:

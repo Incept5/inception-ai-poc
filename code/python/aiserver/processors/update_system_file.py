@@ -1,6 +1,6 @@
 import os
-from bots.system_bots import SystemBotManager
 from utils.partial_file_utils import PartialFileUtils
+from bots.file_fixing_bot import FileFixingBot
 
 def update_system_file(system_root_dir: str, file_path: str, file_content: str, target_dir: str = None) -> None:
     """
@@ -44,7 +44,7 @@ def update_system_file(system_root_dir: str, file_path: str, file_content: str, 
             raise FileNotFoundError(f"Cannot update non-existent file with partial content: {file_path}")
 
         # Invoke the file fixing bot
-        file_fixing_bot = SystemBotManager.get_system_bot("file-fixing-bot")
+        file_fixing_bot = FileFixingBot()
         if file_fixing_bot is None:
             print("[ERROR] File fixing bot not found")
             raise Exception("File fixing bot not found")

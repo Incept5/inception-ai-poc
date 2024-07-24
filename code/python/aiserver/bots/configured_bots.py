@@ -7,7 +7,6 @@ from bots.system_improver_bot import SystemImproverBot
 from bots.web_app_bot import WebAppBot
 from bots.simple_retriever_bot import SimpleRetrieverBot
 from bots.iso20022_expert_bot import ISO20022ExpertBot
-from bots.system_bots import SystemBotManager
 from bots.collaboration_agent_bot import CollaborationAgentBot
 from bots.fast_mlx_bot import FastMlxBot
 from bots.simple_db_bot import SimpleDBBot
@@ -37,26 +36,9 @@ def get_configured_bots():
 
 
 def get_bot(app: FastAPI, bot_type: str):
-    if not hasattr(app.state, 'configured_bots'):
-        app.state.configured_bots = get_configured_bots()
-
-    if bot_type in app.state.configured_bots:
-        return app.state.configured_bots[bot_type]
-    else:
-        return SystemBotManager.get_system_bot(bot_type)
-
+    return get_all_bots(app).get(bot_type)
 
 def get_all_bots(app: FastAPI):
     if not hasattr(app.state, 'configured_bots'):
         app.state.configured_bots = get_configured_bots()
-
-    system_bots = SystemBotManager.get_all_system_bots()
-    return {**app.state.configured_bots, **system_bots}
-
-
-# Dependency function for FastAPI
-def get_bot_dependency(app: FastAPI):
-    def _get_bot(bot_type: str):
-        return get_bot(app, bot_type)
-
-    return _get_bot
+    return app.state.configured_bots

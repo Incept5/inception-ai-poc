@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
 import { useToast } from 'vue-toastification'
-import { fetchFileStructure, fetchFileContent, updateFiles } from '@/api'
+import { fetchFileStructure, fetchFileContent, updateFiles, getFileUrl } from '@/api'
 import TreeItem from './TreeItem.vue'
 import SourceViewer from './SourceViewer.vue'
 import './css/FileViewer.css'
@@ -248,6 +248,18 @@ const stopResize = () => {
   window.removeEventListener('mouseup', stopResize)
 }
 
+// Update the openFileInNewTab function
+const openFileInNewTab = () => {
+  if (selectedFile.value) {
+    const fileUrl = getFileUrl(props.threadId, selectedFile.value)
+    window.open(fileUrl, '_blank')
+    console.log('File opened in new tab')
+    toast.success('File opened in new tab', {
+      timeout: 2000
+    })
+  }
+}
+
 onMounted(() => {
   console.log('FileViewer: Component mounted, threadId:', props.threadId, 'fileViewerKey:', props.fileViewerKey)
   if (props.threadId) {
@@ -278,6 +290,7 @@ watch([() => props.threadId, () => props.fileViewerKey], ([newThreadId, newFileV
       <div class="action-buttons" v-if="selectedFile">
         <button @click="copyToClipboard" :disabled="isLoading">Copy</button>
         <button @click="downloadFile" :disabled="isLoading">Download</button>
+        <button @click="openFileInNewTab" :disabled="isLoading">Open</button>
       </div>
     </div>
     <div v-if="error" class="error-message">{{ error }}</div>

@@ -147,6 +147,10 @@ export const fetchFileContent = async (filePath) => {
   }
 }
 
+export const getFileUrl = (threadId, filePath) => {
+  return `${API_BASE_URL}/file/__threads/${threadId}/${encodeURIComponent(filePath)}`
+}
+
 export const updateFiles = async (threadId) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/update-files/__threads/${threadId}`)

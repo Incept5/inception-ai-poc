@@ -12,8 +12,7 @@ from bots.fast_mlx_bot import FastMlxBot
 from bots.simple_db_bot import SimpleDBBot
 from bots.simple.company_search_bot import CompanySearchBot
 from bots.advanced_company_search_bot import AdvancedCompanySearchBot
-from bots.webscrapers.base_webscraper_bot import BaseWebScraperBot
-
+from bots.webscraping_bot import WebScrapingBot
 
 def get_configured_bots():
     return OrderedDict([
@@ -29,7 +28,7 @@ def get_configured_bots():
         ("simple-db-bot", SimpleDBBot()),
         ("company-search-bot", CompanySearchBot()),
         ("advanced-company-search-bot", AdvancedCompanySearchBot()),
-        ("base-webscraper-bot", BaseWebScraperBot())
+        ("webscraping-bot", WebScrapingBot())
     ])
 
 

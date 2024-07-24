@@ -4,9 +4,9 @@ from bots.base_interface import BaseInterface
 
 class SimpleBotInterface(BaseInterface):
     @abstractmethod
-    def simple_process_request(self, user_input: str, context: str, **kwargs) -> str:
+    async def simple_process_request(self, user_input: str, context: str, **kwargs) -> str:
         """
-        Process a user request and return a response.
+        Process a user request asynchronously and return a response.
 
         :param user_input: The user's input message
         :param context: Additional context for the conversation

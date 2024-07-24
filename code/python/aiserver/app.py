@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from bots.configured_bots import get_all_bots
 from mylangchain.retriever_manager import retriever_manager
 from routes.all_routers import include_all_routers
+import nest_asyncio
 
 
 @asynccontextmanager
@@ -25,7 +26,6 @@ async def lifespan(app: FastAPI):
         await check_imports_task
     except asyncio.CancelledError:
         pass
-
 
 app = FastAPI(lifespan=lifespan)
 

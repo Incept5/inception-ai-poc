@@ -28,3 +28,4 @@ fastapi
 uvicorn
 starlette
 aiofiles
+nest_asyncio

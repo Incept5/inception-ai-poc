@@ -3,13 +3,13 @@ import re
 class PartialFileUtils:
     # Updated regexes to detect partial files
     PARTIAL_FILE_PATTERNS = [
-        r'#\s*\.\.\.\s*\(',  # Matches "# ... ("
         r'//\s*.*?\.\.\.\s*\(',  # Matches "// ... (" with optional whitespace and content before "..."
         r'\[\.\.\.\s*existing\s*content\s*\.\.\.\]',  # Matches "[... existing content ...]"
         r'\[\.\.\.\s*.*?\.\.\.\]',  # Matches "[... ...]" with any content, including "anything"
         r'<!--\s*\.\.\.',  # Matches "<!-- ..."
         r'/\*\s*\.\.\.\s*\(', # Matches "/* ... (" with optional whitespace and content before "..."
         r'/\*\s*\w+\s+remain\s+unchanged\s*\*/',  # Matches "/* Any word remain unchanged */"
+        r'#\s*\.\.\.\s*',   # matches # ...
     ]
 
     @staticmethod

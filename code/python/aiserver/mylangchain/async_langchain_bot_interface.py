@@ -9,10 +9,17 @@ from processors.persist_files_in_response import persist_files_in_response
 
 
 class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
+
+    # An opportunity to perform any asynchronous initialization
+    async def _async_lazy_init(self):
+        pass
+
     async def process_request_async(self, user_input: str, context: str, **kwargs) -> AsyncGenerator[Dict[str, Any], None]:
         debug_print(f"{self.__class__.__name__} processing request asynchronously. User input: {user_input}")
         debug_print(f"Context: {context}")
         debug_print(f"Additional kwargs: {kwargs}")
+
+        await self._async_lazy_init()
 
         thread_id = kwargs.pop('thread_id', '1')
         llm_provider = kwargs.pop('llm_provider', None)

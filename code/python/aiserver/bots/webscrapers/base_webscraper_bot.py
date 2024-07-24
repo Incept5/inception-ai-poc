@@ -1,4 +1,3 @@
-
 from mylangchain.base_bot import BaseBot
 from typing import List
 
@@ -23,9 +22,9 @@ class BaseWebScraperBot(BaseBot):
         Use the available tools to navigate, click, fill forms, and extract data from web pages. 
         Always provide clear and concise summaries of the information you find."""
 
-    def get_tools(self) -> List:
-        browser = create_async_playwright_browser()
-        toolkit = PlaywrightBrowserToolkit.from_browser(async_browser=browser)
+    async def get_tools(self) -> List:
+        browser = await create_async_playwright_browser()
+        toolkit = await PlaywrightBrowserToolkit.from_browser(async_browser=browser)
         return toolkit.get_tools()
 
 # This allows the bot to be easily imported and instantiated

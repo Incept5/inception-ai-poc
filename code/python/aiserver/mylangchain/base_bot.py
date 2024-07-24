@@ -9,6 +9,7 @@ from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
 from bots.simple_bot_interface import SimpleBotInterface
 import traceback
 import sys
+import asyncio
 
 class DefaultState(TypedDict):
     messages: Annotated[List, add_messages]
@@ -57,12 +58,12 @@ class BaseBot(SimpleBotInterface, ABC):
 
     # Default bot should be okay in most cases
     def create_bot(self, llm_wrapper: Any):
-        def bot(state: DefaultState):
+        async def bot(state: DefaultState):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
             system_message = SystemMessage(content=self.get_system_prompt())
             messages = [system_message] + messages
-            result = {"messages": [llm_wrapper.invoke(messages)]}
+            result = {"messages": [await llm_wrapper.ainvoke(messages)]}
             debug_print(f"Chatbot output: {result}")
             return result
 
@@ -92,9 +93,9 @@ class BaseBot(SimpleBotInterface, ABC):
             debug_print("Using system default LLM wrapper")
             return LLMManager.get_default_llm(tools)
 
-    def simple_process_request(self, user_input: str, context: str, **kwargs) -> str:
+    async def simple_process_request(self, user_input: str, context: str, **kwargs) -> str:
         """
-        Process a user request and return a response.
+        Process a user request asynchronously and return a response.
 
         :param user_input: The user's input message
         :param context: Additional context for the conversation
@@ -114,11 +115,11 @@ class BaseBot(SimpleBotInterface, ABC):
 
         try:
             debug_print("Starting graph execution")
-            result = graph.invoke({"messages": [("user", user_input)]})
+            result = await graph.ainvoke({"messages": [("user", user_input)]})
             debug_print(f"Graph execution completed. Result: {result}")
 
             final_response = self.extract_final_response(result)
-            processed_response = self.process_response(final_response)
+            processed_response = await self.process_response(final_response)
             return processed_response
 
         except Exception as e:
@@ -165,7 +166,7 @@ class BaseBot(SimpleBotInterface, ABC):
         debug_print("No valid response found in the result")
         return "No valid response was generated."
 
-    def process_response(self, response: str) -> str:
+    async def process_response(self, response: str) -> str:
         """
         Process the final response. This method can be overridden in child classes
         to implement custom processing of the response.

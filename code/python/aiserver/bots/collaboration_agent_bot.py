@@ -1,5 +1,5 @@
 from typing import List, TypedDict, Annotated, Optional, Literal
-from mylangchain.langchain_bot_interface import LangchainBotInterface
+from mylangchain.async_langchain_bot_interface import AsyncLangchainBotInterface
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph, END, START
 from langgraph.prebuilt import ToolNode
@@ -18,7 +18,7 @@ class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
     sender: str
 
-class CollaborationAgentBot(LangchainBotInterface):
+class CollaborationAgentBot(AsyncLangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None):
         super().__init__(retriever_name,default_llm_provider="openai", default_llm_model="gpt-4-turbo")
         self.initialize()

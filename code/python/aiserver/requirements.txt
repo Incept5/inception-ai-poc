@@ -27,3 +27,4 @@ beautifulsoup4
 fastapi
 uvicorn
 starlette
+aiofiles

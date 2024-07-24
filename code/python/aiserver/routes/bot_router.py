@@ -13,20 +13,23 @@ def create_bot_router(app: FastAPI):
     bot_router = APIRouter()
 
     async def process_sync_bot(bot: SyncBotInterface, user_input: str, context: str, config: Dict[str, Any]) -> AsyncGenerator[str, None]:
+        debug_print(f"*** Processing request synchronously for bot {bot.bot_type}")
         for response in bot.process_request(user_input, context, **config):
             yield f"data: {json.dumps(response)}\n\n"
 
     async def process_async_bot(bot: AsyncBotInterface, user_input: str, context: str, config: Dict[str, Any]) -> AsyncGenerator[str, None]:
+        debug_print(f"*** Processing request asynchronously for bot {bot.bot_type}")
         async for response in bot.process_request_async(user_input, context, **config):
             yield f"data: {json.dumps(response)}\n\n"
 
     async def process_simple_bot(bot: SimpleBotInterface, user_input: str, context: str, config: Dict[str, Any]) -> AsyncGenerator[str, None]:
+        debug_print(f"*** Processing simple request for bot {bot.bot_type}")
         response = bot.simple_process_request(user_input, context, **config)
         yield f"data: {json.dumps({'type': 'text', 'content': response})}\n\n"
 
     bot_processors = {
-        SyncBotInterface: process_sync_bot,
         AsyncBotInterface: process_async_bot,
+        SyncBotInterface: process_sync_bot,
         SimpleBotInterface: process_simple_bot,
     }
 

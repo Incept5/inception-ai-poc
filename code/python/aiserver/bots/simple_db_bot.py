@@ -1,6 +1,6 @@
 import os
 from typing import List, TypedDict, Annotated, Optional
-from mylangchain.langchain_bot_interface import LangchainBotInterface
+from mylangchain.async_langchain_bot_interface import AsyncLangchainBotInterface
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
@@ -25,7 +25,7 @@ It is okay to create new tables and update existing tables and also to delete ta
 If the question does not seem related to the database, just return "I don't know" as the answer.
 """
 
-class SimpleDBBot(LangchainBotInterface):
+class SimpleDBBot(AsyncLangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None, db_url: str = os.environ.get("DB_READER_DB_URI")):
         super().__init__(retriever_name,default_llm_provider="openai", default_llm_model="gpt-4-turbo")
         self.db_url = db_url

@@ -1,44 +1,46 @@
 import os
 import json
 from typing import List, Dict
+import aiofiles
 from langchain_community.document_loaders import PyPDFLoader, UnstructuredXMLLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 import chromadb
 from utils.debug_utils import debug_print
 from .retriever_config import retriever_config
+import asyncio
 
 class VectorDBLoader:
     def __init__(self):
         self.client = None
-        self.initialize_client()
 
-    def initialize_client(self):
+    async def initialize_client(self):
         debug_print(f"Initializing ChromaDB client with persistence directory: {retriever_config.persist_directory}")
         os.makedirs(retriever_config.persist_directory, exist_ok=True)
         self.client = chromadb.PersistentClient(path=retriever_config.persist_directory)
 
-    def load_document(self, file_path: str):
+    async def load_document(self, file_path: str):
         debug_print(f"Loading document: {file_path}")
         file_extension = os.path.splitext(file_path)[1].lower()
         if file_extension == ".pdf":
-            return PyPDFLoader(file_path).load()
+            return await asyncio.to_thread(PyPDFLoader(file_path).load)
         elif file_extension == ".xml":
-            return UnstructuredXMLLoader(file_path).load()
+            return await asyncio.to_thread(UnstructuredXMLLoader(file_path).load)
         elif file_extension == ".txt":
-            return TextLoader(file_path).load()
+            return await asyncio.to_thread(TextLoader(file_path).load)
         else:
             raise ValueError(f"Unsupported file type: {file_extension}")
 
     def get_retriever_info_path(self, name: str):
         return f"/data/imported/{name}/retriever-info.json"
 
-    def load_retriever_info(self, name: str) -> Dict:
+    async def load_retriever_info(self, name: str) -> Dict:
         info_path = self.get_retriever_info_path(name)
         debug_print(f"Loading retriever info from: {info_path}")
         if os.path.exists(info_path):
-            with open(info_path, 'r') as f:
-                info = json.load(f)
+            async with aiofiles.open(info_path, 'r') as f:
+                content = await f.read()
+                info = json.loads(content)
                 debug_print(f"Loaded retriever info: {info}")
                 if "files" not in info or not isinstance(info["files"], list):
                     info["files"] = []
@@ -46,22 +48,22 @@ class VectorDBLoader:
         debug_print(f"No existing retriever info found for {name}")
         return {"name": name, "files": [], "embedding_provider": retriever_config.default_embedding_provider, "embedding_model": retriever_config.default_embedding_model}
 
-    def save_retriever_info(self, name: str, info: Dict):
+    async def save_retriever_info(self, name: str, info: Dict):
         info_path = self.get_retriever_info_path(name)
         debug_print(f"Saving retriever info to: {info_path}")
-        with open(info_path, 'w') as f:
-            json.dump(info, f, indent=2)
+        async with aiofiles.open(info_path, 'w') as f:
+            await f.write(json.dumps(info, indent=2))
         debug_print(f"Saved retriever info: {info}")
 
-    def check_for_updates(self, name: str) -> bool:
+    async def check_for_updates(self, name: str) -> bool:
         debug_print(f"Checking for updates in retriever: {name}")
-        info = self.load_retriever_info(name)
+        info = await self.load_retriever_info(name)
         directory = f"/data/imported/{name}"
 
         if not os.path.exists(directory):
             debug_print(f"Creating new directory: {directory}")
             os.makedirs(directory)
-            self.save_retriever_info(name, info)
+            await self.save_retriever_info(name, info)
             return True
 
         has_updates = False
@@ -95,21 +97,21 @@ class VectorDBLoader:
             info["embedding_provider"] = retriever_config.default_embedding_provider
             info["embedding_model"] = retriever_config.default_embedding_model
 
-        self.save_retriever_info(name, info)
+        await self.save_retriever_info(name, info)
         debug_print(f"Updates check complete. Has updates: {has_updates}")
         return has_updates
 
-    def process_documents(self, name: str):
+    async def process_documents(self, name: str):
         debug_print(f"Processing documents for retriever: {name}")
         collection_name = f"{name}_collection"
         
-        if not self.check_for_updates(name):
-            if self.verify_collection_exists(name):
+        if not await self.check_for_updates(name):
+            if await self.verify_collection_exists(name):
                 debug_print(f"Collection {collection_name} is up to date. Skipping processing.")
                 return
         else:
             debug_print(f"Updates detected, deleting existing collection for {name}")
-            self.delete_collection(name)
+            await self.delete_collection(name)
 
         directory = f"/data/imported/{name}"
 
@@ -120,7 +122,7 @@ class VectorDBLoader:
                 continue
             file_path = os.path.join(directory, filename)
             try:
-                documents.extend(self.load_document(file_path))
+                documents.extend(await self.load_document(file_path))
             except ValueError as e:
                 debug_print(f"Skipping file {filename}: {str(e)}")
 
@@ -130,12 +132,13 @@ class VectorDBLoader:
 
         debug_print(f"Splitting {len(documents)} documents")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        splits = text_splitter.split_documents(documents)
+        splits = await asyncio.to_thread(text_splitter.split_documents, documents)
         debug_print(f"Created {len(splits)} splits")
 
         debug_print(f"Creating Chroma vectorstore for {collection_name}")
         try:
-            vectorstore = Chroma.from_documents(
+            vectorstore = await asyncio.to_thread(
+                Chroma.from_documents,
                 documents=splits,
                 embedding=retriever_config.get_embeddings(),
                 client=self.client,
@@ -143,7 +146,7 @@ class VectorDBLoader:
             )
             debug_print(f"Processed and persisted {len(splits)} chunks for {name}")
             
-            if self.verify_collection_exists(name):
+            if await self.verify_collection_exists(name):
                 debug_print(f"Successfully created and verified collection: {collection_name}")
             else:
                 raise Exception(f"Collection {collection_name} was not created successfully")
@@ -151,20 +154,20 @@ class VectorDBLoader:
             debug_print(f"Error creating Chroma vectorstore: {str(e)}")
             raise
 
-    def delete_collection(self, name: str):
+    async def delete_collection(self, name: str):
         collection_name = f"{name}_collection"
         try:
             if collection_name in self.client.list_collections():
                 debug_print(f"Deleting existing collection: {collection_name}")
-                self.client.delete_collection(collection_name)
+                await asyncio.to_thread(self.client.delete_collection, collection_name)
                 debug_print(f"Deleted collection: {collection_name}")
         except Exception as e:
             debug_print(f"Error deleting collection {collection_name}: {str(e)}")
 
-    def verify_collection_exists(self, name: str) -> bool:
+    async def verify_collection_exists(self, name: str) -> bool:
         collection_name = f"{name}_collection"
         try:
-            collections = self.client.list_collections()
+            collections = await asyncio.to_thread(self.client.list_collections)
             exists = collection_name in [c.name for c in collections]
             if exists:
                 debug_print(f"Verified: Collection {collection_name} exists")

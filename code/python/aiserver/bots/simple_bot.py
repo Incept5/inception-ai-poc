@@ -1,5 +1,5 @@
 from typing import List, TypedDict, Annotated, Optional
-from mylangchain.langchain_bot_interface import LangchainBotInterface
+from mylangchain.async_langchain_bot_interface import AsyncLangchainBotInterface
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
@@ -8,7 +8,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 class State(TypedDict):
     messages: Annotated[List, add_messages]
 
-class SimpleBot(LangchainBotInterface):
+class SimpleBot(AsyncLangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None):
         super().__init__(retriever_name)
         self.tools = []  # SimpleBot doesn't use any tools

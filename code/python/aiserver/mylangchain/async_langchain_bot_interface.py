@@ -1,13 +1,9 @@
 import json
 import asyncio
-from abc import abstractmethod
 from typing import List, Dict, Any, Generator, Optional, AsyncGenerator
-from bots.bot_interface import BotInterface
 from bots.async_bot_interface import AsyncBotInterface
-from langgraph.graph import StateGraph
-from llms.llm_manager import LLMManager
 from utils.debug_utils import debug_print
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import AIMessage
 from mylangchain.langchain_bot_interface import LangchainBotInterface
 from processors.persist_files_in_response import persist_files_in_response
 
@@ -76,7 +72,7 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
     async def process_and_emit_content_async(self, event: Dict[str, Any], step_type: str, thread_id: str) -> AsyncGenerator[
         Dict[str, Any], None]:
         for key, value in event.items():
-            if isinstance(value.get("messages", [])[-1], BaseMessage):
+            if isinstance(value.get("messages", [])[-1], AIMessage):
                 content = value["messages"][-1].content
                 if content is not None and content != "":
                     if isinstance(content, str):

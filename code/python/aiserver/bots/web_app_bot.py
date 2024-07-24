@@ -1,5 +1,5 @@
 from typing import List, TypedDict, Annotated
-from mylangchain.langchain_bot_interface import LangchainBotInterface
+from mylangchain.async_langchain_bot_interface import AsyncLangchainBotInterface
 from utils.debug_utils import debug_print
 from processors.persist_files_in_response import persist_files_in_response
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -12,7 +12,7 @@ from prompts.system_prompts import file_saving_prompt
 class State(TypedDict):
     messages: Annotated[List, add_messages]
 
-class WebAppBot(LangchainBotInterface):
+class WebAppBot(AsyncLangchainBotInterface):
     def __init__(self):
         super().__init__()
         self.tools = [TavilySearchResults(max_results=3)]

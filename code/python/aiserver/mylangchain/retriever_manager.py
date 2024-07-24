@@ -11,11 +11,11 @@ class RetrieverManager:
         self.loader = vector_db_loader
         self.builder = retriever_builder
 
-    def check_imports(self, names: Optional[List[str]] = None):
+    async def check_imports(self, names: Optional[List[str]] = None):
         debug_print("Checking imports and initializing RetrieverManager")
         # Initialize embeddings by calling get_embeddings() instead of initialize_embeddings()
         self.config.get_embeddings()
-        self.loader.initialize_client()
+        await self.loader.initialize_client()
         
         if names is None:
             configured_importers = os.getenv("CONFIGURED_IMPORTERS", "")
@@ -23,7 +23,7 @@ class RetrieverManager:
         
         debug_print(f"Processing importers: {names}")
         for name in names:
-            self.loader.process_documents(name)
+            await self.loader.process_documents(name)
 
     def get_retriever(self, name: str):
         return self.builder.get_retriever(name)

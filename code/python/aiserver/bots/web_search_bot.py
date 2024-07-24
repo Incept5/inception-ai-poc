@@ -1,5 +1,5 @@
 from typing import List, TypedDict, Annotated
-from mylangchain.langchain_bot_interface import LangchainBotInterface
+from mylangchain.async_langchain_bot_interface import AsyncLangchainBotInterface
 from llms.llm_manager import LLMManager
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
@@ -12,7 +12,7 @@ from prompts.system_prompts import file_saving_prompt
 class State(TypedDict):
     messages: Annotated[List, add_messages]
 
-class WebSearchBot(LangchainBotInterface):
+class WebSearchBot(AsyncLangchainBotInterface):
     def __init__(self):
         super().__init__()
         self.tools = [TavilySearchResults(max_results=3)]

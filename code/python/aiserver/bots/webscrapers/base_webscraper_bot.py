@@ -3,7 +3,7 @@ from mylangchain.base_bot import BaseBot
 from typing import List
 
 from toolkits.playwright_toolkit import PlaywrightBrowserToolkit
-from langchain_community.tools.playwright.utils import create_sync_playwright_browser
+from langchain_community.tools.playwright.utils import create_async_playwright_browser
 
 class BaseWebScraperBot(BaseBot):
     def __init__(self, default_llm_provider=None, default_llm_model=None):
@@ -24,8 +24,8 @@ class BaseWebScraperBot(BaseBot):
         Always provide clear and concise summaries of the information you find."""
 
     def get_tools(self) -> List:
-        browser = create_sync_playwright_browser()
-        toolkit = PlaywrightBrowserToolkit.from_browser(sync_browser=browser)
+        browser = create_async_playwright_browser()
+        toolkit = PlaywrightBrowserToolkit.from_browser(async_browser=browser)
         return toolkit.get_tools()
 
 # This allows the bot to be easily imported and instantiated

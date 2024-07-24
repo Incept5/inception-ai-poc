@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
 from bots.configured_bots import get_all_bots
@@ -8,8 +9,10 @@ from routes.all_routers import include_all_routers
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
     get_all_bots(app)  # Initialize configured bots
+
+    # Initialize the retriever_manager
+    await retriever_manager.loader.initialize_client()
 
     # Start check_imports as a background task
     check_imports_task = asyncio.create_task(run_check_imports())
@@ -33,8 +36,9 @@ async def run_check_imports():
     try:
         await retriever_manager.check_imports()
     except Exception as e:
-        print(f"An error occurred during import checking: {e}")
-        # You might want to log this error or handle it in some other way
+        # Print full stack trace
+        print("An error occurred during import checking:")
+        traceback.print_exc()
 
 
 if __name__ == "__main__":

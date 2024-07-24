@@ -1,6 +1,6 @@
 import os
 from typing import List, TypedDict, Annotated, Optional
-from mylangchain.langchain_bot_interface import LangchainBotInterface
+from mylangchain.async_langchain_bot_interface import AsyncLangchainBotInterface
 from utils.debug_utils import debug_print
 from utils.file_tree import file_tree
 from langgraph.graph import StateGraph
@@ -16,7 +16,7 @@ class State(TypedDict):
     messages: Annotated[List, add_messages]
 
 
-class BaseSystemImproverBot(LangchainBotInterface):
+class BaseSystemImproverBot(AsyncLangchainBotInterface):
     def __init__(self, system_src: str = '/system_src'):
         super().__init__()
         self.system_src = system_src

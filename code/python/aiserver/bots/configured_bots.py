@@ -10,7 +10,6 @@ from bots.iso20022_expert_bot import ISO20022ExpertBot
 from bots.collaboration_agent_bot import CollaborationAgentBot
 from bots.fast_mlx_bot import FastMlxBot
 from bots.simple_db_bot import SimpleDBBot
-from bots.example_base_bot import ExampleBaseBot
 from bots.simple.company_search_bot import CompanySearchBot
 from bots.advanced_company_search_bot import AdvancedCompanySearchBot
 from bots.webscrapers.base_webscraper_bot import BaseWebScraperBot
@@ -28,7 +27,6 @@ def get_configured_bots():
         ("collaboration-agent-bot", CollaborationAgentBot()),
         ("fast-mlx-bot", FastMlxBot()),
         ("simple-db-bot", SimpleDBBot()),
-        ("example-base-bot", ExampleBaseBot()),
         ("company-search-bot", CompanySearchBot()),
         ("advanced-company-search-bot", AdvancedCompanySearchBot()),
         ("base-webscraper-bot", BaseWebScraperBot())

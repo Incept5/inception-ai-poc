@@ -1,7 +1,7 @@
 import json
 from abc import abstractmethod
 from typing import List, Dict, Any, Generator, Optional
-from bots.bot_interface import BotInterface
+from bots.sync_bot_interface import SyncBotInterface
 from langgraph.graph import StateGraph
 from llms.llm_manager import LLMManager
 from utils.debug_utils import debug_print
@@ -13,7 +13,7 @@ from mylangchain.retriever.retriever_builder import retriever_builder
 import logging
 
 
-class LangchainBotInterface(BotInterface):
+class LangchainBotInterface(SyncBotInterface):
     def __init__(self, retriever_name: Optional[str] = None, default_llm_provider: Optional[str] = None, default_llm_model: Optional[str] = None):
         self.checkpointer = None
         self.graph = None

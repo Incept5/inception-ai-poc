@@ -2,14 +2,33 @@ from fastapi import APIRouter, HTTPException, Request, FastAPI
 from fastapi.responses import StreamingResponse
 from bots.configured_bots import get_all_bots, get_bot
 from utils.debug_utils import debug_print
-from bots.bot_interface import SimpleBotInterface
-from mylangchain.langchain_bot_interface import LangchainBotInterface
+from bots.sync_bot_interface import SyncBotInterface
+from bots.async_bot_interface import AsyncBotInterface
+from bots.simple_bot_interface import SimpleBotInterface
 import json
 import traceback
+from typing import Any, Dict, AsyncGenerator
 
 def create_bot_router(app: FastAPI):
-
     bot_router = APIRouter()
+
+    async def process_sync_bot(bot: SyncBotInterface, user_input: str, context: str, config: Dict[str, Any]) -> AsyncGenerator[str, None]:
+        for response in bot.process_request(user_input, context, **config):
+            yield f"data: {json.dumps(response)}\n\n"
+
+    async def process_async_bot(bot: AsyncBotInterface, user_input: str, context: str, config: Dict[str, Any]) -> AsyncGenerator[str, None]:
+        async for response in bot.process_request_async(user_input, context, **config):
+            yield f"data: {json.dumps(response)}\n\n"
+
+    async def process_simple_bot(bot: SimpleBotInterface, user_input: str, context: str, config: Dict[str, Any]) -> AsyncGenerator[str, None]:
+        response = bot.simple_process_request(user_input, context, **config)
+        yield f"data: {json.dumps({'type': 'text', 'content': response})}\n\n"
+
+    bot_processors = {
+        SyncBotInterface: process_sync_bot,
+        AsyncBotInterface: process_async_bot,
+        SimpleBotInterface: process_simple_bot,
+    }
 
     @bot_router.get('/bots')
     async def get_available_bots():
@@ -49,12 +68,11 @@ def create_bot_router(app: FastAPI):
 
         async def generate():
             try:
-                if isinstance(bot, LangchainBotInterface):
-                    for response in bot.process_request(user_input, context, **config):
-                        yield f"data: {json.dumps(response)}\n\n"
-                elif isinstance(bot, SimpleBotInterface):
-                    response = bot.simple_process_request(user_input, context, **config)
-                    yield f"data: {json.dumps({'type': 'final', 'content': response})}\n\n"
+                for bot_interface, processor in bot_processors.items():
+                    if isinstance(bot, bot_interface):
+                        async for response in processor(bot, user_input, context, config):
+                            yield response
+                        break
                 else:
                     raise ValueError(f"Unsupported bot type: {type(bot)}")
             except Exception as e:

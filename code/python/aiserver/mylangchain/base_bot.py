@@ -6,7 +6,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from llms.llm_manager import LLMManager
 from utils.debug_utils import debug_print
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
-from bots.bot_interface import SimpleBotInterface
+from bots.simple_bot_interface import SimpleBotInterface
 import traceback
 import sys
 

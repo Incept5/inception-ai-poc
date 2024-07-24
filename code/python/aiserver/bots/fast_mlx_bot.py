@@ -2,7 +2,7 @@ import os
 import requests
 import json
 from typing import Dict, Any
-from bots.bot_interface import SimpleBotInterface
+from bots.simple_bot_interface import SimpleBotInterface
 from utils.debug_utils import debug_print
 
 

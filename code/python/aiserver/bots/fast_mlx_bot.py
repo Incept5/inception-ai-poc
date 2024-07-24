@@ -19,7 +19,7 @@ class FastMlxBot(SimpleBotInterface):
     def description(self) -> str:
         return "FastMlx Bot - Direct interaction with FastMlx models"
 
-    def simple_process_request(self, user_input: str, context: str, **kwargs) -> str:
+    async def simple_process_request(self, user_input: str, context: str, **kwargs) -> str:
         debug_print(f"FastMlxBot processing request. User input: {user_input}")
         debug_print(f"Context: {context}")
         debug_print(f"Additional kwargs: {kwargs}")

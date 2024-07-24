@@ -66,7 +66,6 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
                     " If you are unable to fully answer, that's OK, another assistant with different tools "
                     " will help where you left off. Execute what you can to make progress."
                     " If you or any of the other assistants have the final answer or deliverable,"
-                    " prefix your response with FINAL ANSWER so the team knows to stop."
                     " You have access to the following tools: {tool_names}.\n{system_message}",
                 ),
                 MessagesPlaceholder(variable_name="messages"),
@@ -108,7 +107,7 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
         if last_message.tool_calls:
             debug_print("Router: Routing to 'call_tool' due to tool calls in the last message")
             return "call_tool"
-        if sender is not "Researcher" and "FINAL ANSWER" in last_message.content:
+        if "FINAL ANSWER" in last_message.content:
             debug_print("Router: Routing to '__end__' due to 'FINAL ANSWER' in the last message")
             return "__end__"
         
@@ -118,7 +117,7 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
     def create_graph(self) -> StateGraph:
         research_agent = self.create_agent(
             [self.tavily_tool],
-            system_message="You should provide accurate data for the chart_generator to use.",
+            system_message="You should provide accurate data for the chart_generator to use. Use the web search tool to find relevant information.",
         )
         research_node = functools.partial(self.agent_node, agent=research_agent, name="Researcher")
 
@@ -142,7 +141,9 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
             
             5. Check the output for errors and make any necessary adjustments
             
-            6. IMPORTANT: Always respond with the full path of the saved chart image
+            6. IMPORTANT: After generating and saving the report say "FINAL ANSWER" to end the conversation.
+            
+            7. IMPORTANT: Always respond with the full path of the saved chart image
             
             Example Python code that demonstrates these steps:
             

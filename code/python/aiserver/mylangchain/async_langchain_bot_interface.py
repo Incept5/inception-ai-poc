@@ -3,7 +3,7 @@ import asyncio
 from typing import List, Dict, Any, Generator, Optional, AsyncGenerator
 from bots.async_bot_interface import AsyncBotInterface
 from utils.debug_utils import debug_print
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage, BaseMessage, ToolMessage
 from mylangchain.langchain_bot_interface import LangchainBotInterface
 from processors.persist_files_in_response import persist_files_in_response
 from langgraph.checkpoint.aiosqlite import AsyncSqliteSaver
@@ -86,7 +86,7 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
     AsyncGenerator[
         Dict[str, Any], None]:
         for key, value in event.items():
-            if isinstance(value.get("messages", [])[-1], AIMessage):
+            if isinstance(value.get("messages", [])[-1], BaseMessage):
                 content = value["messages"][-1].content
                 if content is not None and content != "":
                     if isinstance(content, str):

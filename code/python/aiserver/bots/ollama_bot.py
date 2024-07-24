@@ -18,7 +18,7 @@ class OllamaBot(SimpleBotInterface):
     def description(self) -> str:
         return "Ollama Bot - Direct interaction with Ollama models"
 
-    def simple_process_request(self, user_input: str, context: str, **kwargs) -> str:
+    async def simple_process_request(self, user_input: str, context: str, **kwargs) -> str:
         debug_print(f"OllamaBot processing request. User input: {user_input}")
         debug_print(f"Context: {context}")
         debug_print(f"Additional kwargs: {kwargs}")

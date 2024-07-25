@@ -1,4 +1,4 @@
-from typing import List, TypedDict, Annotated, Optional, Literal, Dict
+from typing import List, TypedDict, Annotated, Optional, Literal
 from mylangchain.async_langchain_bot_interface import AsyncLangchainBotInterface
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph, END, START
@@ -8,17 +8,17 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.tools import tool
 from langchain_experimental.tools import PythonREPLTool
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
+from langchain_openai import ChatOpenAI
 import functools
 import operator
-import graphviz
-import os
+
 
 class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
-    sender: str
-    task: Optional[str]
-    subtasks: List[str]
-    completed_subtasks: List[str]
+    next: str
+
 
 class SupervisorAgentBot(AsyncLangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None):
@@ -31,7 +31,7 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
 
     @property
     def description(self) -> str:
-        return "Supervisor Agent Bot - Multi-agent collaboration with a supervisor using LangGraph"
+        return "Supervisor Agent Bot - Multi-agent collaboration using LangGraph with a supervisor"
 
     def get_tools(self) -> List:
         return [self.tavily_tool, self.python_repl]
@@ -43,224 +43,108 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
     def create_agent(self, tools, system_message: str):
         prompt = ChatPromptTemplate.from_messages(
             [
-                (
-                    "system",
-                    "You are an AI assistant with a specific role in a team. "
-                    "Use the provided tools to progress towards completing your assigned subtask. "
-                    "You have access to the following tools: {tool_names}.\n{system_message}",
-                ),
+                ("system", system_message),
                 MessagesPlaceholder(variable_name="messages"),
-                ("human", "Your current subtask is: {subtask}"),
+                MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
-        prompt = prompt.partial(system_message=system_message)
-        tool_names = ", ".join([tool.name for tool in tools])
-        prompt = prompt.partial(tool_names=tool_names)
-        return prompt | self.llm_wrapper.llm.bind_tools(tools)
+        agent = create_openai_tools_agent(self.llm, tools, prompt)
+        return AgentExecutor(agent=agent, tools=tools)
+
+    def agent_node(self, state, agent, name):
+        result = agent.invoke(state)
+        return {"messages": [HumanMessage(content=result["output"], name=name)]}
 
     def create_supervisor(self):
+        members = ["Researcher", "Coder"]
+        system_prompt = (
+            "You are a supervisor tasked with managing a conversation between the"
+            " following workers: {members}. Given the following user request,"
+            " respond with the worker to act next. Each worker will perform a"
+            " task and respond with their results and status. When finished,"
+            " respond with FINISH."
+        )
+        options = ["FINISH"] + members
+        function_def = {
+            "name": "route",
+            "description": "Select the next role.",
+            "parameters": {
+                "title": "routeSchema",
+                "type": "object",
+                "properties": {
+                    "next": {
+                        "title": "Next",
+                        "anyOf": [
+                            {"enum": options},
+                        ],
+                    }
+                },
+                "required": ["next"],
+            },
+        }
         prompt = ChatPromptTemplate.from_messages(
             [
+                ("system", system_prompt),
+                MessagesPlaceholder(variable_name="messages"),
                 (
                     "system",
-                    "You are an AI supervisor overseeing a team of AI assistants. "
-                    "Your role is to break down the main task into subtasks, assign them to agents, "
-                    "coordinate their efforts, provide guidance, and ensure the team is making progress. "
-                    "Available agents are: Researcher and chart_generator. "
-                    "Analyze the work done so far and decide which subtask should be worked on next, "
-                    "or if the main task is complete. "
-                    "Respond with a JSON object containing: "
-                    "{'decision': 'continue' or 'final', 'agent': 'Researcher' or 'chart_generator', 'subtask': 'description of the subtask'}"
+                    "Given the conversation above, who should act next?"
+                    " Or should we FINISH? Select one of: {options}",
                 ),
-                MessagesPlaceholder(variable_name="messages"),
-                ("human", "The main task is: {task}\nCompleted subtasks: {completed_subtasks}\nRemaining subtasks: {subtasks}"),
             ]
+        ).partial(options=str(options), members=", ".join(members))
+
+        return (
+                prompt
+                | self.llm.bind_functions(functions=[function_def], function_call="route")
+                | JsonOutputFunctionsParser()
         )
-        return prompt | self.llm_wrapper.llm
-
-    def agent_node(self, state: Dict, agent, name: str) -> Dict:
-        debug_print(f"[DEBUG] Agent Node: {name}")
-        messages = state["messages"]
-        subtask = state.get("current_subtask", "No specific subtask assigned")
-        
-        agent_input = {
-            "messages": messages,
-            "subtask": subtask
-        }
-        
-        result = agent.invoke(agent_input)
-        
-        if isinstance(result, ToolMessage):
-            debug_print("[DEBUG] Result is a ToolMessage")
-        else:
-            result = AIMessage(**result.dict(exclude={"type", "name"}), name=name)
-        
-        return {
-            "messages": messages + [result],
-            "sender": name,
-            "task": state["task"],
-            "subtasks": state["subtasks"],
-            "completed_subtasks": state["completed_subtasks"],
-            "current_subtask": subtask
-        }
-
-    def supervisor_node(self, state: Dict) -> Dict:
-        debug_print("[DEBUG] Supervisor Node")
-        supervisor = self.create_supervisor()
-        
-        supervisor_input = {
-            "messages": state["messages"],
-            "task": state["task"],
-            "completed_subtasks": ", ".join(state["completed_subtasks"]),
-            "subtasks": ", ".join(state["subtasks"])
-        }
-        
-        result = supervisor.invoke(supervisor_input)
-        decision = self.parse_supervisor_decision(result.content)
-        
-        if decision["decision"] == "continue":
-            state["subtasks"].append(decision["subtask"])
-            state["current_subtask"] = decision["subtask"]
-        elif decision["decision"] == "final":
-            state["completed_subtasks"].extend(state["subtasks"])
-            state["subtasks"] = []
-            state["current_subtask"] = None
-        
-        return {
-            "messages": state["messages"] + [AIMessage(content=result.content, name="Supervisor")],
-            "sender": "Supervisor",
-            "task": state["task"],
-            "subtasks": state["subtasks"],
-            "completed_subtasks": state["completed_subtasks"],
-            "current_subtask": state.get("current_subtask"),
-            "decision": decision
-        }
-
-    def parse_supervisor_decision(self, content: str) -> Dict:
-        # This is a simple parser. In a real-world scenario, you might want to use a more robust JSON parser.
-        import json
-        try:
-            decision = json.loads(content)
-            return {
-                "decision": decision.get("decision", "continue"),
-                "agent": decision.get("agent", "Researcher"),
-                "subtask": decision.get("subtask", "")
-            }
-        except json.JSONDecodeError:
-            debug_print("[DEBUG] Error parsing supervisor decision. Defaulting to continue with Researcher.")
-            return {
-                "decision": "continue",
-                "agent": "Researcher",
-                "subtask": "Continue the research"
-            }
-
-    def router(self, state: Dict) -> Literal["Researcher", "chart_generator", "__end__"]:
-        decision = state.get("decision", {})
-        
-        if decision.get("decision") == "final":
-            return "__end__"
-        elif decision.get("agent") == "chart_generator":
-            return "chart_generator"
-        else:
-            return "Researcher"
 
     def create_graph(self) -> StateGraph:
         research_agent = self.create_agent(
             [self.tavily_tool],
-            system_message="You are the Researcher. Provide accurate data for the chart generator to use."
+            "You are a web researcher. Use the provided tools to find accurate information."
         )
         research_node = functools.partial(self.agent_node, agent=research_agent, name="Researcher")
 
-        chart_agent = self.create_agent(
+        code_agent = self.create_agent(
             [self.python_repl],
-            system_message="You are the Chart Generator. Create and save charts based on the data provided by the Researcher."
+            "You are a coder. Generate and run Python code to analyze data and create charts using matplotlib."
         )
-        chart_node = functools.partial(self.agent_node, agent=chart_agent, name="chart_generator")
+        code_node = functools.partial(self.agent_node, agent=code_agent, name="Coder")
+
+        supervisor_chain = self.create_supervisor()
 
         workflow = StateGraph(AgentState)
-
         workflow.add_node("Researcher", research_node)
-        workflow.add_node("chart_generator", chart_node)
-        workflow.add_node("Supervisor", self.supervisor_node)
+        workflow.add_node("Coder", code_node)
+        workflow.add_node("supervisor", supervisor_chain)
 
-        workflow.add_conditional_edges(
-            "Supervisor",
-            self.router,
-            {
-                "Researcher": "Researcher",
-                "chart_generator": "chart_generator",
-                "__end__": END,
-            },
-        )
-        workflow.add_edge("Researcher", "Supervisor")
-        workflow.add_edge("chart_generator", "Supervisor")
+        members = ["Researcher", "Coder"]
+        for member in members:
+            workflow.add_edge(member, "supervisor")
 
-        workflow.set_entry_point("Supervisor")
+        conditional_map = {k: k for k in members}
+        conditional_map["FINISH"] = END
+        workflow.add_conditional_edges("supervisor", lambda x: x["next"], conditional_map)
+        workflow.add_edge(START, "supervisor")
 
-        mycheckpointer = self.get_checkpointer()
-        return workflow.compile(checkpointer=mycheckpointer)
+        return workflow.compile()
 
-    async def process_input(self, user_input: str, thread_id: str) -> str:
-        workflow = self.create_graph()
-        
+    async def process_input(self, input_text: str, thread_id: str) -> str:
+        graph = self.create_graph()
+
+        # Initialize the state with the input message
         initial_state = {
-            "messages": [HumanMessage(content=user_input)],
-            "sender": "Human",
-            "task": user_input,
-            "subtasks": [],
-            "completed_subtasks": [],
-            "current_subtask": None
+            "messages": [HumanMessage(content=input_text)],
+            "next": "supervisor"
         }
-        
-        for output in workflow.stream(initial_state):
-            if output["type"] == "end":
-                final_state = output["state"]
-                final_output = self.format_final_output(final_state)
-                
-                # Generate and add the diagram
-                diagram_path = self.create_diagram(thread_id)
-                final_output += f"\n\nWorkflow diagram saved at: {diagram_path}"
-                
-                return final_output
-        
-        return "An error occurred while processing the input."
 
-    def format_final_output(self, final_state: Dict) -> str:
-        messages = final_state["messages"]
-        completed_subtasks = final_state["completed_subtasks"]
-        
-        output = "Task completed. Here's a summary of the work done:\n\n"
-        output += f"Main task: {final_state['task']}\n\n"
-        output += "Completed subtasks:\n"
-        for i, subtask in enumerate(completed_subtasks, 1):
-            output += f"{i}. {subtask}\n"
-        output += "\nFinal output from the agents:\n"
-        output += messages[-1].content
-        
-        return output
+        # Run the graph
+        for output in graph.stream(initial_state):
+            if output["next"] == "FINISH":
+                # Return the final message content
+                return output["messages"][-1].content
 
-    def create_diagram(self, thread_id: str) -> str:
-        dot = graphviz.Digraph(comment='SupervisorAgentBot Workflow')
-        dot.attr(rankdir='TB', size='8,8')
-
-        # Add nodes
-        dot.node('Supervisor', 'Supervisor')
-        dot.node('Researcher', 'Researcher')
-        dot.node('ChartGenerator', 'Chart Generator')
-        dot.node('Human', 'Human')
-
-        # Add edges
-        dot.edge('Human', 'Supervisor', 'Input task')
-        dot.edge('Supervisor', 'Researcher', 'Assign research subtask')
-        dot.edge('Supervisor', 'ChartGenerator', 'Assign chart creation subtask')
-        dot.edge('Researcher', 'Supervisor', 'Return research results')
-        dot.edge('ChartGenerator', 'Supervisor', 'Return chart')
-        dot.edge('Supervisor', 'Human', 'Final output')
-
-        # Save the diagram
-        save_dir = f'/mnt/__threads/{thread_id}'
-        os.makedirs(save_dir, exist_ok=True)
-        file_path = os.path.join(save_dir, 'supervisor_agent_workflow.png')
-        dot.render(file_path, format='png', cleanup=True)
-
-        return file_path
+        # If we reach here, something went wrong
+        return "An error occurred while processing your request."

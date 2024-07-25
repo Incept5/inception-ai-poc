@@ -74,9 +74,11 @@ class LangchainBotInterface(SyncBotInterface):
             debug_print(f"Updating LLM wrapper. New provider: {llm_provider}, New model: {llm_model}")
             if llm_provider and llm_model:
                 self.llm_wrapper = LLMManager.get_llm(self.get_tools(), llm_provider, llm_model)
+                self.llm = self.llm_wrapper.llm
             else:
                 debug_print("Using default LLM wrapper")
                 self.llm_wrapper = LLMManager.get_default_llm(self.get_tools())
+                self.llm = self.llm_wrapper.llm
             self.current_llm_provider = llm_provider
             self.current_llm_model = llm_model
         else:

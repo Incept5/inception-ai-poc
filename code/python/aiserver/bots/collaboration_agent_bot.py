@@ -72,7 +72,9 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
             ]
         )
         prompt = prompt.partial(system_message=system_message)
-        prompt = prompt.partial(tool_names=", ".join([tool.name for tool in tools]))
+        tool_names = ", ".join([tool.name for tool in tools])
+        debug_print(f"[DEBUG] Tool names: {tool_names}")
+        prompt = prompt.partial(tool_names=tool_names)
         return prompt | self.llm_wrapper.llm.bind_tools(tools)
 
     def agent_node(self, state, agent, name):
@@ -117,7 +119,7 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
     def create_graph(self) -> StateGraph:
         research_agent = self.create_agent(
             [self.tavily_tool],
-            system_message="You should provide accurate data for the chart_generator to use. Use the web search tool to find relevant information.",
+            system_message="You should use the Tavily Search API to find relevant information to answer the question and format it in a structured way and then say 'chart_generator do your thing'"
         )
         research_node = functools.partial(self.agent_node, agent=research_agent, name="Researcher")
 
@@ -125,7 +127,7 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
             [self.python_repl],
             system_message="""
             Write Python code to generate a chart using the data provided by the Researcher.
-            Then run the code to generate the chart and save it to disk.
+            Then run the code to generate the chart and save it to disk. Do not wrap the code in JSON when calling the Python REPL tool.
             Follow these steps carefully:
             
             1. IMPORTANT: Use the thread_id from the context to construct the save path:

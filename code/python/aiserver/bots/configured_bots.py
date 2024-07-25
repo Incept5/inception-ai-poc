@@ -13,6 +13,7 @@ from bots.supervisor_agent_bot import SupervisorAgentBot
 from bots.fast_mlx_bot import FastMlxBot
 from bots.simple_db_bot import SimpleDBBot
 from bots.webscraping_bot import WebScrapingBot
+from bots.webscraping_db_bot import WebScrapingDBBot
 
 def get_configured_bots():
     return OrderedDict([
@@ -28,7 +29,8 @@ def get_configured_bots():
         #("supervisor-agent-bot", SupervisorAgentBot()),
         ("fast-mlx-bot", FastMlxBot()),
         ("simple-db-bot", SimpleDBBot()),
-        ("webscraping-bot", WebScrapingBot())
+        ("webscraping-bot", WebScrapingBot()),
+        ("webscraping-db-bot", WebScrapingDBBot())
     ])
 
 

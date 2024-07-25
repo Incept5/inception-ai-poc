@@ -141,10 +141,14 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
         }
 
         # Run the graph
+        final_output = None
         for output in graph.stream(initial_state):
+            final_output = output
             if output["next"] == "FINISH":
-                # Return the final message content
-                return output["messages"][-1].content
+                break
 
-        # If we reach here, something went wrong
-        return "An error occurred while processing your request."
+        # Check if we have a valid final output
+        if final_output and final_output.get("messages"):
+            return final_output["messages"][-1].content
+        else:
+            return "An error occurred while processing your request."

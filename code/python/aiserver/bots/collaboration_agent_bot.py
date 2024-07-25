@@ -7,7 +7,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, Base
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.tools import tool
-from langchain.tools import PythonREPLTool
+from langchain_experimental.tools import PythonREPLTool
 import functools
 import operator
 

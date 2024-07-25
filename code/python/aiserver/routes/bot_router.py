@@ -43,10 +43,10 @@ def create_bot_router(app: FastAPI):
         available_bots = [
             {
                 'bot_type': bot_type,
-                'description': bot.description,
-                'config_options': bot.get_config_options()
+                'description': bot_class().description,
+                'config_options': bot_class().get_config_options()
             }
-            for bot_type, bot in configured_bots.items()
+            for bot_type, bot_class in configured_bots.items()
         ]
         return available_bots
 
@@ -59,12 +59,17 @@ def create_bot_router(app: FastAPI):
         user_input = data.get('message')
         context = data.get('context', '')
         config = data.get('config', {})
+        thread_id = config.get('thread_id')
 
         if not user_input:
             debug_print("Error: No message provided")
             raise HTTPException(status_code=400, detail="No message provided")
 
-        bot = get_bot(app, bot_type)
+        if not thread_id:
+            debug_print("Error: No thread_id provided")
+            raise HTTPException(status_code=400, detail="No thread_id provided")
+
+        bot = get_bot(app, bot_type, thread_id)
         if bot is None:
             debug_print(f"Error: Invalid bot type {bot_type}")
             raise HTTPException(status_code=400, detail=f"Invalid bot type {bot_type}")

@@ -32,13 +32,14 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
         return "Collaboration Agent Bot - Multi-agent collaboration using LangGraph"
 
     def get_tools(self) -> List:
-        return [self.tavily_search, self.python_repl]
+        return [self.tavily_tool, self.python_repl]
 
     def initialize(self):
-        self.tavily_search = TavilySearchResults(max_results=5, name="tavily_search")
+        self.tavily_tool = TavilySearchResults(max_results=5)
         self.repl = PythonREPL()
 
-        def python_repl(code: str) -> str:
+        @tool
+        def python_repl(code: str):
             """Use this to execute python code. If you want to see the output of a value,
             you should print it out with `print(...)`. This is visible to the user."""
             debug_print(f"[DEBUG] Executing Python code:\n{code}")
@@ -53,7 +54,7 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
             debug_print(f"[DEBUG] Formatted result:\n{result_str}")
             return result_str + "\n\nIf you have completed all tasks, respond with FINAL ANSWER."
 
-        self.python_repl = tool(name="python_repl")(python_repl)
+        self.python_repl = python_repl
 
     def create_agent(self, tools, system_message: str):
         prompt = ChatPromptTemplate.from_messages(

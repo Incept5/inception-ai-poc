@@ -22,6 +22,7 @@ def get_configured_bots():
         ("simple-retriever-bot", SimpleRetrieverBot()),
         ("iso20022-expert-bot", ISO20022ExpertBot()),
         ("collaboration-agent-bot", CollaborationAgentBot()),
+        ("supervisor-agent-bot", SupervisorAgentBot()),
         ("fast-mlx-bot", FastMlxBot()),
         ("simple-db-bot", SimpleDBBot()),
         ("webscraping-bot", WebScrapingBot())

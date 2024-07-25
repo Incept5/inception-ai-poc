@@ -52,16 +52,19 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
         prompt = prompt.partial(tool_names=tool_names)
         return prompt | self.llm_wrapper.llm.bind_tools(tools)
 
-    def create_supervisor(self):
+    def create_orchestrator(self):
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
                     "system",
-                    "You are the supervisor overseeing a team of AI assistants. "
+                    "You are an AI orchestrator overseeing a team of AI assistants. "
                     "Your role is to coordinate their efforts, provide guidance, "
                     "and ensure the team is making progress towards the goal. "
                     "Analyze the work done so far and decide which agent should act next, "
-                    "or if the task is complete."
+                    "or if the task is complete. "
+                    "Available agents are: Researcher and chart_generator. "
+                    "Respond with the name of the agent that should act next, "
+                    "or 'FINAL' if the task is complete."
                 ),
                 MessagesPlaceholder(variable_name="messages"),
             ]
@@ -75,27 +78,27 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
             debug_print("[DEBUG] Result is a ToolMessage")
         else:
             result = AIMessage(**result.dict(exclude={"type", "name"}), name=name)
-        return {"messages": [result], "sender": name}
+        return {"messages": state["messages"] + [result], "sender": name}
 
-    def supervisor_node(self, state):
-        debug_print("[DEBUG] Supervisor Node")
-        supervisor = self.create_supervisor()
-        result = supervisor.invoke(state)
-        return {"messages": [AIMessage(content=result.content, name="Supervisor")], "sender": "Supervisor"}
+    def orchestrator_node(self, state):
+        debug_print("[DEBUG] Orchestrator Node")
+        orchestrator = self.create_orchestrator()
+        result = orchestrator.invoke(state)
+        decision = result.content.strip().lower()
+        return {"messages": state["messages"], "sender": "Orchestrator", "decision": decision}
 
-    def router(self, state) -> Literal["Researcher", "chart_generator", "Supervisor", "__end__"]:
-        messages = state["messages"]
-        last_message = messages[-1]
+    def router(self, state) -> Literal["Researcher", "chart_generator", "__end__"]:
+        decision = state.get("decision", "").lower()
         
-        if "FINAL ANSWER" in last_message.content:
+        if decision == "researcher":
+            return "Researcher"
+        elif decision == "chart_generator":
+            return "chart_generator"
+        elif decision == "final":
             return "__end__"
-        elif last_message.name == "Supervisor":
-            if "Researcher" in last_message.content:
-                return "Researcher"
-            elif "chart_generator" in last_message.content:
-                return "chart_generator"
-        
-        return "Supervisor"
+        else:
+            # Default to Researcher if decision is unclear
+            return "Researcher"
 
     def create_graph(self) -> StateGraph:
         research_agent = self.create_agent(
@@ -114,10 +117,10 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
 
         workflow.add_node("Researcher", research_node)
         workflow.add_node("chart_generator", chart_node)
-        workflow.add_node("Supervisor", self.supervisor_node)
+        workflow.add_node("Orchestrator", self.orchestrator_node)
 
         workflow.add_conditional_edges(
-            "Supervisor",
+            "Orchestrator",
             self.router,
             {
                 "Researcher": "Researcher",
@@ -125,10 +128,10 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
                 "__end__": END,
             },
         )
-        workflow.add_edge("Researcher", "Supervisor")
-        workflow.add_edge("chart_generator", "Supervisor")
+        workflow.add_edge("Researcher", "Orchestrator")
+        workflow.add_edge("chart_generator", "Orchestrator")
 
-        workflow.add_edge(START, "Supervisor")
+        workflow.add_edge(START, "Orchestrator")
 
         mycheckpointer = self.get_checkpointer()
         return workflow.compile(checkpointer=mycheckpointer)

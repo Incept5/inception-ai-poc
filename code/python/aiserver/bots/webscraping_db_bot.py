@@ -16,7 +16,7 @@ class State(TypedDict):
 
 class WebScrapingDBBot(AsyncLangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None, db_url: str = os.environ.get("DB_READER_DB_URI")):
-        super().__init__(retriever_name, default_llm_provider="openai", default_llm_model="gpt-4-turbo")
+        super().__init__(retriever_name, default_llm_provider="openai", default_llm_model="gpt-4o")
         self.db_url = db_url
         self.tools = None
         self.initialize()
@@ -64,8 +64,7 @@ class WebScrapingDBBot(AsyncLangchainBotInterface):
             5. Use SQL commands to interact with the database (create tables, insert data, update records)
             6. Provide clear explanations of your actions and any database changes made
             7. Handle potential errors or edge cases in both web scraping and database operations
-            8. Respect website terms of service and ethical scraping practices
-            9. Always provide a summary of the scraped data and database updates
+            8. Always provide a summary of the scraped data and database updates
             """
 
             prompt_message = HumanMessage(content=prompt)

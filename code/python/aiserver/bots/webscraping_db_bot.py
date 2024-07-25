@@ -5,11 +5,26 @@ from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 from toolkits.playwright_toolkit import PlaywrightBrowserToolkit
 from playwright.async_api import async_playwright
 from langchain_community.agent_toolkits import create_sql_agent
 from langchain_community.utilities import SQLDatabase
+
+SQL_PREFIX = """You are an agent designed to interact with a SQL database and perform web scraping.
+Given an input question, create a syntactically correct SQL query to run, then look at the results of the query and return the answer.
+You can also use web scraping tools to gather information from websites when necessary.
+Unless the user specifies a specific number of examples they wish to obtain, always limit your query to at most 10 results.
+You can order the results by a relevant column to return the most interesting examples in the database.
+Never query for all the columns from a specific table, only ask for the relevant columns given the question.
+You have access to tools for interacting with the database and web scraping.
+Only use the provided tools. Only use the information returned by the tools to construct your final answer.
+You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
+
+It is okay to create new tables and update existing tables and also to delete tables.
+
+If the question does not seem related to the database or web scraping, just return "I don't know" as the answer.
+"""
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]
@@ -39,11 +54,6 @@ class WebScrapingDBBot(AsyncLangchainBotInterface):
         async_browser = await browser.chromium.launch()
         self.tools = PlaywrightBrowserToolkit.from_browser(async_browser=async_browser).get_tools()
 
-        # Add SQL database tools
-        db = SQLDatabase.from_uri(self.db_url)
-        sql_agent = create_sql_agent(self.llm_wrapper.llm, db=db, agent_type="tool-calling", verbose=True)
-        self.tools.extend(sql_agent.tools)
-
     def get_tools(self) -> List:
         if self.tools is None:
             raise ValueError("Tools have not been initialized")
@@ -69,10 +79,23 @@ class WebScrapingDBBot(AsyncLangchainBotInterface):
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
-            ai_message = await self.llm_wrapper.llm.ainvoke(messages)
-            debug_print(f"Chatbot output ai_message: {ai_message}")
-            result = {"messages": [ai_message]}
-            debug_print(f"Chatbot output result: {result}")
+
+            db = SQLDatabase.from_uri(self.db_url)
+            agent_executor = create_sql_agent(
+                self.llm_wrapper.llm,
+                db=db,
+                agent_type="tool-calling",
+                verbose=True,
+                prefix=SQL_PREFIX,
+                extra_tools=self.get_tools()
+            )
+
+            # Use the SQL agent to process the user's query
+            result = agent_executor.invoke({"input": messages[-1].content})
+            answer = result["output"]
+
+            result = {"messages": [HumanMessage(content=answer)]}
+            debug_print(f"Chatbot output: {result}")
             return result
 
         return chatbot

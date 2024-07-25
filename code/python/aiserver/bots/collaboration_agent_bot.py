@@ -7,7 +7,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, Base
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.tools import tool
-from langchain_experimental.utilities import PythonREPL
+from langchain_community.tools import PythonREPLTool
 import functools
 import operator
 
@@ -36,25 +36,7 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
 
     def initialize(self):
         self.tavily_tool = TavilySearchResults(max_results=5)
-        self.repl = PythonREPL()
-
-        @tool
-        def python_repl(code: str):
-            """Use this to execute python code. If you want to see the output of a value,
-            you should print it out with `print(...)`. This is visible to the user."""
-            debug_print(f"[DEBUG] Executing Python code:\n{code}")
-            try:
-                result = self.repl.run(code)
-                debug_print(f"[DEBUG] Execution result:\n{result}")
-            except BaseException as e:
-                error_message = f"Failed to execute. Error: {repr(e)}"
-                debug_print(f"[DEBUG] Execution error: {error_message}")
-                return error_message
-            result_str = f"Successfully executed:\n```python\n{code}\n```\nStdout: {result}"
-            debug_print(f"[DEBUG] Formatted result:\n{result_str}")
-            return result_str + "\n\nIf you have completed all tasks, respond with FINAL ANSWER."
-
-        self.python_repl = python_repl
+        self.python_repl = PythonREPLTool()
 
     def create_agent(self, tools, system_message: str):
         prompt = ChatPromptTemplate.from_messages(

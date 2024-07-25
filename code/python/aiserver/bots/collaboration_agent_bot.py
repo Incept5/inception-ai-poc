@@ -31,33 +31,27 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
     def description(self) -> str:
         return "Collaboration Agent Bot - Multi-agent collaboration using LangGraph"
 
-    def get_tools(self) -> List:
-        return [self.tavily_tool, self.python_repl]
-
     def initialize(self):
         self.tavily_tool = TavilySearchResults(max_results=5)
         self.python_repl = PythonREPLTool()
 
-    def create_agent(self, tools, system_message: str):
+    def create_agent(self, tool, system_message: str):
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
                     "system",
                     "You are a helpful AI assistant, collaborating with other assistants."
-                    " Use the provided tools to progress towards answering the question."
-                    " If you are unable to fully answer, that's OK, another assistant with different tools "
+                    " Use the provided tool to progress towards answering the question."
+                    " If you are unable to fully answer, that's OK, another assistant with a different tool "
                     " will help where you left off. Execute what you can to make progress."
-                    " If you or any of the other assistants have the final answer or deliverable,"
-                    " You have access to the following tools: {tool_names}.\n{system_message}",
+                    " You have access to the following tool: {tool_name}.\n{system_message}",
                 ),
                 MessagesPlaceholder(variable_name="messages"),
             ]
         )
-        prompt = prompt.partial(system_message=system_message)
-        tool_names = ", ".join([tool.name for tool in tools])
-        debug_print(f"[DEBUG] Tool names: {tool_names}")
-        prompt = prompt.partial(tool_names=tool_names)
-        return prompt | self.llm_wrapper.llm.bind_tools(tools)
+        prompt = prompt.partial(system_message=system_message, tool_name=tool.name)
+        debug_print(f"[DEBUG] Tool name: {tool.name}")
+        return prompt | self.llm_wrapper.llm.bind_tools([tool])
 
     def agent_node(self, state, agent, name):
         debug_print(f"[DEBUG] Agent Node: {name}")
@@ -80,17 +74,13 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
         debug_print(f"[DEBUG] Output State: {output_state}")
         return output_state
 
-    def router(self, state) -> Literal["call_tool", "__end__", "continue"]:
+    def router(self, state) -> Literal["__end__", "continue"]:
         messages = state["messages"]
-        sender = state["sender"]
         last_message = messages[-1]
         
         debug_print(f"Router: Current messages: {messages}")
         debug_print(f"Router: Last message: {last_message}")
         
-        if last_message.tool_calls:
-            debug_print("Router: Routing to 'call_tool' due to tool calls in the last message")
-            return "call_tool"
         if "FINAL ANSWER" in last_message.content:
             debug_print("Router: Routing to '__end__' due to 'FINAL ANSWER' in the last message")
             return "__end__"
@@ -100,13 +90,13 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
 
     def create_graph(self) -> StateGraph:
         research_agent = self.create_agent(
-            [self.tavily_tool],
-            system_message="You should use the Tavily Search API to find relevant information to answer the question and format it in a structured way and then say 'chart_generator do your thing'"
+            self.tavily_tool,
+            system_message="Use the Tavily Search API to find relevant information to answer the question. Format it in a structured way and then say 'chart_generator do your thing'"
         )
         research_node = functools.partial(self.agent_node, agent=research_agent, name="Researcher")
 
         chart_agent = self.create_agent(
-            [self.python_repl],
+            self.python_repl,
             system_message="""
             Write Python code to generate a chart using the data provided by the Researcher.
             Then run the code to generate the chart and save it to disk. Do not wrap the code in JSON when calling the Python REPL tool.
@@ -159,33 +149,22 @@ class CollaborationAgentBot(AsyncLangchainBotInterface):
         )
         chart_node = functools.partial(self.agent_node, agent=chart_agent, name="chart_generator")
 
-        tool_node = ToolNode(self.get_tools())
-
         workflow = StateGraph(AgentState)
 
         workflow.add_node("Researcher", research_node)
         workflow.add_node("chart_generator", chart_node)
-        workflow.add_node("call_tool", tool_node)
 
         workflow.add_conditional_edges(
             "Researcher",
             self.router,
-            {"continue": "chart_generator", "call_tool": "call_tool", "__end__": END},
+            {"continue": "chart_generator", "__end__": END},
         )
         workflow.add_conditional_edges(
             "chart_generator",
             self.router,
-            {"continue": "Researcher", "call_tool": "call_tool", "__end__": END},
+            {"continue": "Researcher", "__end__": END},
         )
 
-        workflow.add_conditional_edges(
-            "call_tool",
-            lambda x: x["sender"],
-            {
-                "Researcher": "Researcher",
-                "chart_generator": "chart_generator",
-            },
-        )
         workflow.add_edge(START, "Researcher")
 
         mycheckpointer = self.get_checkpointer()

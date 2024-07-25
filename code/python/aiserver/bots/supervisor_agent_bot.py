@@ -10,6 +10,8 @@ from langchain_core.tools import tool
 from langchain_experimental.tools import PythonREPLTool
 import functools
 import operator
+import graphviz
+import os
 
 class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
@@ -198,7 +200,7 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
         mycheckpointer = self.get_checkpointer()
         return workflow.compile(checkpointer=mycheckpointer)
 
-    async def process_input(self, user_input: str) -> str:
+    async def process_input(self, user_input: str, thread_id: str) -> str:
         workflow = self.create_graph()
         
         initial_state = {
@@ -213,7 +215,13 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
         for output in workflow.stream(initial_state):
             if output["type"] == "end":
                 final_state = output["state"]
-                return self.format_final_output(final_state)
+                final_output = self.format_final_output(final_state)
+                
+                # Generate and add the diagram
+                diagram_path = self.create_diagram(thread_id)
+                final_output += f"\n\nWorkflow diagram saved at: {diagram_path}"
+                
+                return final_output
         
         return "An error occurred while processing the input."
 
@@ -230,3 +238,29 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
         output += messages[-1].content
         
         return output
+
+    def create_diagram(self, thread_id: str) -> str:
+        dot = graphviz.Digraph(comment='SupervisorAgentBot Workflow')
+        dot.attr(rankdir='TB', size='8,8')
+
+        # Add nodes
+        dot.node('Supervisor', 'Supervisor')
+        dot.node('Researcher', 'Researcher')
+        dot.node('ChartGenerator', 'Chart Generator')
+        dot.node('Human', 'Human')
+
+        # Add edges
+        dot.edge('Human', 'Supervisor', 'Input task')
+        dot.edge('Supervisor', 'Researcher', 'Assign research subtask')
+        dot.edge('Supervisor', 'ChartGenerator', 'Assign chart creation subtask')
+        dot.edge('Researcher', 'Supervisor', 'Return research results')
+        dot.edge('ChartGenerator', 'Supervisor', 'Return chart')
+        dot.edge('Supervisor', 'Human', 'Final output')
+
+        # Save the diagram
+        save_dir = f'/mnt/__threads/{thread_id}'
+        os.makedirs(save_dir, exist_ok=True)
+        file_path = os.path.join(save_dir, 'supervisor_agent_workflow.png')
+        dot.render(file_path, format='png', cleanup=True)
+
+        return file_path

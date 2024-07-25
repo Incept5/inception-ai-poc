@@ -8,3 +8,4 @@ __threads
 __chromadb
 retriever-info.json
 **/huggingface_cache/**
+.aider*

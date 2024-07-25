@@ -59,7 +59,7 @@ def create_bot_router(app: FastAPI):
         user_input = data.get('message')
         context = data.get('context', '')
         config = data.get('config', {})
-        thread_id = data.get('thread_id')
+        thread_id = config.get('thread_id')
 
         if not user_input:
             debug_print("Error: No message provided")

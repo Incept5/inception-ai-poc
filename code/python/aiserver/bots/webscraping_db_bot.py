@@ -1,37 +1,24 @@
 import os
 from typing import List, TypedDict, Annotated, Optional
-from mylangchain.async_langchain_bot_interface import AsyncLangchainBotInterface
-from utils.debug_utils import debug_print
+
+from langchain_community.agent_toolkits import SQLDatabaseToolkit
+from langchain_community.utilities import SQLDatabase
+from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
-from langchain_core.messages import SystemMessage, HumanMessage
-from toolkits.playwright_toolkit import PlaywrightBrowserToolkit
+from mylangchain.async_langchain_bot_interface import AsyncLangchainBotInterface
 from playwright.async_api import async_playwright
-from langchain_community.agent_toolkits import create_sql_agent
-from langchain_community.utilities import SQLDatabase
+from toolkits.playwright_toolkit import PlaywrightBrowserToolkit
+from utils.debug_utils import debug_print
 
-SQL_PREFIX = """You are an agent designed to interact with a SQL database and perform web scraping.
-Given an input question, create a syntactically correct SQL query to run, then look at the results of the query and return the answer.
-You can also use web scraping tools to gather information from websites when necessary.
-Unless the user specifies a specific number of examples they wish to obtain, always limit your query to at most 10 results.
-You can order the results by a relevant column to return the most interesting examples in the database.
-Never query for all the columns from a specific table, only ask for the relevant columns given the question.
-You have access to tools for interacting with the database and web scraping.
-Only use the provided tools. Only use the information returned by the tools to construct your final answer.
-You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
-
-It is okay to create new tables and update existing tables and also to delete tables.
-
-If the question does not seem related to the database or web scraping, just return "I don't know" as the answer.
-"""
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]
 
 class WebScrapingDBBot(AsyncLangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None, db_url: str = os.environ.get("DB_READER_DB_URI")):
-        super().__init__(retriever_name, default_llm_provider="openai", default_llm_model="gpt-4o")
+        super().__init__(retriever_name)
         self.db_url = db_url
         self.tools = None
         self.initialize()
@@ -44,6 +31,9 @@ class WebScrapingDBBot(AsyncLangchainBotInterface):
     def description(self) -> str:
         return "Web Scraping DB Bot - Expert in web scraping and database updating"
 
+    def get_tools(self) -> List:
+        return self.tools
+
     async def _async_lazy_init(self):
         if self.tools is None:
             await self.initialize_tools()
@@ -54,16 +44,26 @@ class WebScrapingDBBot(AsyncLangchainBotInterface):
         async_browser = await browser.chromium.launch()
         self.tools = PlaywrightBrowserToolkit.from_browser(async_browser=async_browser).get_tools()
 
-    def get_tools(self) -> List:
-        if self.tools is None:
-            raise ValueError("Tools have not been initialized")
-        return self.tools
+        # Add SQL database tools also
+        db = SQLDatabase.from_uri(self.db_url)
+        sql_toolkit = SQLDatabaseToolkit(db=db,llm=self.llm)
+        self.tools.extend(sql_toolkit.get_tools())
+
+        # Need to bind the tools to the LLM as we missed the prior opportunity
+        self.llm = self.llm.bind_tools(self.tools)
+
+        debug_print(f"Bound Tools: {self.tools}")
+
 
     def create_chatbot(self):
         async def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
-            system_message = SystemMessage(content="You are an expert web scraping and database management AI assistant.")
+            system_message = SystemMessage(content="""
+            You are an expert web scraping and database management AI assistant. 
+            Use the provided tools to interact with web pages and update databases.
+            Do not try to tell me how I can write code. Just use the tools to do the job.
+            """)
 
             prompt = """
             As an AI assistant specializing in web scraping and database management, please follow these guidelines:
@@ -72,30 +72,18 @@ class WebScrapingDBBot(AsyncLangchainBotInterface):
             3. If a matching table exists, update it with the new data
             4. If no matching table exists, create a new table and insert the scraped data
             5. Use SQL commands to interact with the database (create tables, insert data, update records)
-            6. Provide clear explanations of your actions and any database changes made
-            7. Handle potential errors or edge cases in both web scraping and database operations
-            8. Always provide a summary of the scraped data and database updates
+            6. When doing inserts keep the SQL simple and avoid ON CONFLICT clauses
+            7. Provide clear explanations of your actions and any database changes made
+            8. Handle potential errors or edge cases in both web scraping and database operations
+            9. Always provide a summary of the scraped data and database updates
             """
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
-
-            db = SQLDatabase.from_uri(self.db_url)
-            agent_executor = create_sql_agent(
-                self.llm_wrapper.llm,
-                db=db,
-                agent_type="tool-calling",
-                verbose=True,
-                prefix=SQL_PREFIX,
-                extra_tools=self.get_tools()
-            )
-
-            # Use the SQL agent to process the user's query
-            result = agent_executor.invoke({"input": messages[-1].content})
-            answer = result["output"]
-
-            result = {"messages": [HumanMessage(content=answer)]}
-            debug_print(f"Chatbot output: {result}")
+            ai_message = await self.llm.ainvoke(messages)
+            debug_print(f"Chatbot output ai_message: {ai_message}")
+            result = {"messages": [ai_message]}
+            debug_print(f"Chatbot output result: {result}")
             return result
 
         return chatbot

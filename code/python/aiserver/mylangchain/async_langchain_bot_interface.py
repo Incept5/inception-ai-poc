@@ -13,8 +13,17 @@ from langgraph.checkpoint.aiosqlite import AsyncSqliteSaver
 class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
 
     # An opportunity to perform any asynchronous initialization
+    # self.llm will already be populated with the correct LLM
     async def _async_lazy_init(self):
         pass
+
+    async def lazy_init_langchain_async(self, llm_provider=None, llm_model=None):
+        llm_changed = self._update_llm_wrapper(llm_provider, llm_model)
+        await self._async_lazy_init()
+        if not self.is_initialized or llm_changed:
+            self.lazy_init_retriever()
+            self.graph = self.create_graph()
+            self.is_initialized = True
 
     def get_checkpointer(self, checkpointer_type: str = "sqlite", **kwargs):
         if self.checkpointer is None:
@@ -26,13 +35,11 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
         debug_print(f"Context: {context}")
         debug_print(f"Additional kwargs: {kwargs}")
 
-        await self._async_lazy_init()
-
         thread_id = kwargs.pop('thread_id', '1')
         llm_provider = kwargs.pop('llm_provider', None)
         llm_model = kwargs.pop('llm_model', None)
 
-        self.lazy_init_langchain(llm_provider, llm_model)
+        await self.lazy_init_langchain_async(llm_provider, llm_model)
 
         input_message = f"Context: {context}\n\nthread_id: {thread_id}\n\nUser query: {user_input}"
         config = self.getGraphConfig(thread_id)

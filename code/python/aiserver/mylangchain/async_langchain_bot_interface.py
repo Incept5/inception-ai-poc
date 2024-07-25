@@ -118,17 +118,21 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
         except json.JSONDecodeError:
             items = [content]
 
+        last_processed_content = None
         for item in items:
             processed_item = process_item(item)
             processed_content = await self.process_response_content_async(processed_item, thread_id)
+            last_processed_content = processed_content
 
             if await self.should_emit_response_async(processed_content, step_type):
                 yield {"type": step_type, "content": processed_content}
 
             await asyncio.sleep(0)  # Allow other tasks to run
 
-        print(
-            f"Processed content: {processed_content[:200]}...")  # Print first 200 characters of the last processed item
+        if last_processed_content is not None:
+            print(f"Processed content: {last_processed_content[:200]}...")  # Print first 200 characters of the last processed item
+        else:
+            print("No content was processed.")
 
     async def process_response_content_async(self, content: str, thread_id: str) -> str:
         """

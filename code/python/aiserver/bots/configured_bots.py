@@ -8,6 +8,7 @@ from bots.web_app_bot import WebAppBot
 from bots.simple_retriever_bot import SimpleRetrieverBot
 from bots.iso20022_expert_bot import ISO20022ExpertBot
 from bots.collaboration_agent_bot import CollaborationAgentBot
+from bots.supervisor_agent_bot import SupervisorAgentBot
 from bots.fast_mlx_bot import FastMlxBot
 from bots.simple_db_bot import SimpleDBBot
 from bots.webscraping_bot import WebScrapingBot

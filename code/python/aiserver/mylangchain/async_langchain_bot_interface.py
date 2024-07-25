@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Generator, Optional, AsyncGenerator
 from bots.async_bot_interface import AsyncBotInterface
 from utils.debug_utils import debug_print
 from langchain_core.messages import AIMessage, HumanMessage, BaseMessage, ToolMessage
+from langchain_core.runnables.config import RunnableConfig
 from mylangchain.langchain_bot_interface import LangchainBotInterface
 from processors.persist_files_in_response import persist_files_in_response
 from langgraph.checkpoint.aiosqlite import AsyncSqliteSaver
@@ -34,7 +35,7 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
         self.lazy_init_langchain(llm_provider, llm_model)
 
         input_message = f"Context: {context}\n\nthread_id: {thread_id}\n\nUser query: {user_input}"
-        config = {"configurable": {"thread_id": thread_id}}
+        config = self.getGraphConfig(thread_id)
 
         last_event = None
         event_count = 0

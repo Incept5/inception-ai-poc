@@ -6,6 +6,7 @@ from langgraph.graph import StateGraph
 from llms.llm_manager import LLMManager
 from utils.debug_utils import debug_print
 from langchain_core.messages import BaseMessage
+from langchain_core.runnables.config import RunnableConfig
 from mylangchain.checkpointer_service import CheckpointerService
 from processors.persist_files_in_response import persist_files_in_response
 from mylangchain.retriever_manager import RetrieverManager
@@ -35,6 +36,9 @@ class LangchainBotInterface(SyncBotInterface):
     @abstractmethod
     def get_tools(self) -> List:
         pass
+
+    def getGraphConfig(self, thread_id: str) -> RunnableConfig:
+        return RunnableConfig(recursion_limit=50, configurable={"thread_id": thread_id})
 
     def get_checkpointer(self, checkpointer_type: str = "sqlite", **kwargs):
         if self.checkpointer is None:
@@ -121,7 +125,7 @@ class LangchainBotInterface(SyncBotInterface):
         self.lazy_init_langchain(llm_provider, llm_model)
 
         input_message = f"Context: {context}\n\nthread_id: {thread_id}\n\nUser query: {user_input}"
-        config = {"configurable": {"thread_id": thread_id}}
+        config = self.getGraphConfig(thread_id)
 
         last_event = None
         event_count = 0

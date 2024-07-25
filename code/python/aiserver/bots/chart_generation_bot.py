@@ -7,15 +7,15 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain.tools import PythonREPLTool
-from prompts.system_prompts import file_saving_prompt
+from langchain_experimental.tools import PythonREPLTool
+from prompts.system_prompts import python_repl_prompt
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]
 
 class ChartGenerationBot(AsyncLangchainBotInterface):
     def __init__(self):
-        super().__init__()
+        super().__init__(default_llm_provider="openai", default_llm_model="gpt-4o")
         self.tools = [TavilySearchResults(max_results=3), PythonREPLTool()]
         self.initialize()
 
@@ -34,14 +34,14 @@ class ChartGenerationBot(AsyncLangchainBotInterface):
         def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
-            system_message = SystemMessage(content="You are a helpful AI assistant with web search and Python chart generation capabilities.")
+            system_message = SystemMessage(content=python_repl_prompt())
 
             prompt = """
             As an AI assistant with web search and Python chart generation capabilities, please provide a helpful and informative response to the user's query.
             Follow these guidelines:
             1. Use the web search tool when you need up-to-date information or specific data
             2. After gathering data, write Python code to generate appropriate charts or visualizations
-            3. Use libraries like matplotlib, seaborn, or plotly for chart generation
+            3. Use libraries like matplotlib for chart generation (always save the chart to disk under /mnt/__threads/{thread_id})
             4. Execute the Python code using the PythonREPL tool to display the results
             5. Be clear and specific in your explanations
             6. If you're unsure about something, it's okay to admit it
@@ -51,7 +51,7 @@ class ChartGenerationBot(AsyncLangchainBotInterface):
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
-            result = {"messages": [self.llm_wrapper.invoke(messages)]}
+            result = {"messages": [self.llm.invoke(messages)]}
             debug_print(f"Chatbot output: {result}")
             return result
 

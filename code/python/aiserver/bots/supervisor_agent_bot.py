@@ -103,7 +103,7 @@ class SupervisorAgentBot(AsyncLangchainBotInterface):
     def create_graph(self) -> StateGraph:
         research_agent = self.create_agent(
             [self.tavily_tool],
-            "You are a web researcher. Use the provided tools to find accurate information."
+            "You are a web researcher. Use the web search tool to find relevant information. Do not try to code, leave that for other agents in the chain."
         )
         research_node = functools.partial(self.agent_node, agent=research_agent, name="Researcher")
 

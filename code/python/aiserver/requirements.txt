@@ -2,14 +2,15 @@ flask
 flask-cors
 gunicorn
 python-dotenv
-langgraph
 langchain
+langchain_core
 langchain_anthropic
 langchain_openai
 langchain_groq
 langchain_community
 langchain_experimental
-langchain-huggingface
+langchain_huggingface
+langgraph
 tavily-python
 typing-extensions
 PyPDF2

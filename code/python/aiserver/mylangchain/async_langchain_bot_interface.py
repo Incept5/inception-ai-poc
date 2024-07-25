@@ -87,6 +87,14 @@ class AsyncLangchainBotInterface(LangchainBotInterface, AsyncBotInterface):
     AsyncGenerator[
         Dict[str, Any], None]:
         for key, value in event.items():
+            debug_print(f"Processing event key: {key}")
+            debug_print(f"Event value: {value}")
+            if value.get("messages") is None:
+                debug_print("No messages found in event value")
+                continue
+
+            messages = value.get("messages", [])
+            debug_print(f"Messages: {messages}")
             if isinstance(value.get("messages", [])[-1], BaseMessage):
                 content = value["messages"][-1].content
                 if content is not None and content != "":

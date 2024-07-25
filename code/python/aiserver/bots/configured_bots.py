@@ -4,6 +4,7 @@ from bots.simple_bot import SimpleBot
 from bots.web_search_bot import WebSearchBot
 from bots.ollama_bot import OllamaBot
 from bots.system_improver_bot import SystemImproverBot
+from bots.chart_generation_bot import ChartGenerationBot
 from bots.web_app_bot import WebAppBot
 from bots.simple_retriever_bot import SimpleRetrieverBot
 from bots.iso20022_expert_bot import ISO20022ExpertBot
@@ -21,6 +22,7 @@ def get_configured_bots():
         ("web-search-bot", WebSearchBot()),
         ("ollama-bot", OllamaBot()),
         ("simple-retriever-bot", SimpleRetrieverBot()),
+        ("chart-generation-bot", ChartGenerationBot()),
         ("iso20022-expert-bot", ISO20022ExpertBot()),
         ("collaboration-agent-bot", CollaborationAgentBot()),
         ("supervisor-agent-bot", SupervisorAgentBot()),

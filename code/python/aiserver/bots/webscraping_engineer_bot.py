@@ -1,7 +1,7 @@
 from typing import List, TypedDict, Annotated
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
-from aiserver.prompts.system_prompts import file_saving_prompt
+from prompts.system_prompts import file_saving_prompt
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage

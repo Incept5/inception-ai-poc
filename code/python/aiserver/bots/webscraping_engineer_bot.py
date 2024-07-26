@@ -14,8 +14,8 @@ from tools.file_tree_tool import file_tree_tool
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]
-    phase: str
     scraped_data: dict
+    improve_system: bool
 
 class WebScrapingEngineerBot(BaseSystemImproverBot):
     def __init__(self):
@@ -63,64 +63,53 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
         async def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
-            phase = state.get("phase", "scraping")
             scraped_data = state.get("scraped_data", {})
+            improve_system = state.get("improve_system", False)
 
-            if phase == "scraping":
-                system_message = SystemMessage(content="""
-                You are an expert web scraping AI assistant and system improver. 
-                You work in two phases: 
-                1. Web Scraping: Use the provided Playwright tools to interact with web pages and extract information.
-                2. System Improvement: Once data is scraped, use it to build or update a webscraper in the system.
-                Follow the current phase instructions carefully.
-                """)
-                prompt = """
-                Phase 1: Web Scraping
-                1. Use the Playwright browser tools to interact with web pages and extract information
-                2. Break down complex scraping tasks into manageable steps
-                3. Provide clear and specific instructions for each step of the scraping process
-                4. Handle potential errors or edge cases in web scraping scenarios
-                5. If a task cannot be completed with the available tools, explain why and suggest alternatives
-                6. Always provide the extracted information in a structured and easy-to-read format
-                7. Once scraping is complete, return the scraped data and set the phase to "improving"
-                8. Finally use the file_tree_tool to get an overview of the system structure so we can move into the next phase
-                """
-            else:  # phase == "improving"
-                system_message = SystemMessage(content=f"""
-                You are an expert web scraping AI assistant and system improver. 
-                You are now in the System Improvement phase.
-                {file_saving_prompt()}
-                """)
-                prompt = """
-                Phase 2: System Improvement
-                1. Use the file_tree_tool to get an overview of the system structure
-                2. Look for and fetch the content of any "hints.md" file using the file_content tool
-                3. Review the scraped data and the route/process we used to scrape it
-                4. Optimise the steps we took to scrape the data so the new system is more efficient
-                5. Analyze the current system's web scraping capabilities
-                6. Determine if a new webscraper should be added or an existing one updated
-                7. Use the file_content tool to fetch example code for reference
-                8. Write or update the webscraper code in the appropriate language and style
-                9. Ensure the new or updated code integrates well with the existing system
-                10. Provide clear documentation in the code for the changes made
-                11. If no improvements are needed, explain why
-                """
+            system_message = SystemMessage(content=f"""
+            You are an expert web scraping AI assistant and system improver. 
+            Your primary task is web scraping, but you can also improve the system if asked.
+            {file_saving_prompt()}
+            """)
+
+            prompt = """
+            Web Scraping and System Improvement Instructions:
+
+            1. Use the Playwright browser tools to interact with web pages and extract information
+            2. Break down complex scraping tasks into manageable steps
+            3. Provide clear and specific instructions for each step of the scraping process
+            4. Handle potential errors or edge cases in web scraping scenarios
+            5. If a task cannot be completed with the available tools, explain why and suggest alternatives
+            6. Always provide the extracted information in a structured and easy-to-read format
+            7. Once scraping is complete, return the scraped data
+
+            If asked to improve the system:
+            8. Use the file_tree_tool to get an overview of the system structure
+            9. Look for and fetch the content of any "hints.md" file using the file_content tool
+            10. Review the scraped data and the route/process used to scrape it
+            11. Optimize the steps taken to scrape the data for improved efficiency
+            12. Analyze the current system's web scraping capabilities
+            13. Determine if a new webscraper should be added or an existing one updated
+            14. Use the file_content tool to fetch example code for reference
+            15. Write or update the webscraper code in the appropriate language and style
+            16. Ensure the new or updated code integrates well with the existing system
+            17. Provide clear documentation in the code for the changes made
+            18. If no improvements are needed, explain why
+            """
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
             ai_message = await self.llm.ainvoke(messages)
             debug_print(f"Chatbot output ai_message: {ai_message}")
 
-            # Check if we need to transition from scraping to improving phase
-            if phase == "scraping" and "scraped data" in ai_message.content.lower():
-                # Extract scraped data from the message (this is a simplified example)
+            # Extract scraped data from the message (this is a simplified example)
+            if "scraped data" in ai_message.content.lower():
                 scraped_data = {"data": ai_message.content}
-                phase = "improving"
 
             result = {
                 "messages": [ai_message],
-                "phase": phase,
-                "scraped_data": scraped_data
+                "scraped_data": scraped_data,
+                "improve_system": improve_system
             }
             debug_print(f"Chatbot output result: {result}")
             return result

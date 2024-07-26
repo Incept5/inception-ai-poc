@@ -51,3 +51,4 @@ def get_bot(app: FastAPI, bot_type: str, thread_id: str):
 
 def get_all_bots(app: FastAPI):
     return get_bot_factories()
+from .webscraping_engineer_bot import WebScrapingEngineerBot

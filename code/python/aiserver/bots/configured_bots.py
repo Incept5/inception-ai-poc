@@ -30,7 +30,8 @@ def get_bot_factories():
         ("fast-mlx-bot", FastMlxBot),
         ("simple-db-bot", SimpleDBBot),
         ("webscraping-bot", WebScrapingBot),
-        ("webscraping-db-bot", WebScrapingDBBot)
+        ("webscraping-db-bot", WebScrapingDBBot),
+        ("webscraping-engineer-bot", WebScrapingEngineerBot)
     ])
 
 def get_bot(app: FastAPI, bot_type: str, thread_id: str):

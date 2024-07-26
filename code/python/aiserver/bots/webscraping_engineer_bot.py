@@ -1,5 +1,4 @@
 from typing import List, TypedDict, Annotated
-from mylangchain.async_langchain_bot_interface import AsyncLangchainBotInterface
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
@@ -15,13 +14,21 @@ class State(TypedDict):
     phase: str
     scraped_data: dict
 
-class WebScrapingEngineerBot(AsyncLangchainBotInterface, BaseSystemImproverBot):
+class WebScrapingEngineerBot(BaseSystemImproverBot):
     def __init__(self):
-        AsyncLangchainBotInterface.__init__(self)
-        BaseSystemImproverBot.__init__(self, system_src='/system_src')
+        super().__init__(system_src='/system_src')
         self.tools = None
         self.async_browser = True
+        self.llm = self.get_llm()
         self.initialize()
+
+    def get_llm(self):
+        # Implement this method to return the appropriate LLM
+        pass
+
+    def get_checkpointer(self):
+        # Implement this method to return the appropriate checkpointer
+        pass
 
     @property
     def bot_type(self) -> str:

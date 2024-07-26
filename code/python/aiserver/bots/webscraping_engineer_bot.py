@@ -8,6 +8,8 @@ from toolkits.playwright_toolkit import PlaywrightBrowserToolkit
 from playwright.async_api import async_playwright
 from playwright.sync_api import sync_playwright
 from .base_system_improver_bot import BaseSystemImproverBot
+from tools.file_content_tool import file_content
+from tools.file_tree_tool import file_tree_tool
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]
@@ -44,6 +46,9 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
             browser = sync_playwright().start()
             sync_browser = browser.chromium.launch()
             self.tools = PlaywrightBrowserToolkit.from_browser(sync_browser=sync_browser).get_tools()
+
+        # Add file_content_tool and file_tree_tool
+        self.tools.extend([file_content, file_tree_tool])
 
         # Need to bind the tools to the LLM as we missed the prior opportunity
         self.llm = self.llm.bind_tools(self.tools)
@@ -82,15 +87,17 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
             else:  # phase == "improving"
                 prompt = """
                 Phase 2: System Improvement
-                1. Review the scraped data and the route/process we used to scrape it
-                2. Optimise the steps we took to scrape the data so the new system is more efficient
-                3. Analyze the current system's web scraping capabilities
-                4. Determine if a new webscraper should be added or an existing one updated
-                5. Use the file_content tool to fetch example code for reference
-                6. Write or update the webscraper code in the appropriate language and style
-                7. Ensure the new or updated code integrates well with the existing system
-                8. Provide clear documentation in the code for the changes made
-                9. If no improvements are needed, explain why
+                1. Use the file_tree_tool to get an overview of the system structure
+                2. Look for and fetch the content of any "hints.md" file using the file_content tool
+                3. Review the scraped data and the route/process we used to scrape it
+                4. Optimise the steps we took to scrape the data so the new system is more efficient
+                5. Analyze the current system's web scraping capabilities
+                6. Determine if a new webscraper should be added or an existing one updated
+                7. Use the file_content tool to fetch example code for reference
+                8. Write or update the webscraper code in the appropriate language and style
+                9. Ensure the new or updated code integrates well with the existing system
+                10. Provide clear documentation in the code for the changes made
+                11. If no improvements are needed, explain why
                 """
 
             prompt_message = HumanMessage(content=prompt)

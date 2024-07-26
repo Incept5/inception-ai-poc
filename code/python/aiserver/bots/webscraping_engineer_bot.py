@@ -1,6 +1,7 @@
 from typing import List, TypedDict, Annotated
 from utils.debug_utils import debug_print
 from langgraph.graph import StateGraph
+from aiserver.prompts.system_prompts import file_saving_prompt
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
@@ -65,15 +66,14 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
             phase = state.get("phase", "scraping")
             scraped_data = state.get("scraped_data", {})
 
-            system_message = SystemMessage(content="""
-            You are an expert web scraping AI assistant and system improver. 
-            You work in two phases: 
-            1. Web Scraping: Use the provided Playwright tools to interact with web pages and extract information.
-            2. System Improvement: Once data is scraped, use it to build or update a webscraper in the system.
-            Follow the current phase instructions carefully.
-            """)
-
             if phase == "scraping":
+                system_message = SystemMessage(content="""
+                You are an expert web scraping AI assistant and system improver. 
+                You work in two phases: 
+                1. Web Scraping: Use the provided Playwright tools to interact with web pages and extract information.
+                2. System Improvement: Once data is scraped, use it to build or update a webscraper in the system.
+                Follow the current phase instructions carefully.
+                """)
                 prompt = """
                 Phase 1: Web Scraping
                 1. Use the Playwright browser tools to interact with web pages and extract information
@@ -86,6 +86,11 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
                 8. Finally use the file_tree_tool to get an overview of the system structure so we can move into the next phase
                 """
             else:  # phase == "improving"
+                system_message = SystemMessage(content=f"""
+                You are an expert web scraping AI assistant and system improver. 
+                You are now in the System Improvement phase.
+                {file_saving_prompt()}
+                """)
                 prompt = """
                 Phase 2: System Improvement
                 1. Use the file_tree_tool to get an overview of the system structure

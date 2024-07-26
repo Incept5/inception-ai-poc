@@ -27,7 +27,7 @@ If the question does not seem related to the database, just return "I don't know
 
 class SimpleDBBot(AsyncLangchainBotInterface):
     def __init__(self, retriever_name: Optional[str] = None, db_url: str = os.environ.get("DB_READER_DB_URI")):
-        super().__init__(retriever_name,default_llm_provider="openai", default_llm_model="gpt-4-turbo")
+        super().__init__(retriever_name,default_llm_provider="openai", default_llm_model="gpt-4o")
         self.db_url = db_url
         self.initialize()
 

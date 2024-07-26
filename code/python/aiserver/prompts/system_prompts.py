@@ -18,7 +18,8 @@ def file_saving_prompt():
     ```
 
     VERY IMPORTANT: Always make a plan first before iterating through the steps. Update the plan as you are going if you need to.
-    VERY IMPORTANT: Do not forget to add the file path at the top of the generated file as in the examples above!    
+    VERY IMPORTANT: Do not forget to add the file path at the top of the generated file as in the examples above!
+    VERY IMPORTANT: do NOT include the /system_src prefix directory in the file path when generating files!
     """
 
 def python_repl_prompt():

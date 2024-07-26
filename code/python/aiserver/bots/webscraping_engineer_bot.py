@@ -83,6 +83,7 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
                 5. If a task cannot be completed with the available tools, explain why and suggest alternatives
                 6. Always provide the extracted information in a structured and easy-to-read format
                 7. Once scraping is complete, return the scraped data and set the phase to "improving"
+                8. Finally use the file_tree_tool to get an overview of the system structure so we can move into the next phase
                 """
             else:  # phase == "improving"
                 prompt = """

@@ -19,16 +19,7 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
         super().__init__(system_src='/system_src')
         self.tools = None
         self.async_browser = True
-        self.llm = self.get_llm()
         self.initialize()
-
-    def get_llm(self):
-        # Implement this method to return the appropriate LLM
-        pass
-
-    def get_checkpointer(self):
-        # Implement this method to return the appropriate checkpointer
-        pass
 
     @property
     def bot_type(self) -> str:
@@ -84,22 +75,22 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
                 2. Break down complex scraping tasks into manageable steps
                 3. Provide clear and specific instructions for each step of the scraping process
                 4. Handle potential errors or edge cases in web scraping scenarios
-                5. Respect website terms of service and ethical scraping practices
-                6. If a task cannot be completed with the available tools, explain why and suggest alternatives
-                7. Always provide the extracted information in a structured and easy-to-read format
-                8. Once scraping is complete, return the scraped data and set the phase to "improving"
+                5. If a task cannot be completed with the available tools, explain why and suggest alternatives
+                6. Always provide the extracted information in a structured and easy-to-read format
+                7. Once scraping is complete, return the scraped data and set the phase to "improving"
                 """
             else:  # phase == "improving"
                 prompt = """
                 Phase 2: System Improvement
-                1. Review the scraped data from the previous phase
-                2. Analyze the current system's web scraping capabilities
-                3. Determine if a new webscraper should be added or an existing one updated
-                4. Use the file_content tool to fetch example code for reference
-                5. Write or update the webscraper code in the appropriate language and style
-                6. Ensure the new or updated code integrates well with the existing system
-                7. Provide clear documentation for the changes made
-                8. If no improvements are needed, explain why
+                1. Review the scraped data and the route/process we used to scrape it
+                2. Optimise the steps we took to scrape the data so the new system is more efficient
+                3. Analyze the current system's web scraping capabilities
+                4. Determine if a new webscraper should be added or an existing one updated
+                5. Use the file_content tool to fetch example code for reference
+                6. Write or update the webscraper code in the appropriate language and style
+                7. Ensure the new or updated code integrates well with the existing system
+                8. Provide clear documentation in the code for the changes made
+                9. If no improvements are needed, explain why
                 """
 
             prompt_message = HumanMessage(content=prompt)

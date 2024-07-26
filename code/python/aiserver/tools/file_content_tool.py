@@ -6,7 +6,7 @@ from utils.file_tree import file_tree
 
 @tool("file_content")
 def file_content(file_path: Optional[str] = None) -> str:
-    """Get the content of a file, handling paths that may or may not start with the system source directory or a forward slash."""
+    """Get the content of a file, when providing the path do not include the /system_src prefix."""
     debug_print(f"file_content tool called with file_path: {file_path}")
 
     system_src = os.environ.get("SYSTEM_SOURCE_PATH", "/system_src")

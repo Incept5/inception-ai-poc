@@ -101,7 +101,7 @@ class BaseSystemImproverBot(AsyncLangchainBotInterface):
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
-            result = {"messages": [self.llm_wrapper.invoke(messages)]}
+            result = {"messages": [self.llm.invoke(messages)]}
             debug_print(f"Chatbot output: {result}")
             return result
 

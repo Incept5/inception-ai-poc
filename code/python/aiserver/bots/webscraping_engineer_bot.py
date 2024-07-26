@@ -14,7 +14,6 @@ from tools.file_tree_tool import file_tree_tool
 
 class State(TypedDict):
     messages: Annotated[List, add_messages]
-    scraped_data: dict
     improve_system: bool
 
 class WebScrapingEngineerBot(BaseSystemImproverBot):
@@ -63,7 +62,6 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
         async def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
-            scraped_data = state.get("scraped_data", {})
             improve_system = state.get("improve_system", False)
 
             system_message = SystemMessage(content=f"""
@@ -83,18 +81,18 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
             6. Always provide the extracted information in a structured and easy-to-read format
             7. Once scraping is complete, return the scraped data
 
-            If asked to improve the system:
+            If asked to improve the system or add a new webscraper, follow these steps:
             8. Use the file_tree_tool to get an overview of the system structure
-            9. Look for and fetch the content of any "hints.md" file using the file_content tool
-            10. Review the scraped data and the route/process used to scrape it
-            11. Optimize the steps taken to scrape the data for improved efficiency
+            9. Look for a "hints.md" in the root of the file structure and read the file using the file_content tool (THIS IS IMPORTANT!)
+            10. Follow any instructions found in the hints.md file to learn more about the system we are updating.
+            11. Optimize the steps taken previously to scrape the data for improved efficiency
             12. Analyze the current system's web scraping capabilities
             13. Determine if a new webscraper should be added or an existing one updated
             14. Use the file_content tool to fetch example code for reference
             15. Write or update the webscraper code in the appropriate language and style
             16. Ensure the new or updated code integrates well with the existing system
             17. Provide clear documentation in the code for the changes made
-            18. If no improvements are needed, explain why
+            18. Add the necessary tests to verify the new code also (fetch an example to help you know what the tests should look like)
             """
 
             prompt_message = HumanMessage(content=prompt)
@@ -102,13 +100,8 @@ class WebScrapingEngineerBot(BaseSystemImproverBot):
             ai_message = await self.llm.ainvoke(messages)
             debug_print(f"Chatbot output ai_message: {ai_message}")
 
-            # Extract scraped data from the message (this is a simplified example)
-            if "scraped data" in ai_message.content.lower():
-                scraped_data = {"data": ai_message.content}
-
             result = {
                 "messages": [ai_message],
-                "scraped_data": scraped_data,
                 "improve_system": improve_system
             }
             debug_print(f"Chatbot output result: {result}")

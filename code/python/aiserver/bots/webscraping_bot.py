@@ -44,16 +44,23 @@ class WebScrapingBot(AsyncLangchainBotInterface):
             sync_browser = browser.chromium.launch()
             self.tools = PlaywrightBrowserToolkit.from_browser(sync_browser=sync_browser).get_tools()
 
+        # Need to bind the tools to the LLM as we missed the prior opportunity
+        self.llm = self.llm.bind_tools(self.tools)
+
+        debug_print(f"Bound Tools: {self.tools}")
+
     def get_tools(self) -> List:
-        if self.tools is None:
-            raise ValueError("Tools have not been initialized")
         return self.tools
 
     def create_chatbot(self):
         async def chatbot(state: State):
             debug_print(f"Chatbot input state: {state}")
             messages = state["messages"]
-            system_message = SystemMessage(content="You are an expert web scraping AI assistant using Playwright browser tools.")
+            system_message = SystemMessage(content="""
+            You are an expert web scraping AI assistant. 
+            Use the provided tools to interact with web pages.
+            Do not try to tell me how I can write code. Just use the tools to do the job.
+            """)
 
             prompt = """
             As an AI assistant specializing in web scraping with Playwright, please follow these guidelines:
@@ -68,7 +75,7 @@ class WebScrapingBot(AsyncLangchainBotInterface):
 
             prompt_message = HumanMessage(content=prompt)
             messages = [system_message, prompt_message] + messages
-            ai_message = await self.llm_wrapper.llm.ainvoke(messages)
+            ai_message = await self.llm.ainvoke(messages)
             debug_print(f"Chatbot output ai_message: {ai_message}")
             result = {"messages": [ai_message]}
             debug_print(f"Chatbot output result: {result}")
